@@ -1,11 +1,17 @@
 ---
 name: two-machine-setup
-description: "Dev laptop vs RTX 4060 GPU box: specs, repo paths, roles; GPU box VRAM (\"20 GB\") unconfirmed, plan assumes 8 GB dedicated"
+description: "Dev laptop vs RTX 4060 GPU box: specs, repo paths, roles; GPU box available only until 2026-10-28; VRAM (\"20 GB\") unconfirmed"
 metadata:
+  node_type: memory
   type: project
+  originSessionId: 0952188d-bc75-46ae-a49b-65b82c0ee291
+  modified: 2026-10-23T22:42:10.287Z
 ---
 
 Two machines (decided 2026-10-23). The GitHub repo is the only thing they share ([[shared-memory]]).
+
+**The GPU box is only available until 2026-10-28** (user, 2026-10-24). Weeks 2–8 training, batch ASR and full evals
+need another home after that; see [[pehleaap-status]] for what was decided. Anything that must run on the GPU box has to finish by Oct 28.
 
 - **Dev box** = laptop, repo at `D:\pehleaap`: i5-11300H 4C/8T, GTX 1650 4 GB (Turing, no native bf16 → fp16), 7.8 GB RAM,
   ~450 GB free on D:. Used for code, tests, labeling UI, eval on slices, Pipecat demo, CPU benchmark #1.
