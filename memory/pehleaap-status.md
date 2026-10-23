@@ -1,6 +1,6 @@
 ---
 name: pehleaap-status
-description: "Locked decisions (compute = Dev box + Kaggle from Oct 29), 8-week schedule with dates, done/pending (PR #1-#3 merged, labeling engine v0 on week1-labeling)"
+description: "Locked decisions (compute = Dev box + Kaggle from Oct 29), 8-week schedule with dates, done/pending (PR #1-#4 merged; Kaggle switch on branch kaggle-compute)"
 metadata:
   node_type: memory
   type: project
@@ -41,7 +41,7 @@ every 30 min and resume, recordings as a private Kaggle dataset `pehleaap-raw` c
 or another machine). docs/machines.md has a Kaggle section; the untested GPU-box scripts (remote.ps1, fetch_ckpt.ps1, sync_data.ps1,
 run_job.cmd) were deleted. torch 2.14.1+cu126 includes sm_60 (P100) and sm_75 (T4) kernels (checked).
 
-**Done 2026-10-24 (pushed on branch week1-labeling, commit 858cbfb):** labeling engine v0. `pehleaap/audio/vad.py` (Silero ONNX via onnxruntime, no torch,
+**Done 2026-10-24 (PR #4, merge 7d4186d):** labeling engine v0. `pehleaap/audio/vad.py` (Silero ONNX via onnxruntime, no torch,
 batched tracks, bit-identical to silero's wrapper, 25 min × 2 tracks in ~12 s), `pehleaap/labeling/` (config, lexicons, ipu,
 events, schema), `configs/labeling.yaml`, `scripts/label_session.py`; 38 new tests (64 pass in .venv). Check on a synthetic
 session built from real Smart Turn Hindi clips: every SHIFT/HOLD/INTERRUPT right; VAD offsets ±130 ms, onsets 0–150 ms late
