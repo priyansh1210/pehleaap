@@ -1,0 +1,27 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+
+# Data never goes in git (recordings are private); manifests with checksums do.
+data/*
+!data/manifests/
+weights/
+runs/
+
+# Large or binary artifacts
+*.wav
+*.flac
+*.m4a
+*.mp3
+*.ogg
+*.opus
+*.parquet
+*.onnx
+*.pt
+*.ckpt
+
+# Secrets
+.env
