@@ -17,6 +17,7 @@ import numpy as np
 import soundfile as sf
 
 from pehleaap.audio.align import estimate_offset
+from pehleaap.audio.io import resample
 from pehleaap.paths import ffmpeg_bin
 
 SR = 8000
@@ -71,6 +72,30 @@ def apply_codec(x: np.ndarray, codec: str) -> np.ndarray:
     y = _roundtrip(x, codec)
     d = codec_delay_samples(codec)
     y = y[d:] if d >= 0 else np.concatenate([np.zeros(-d, dtype=np.float32), y])
-    if len(y) < len(x):
-        y = np.concatenate([y, np.zeros(len(x) - len(y), dtype=np.float32)])
-    return y[: len(x)].astype(np.float32)
+    return _fit(y, len(x))
+
+
+def _fit(y: np.ndarray, n: int) -> np.ndarray:
+    """Trim or zero-pad to exactly n samples."""
+    if len(y) < n:
+        y = np.concatenate([y, np.zeros(n - len(y), dtype=np.float32)])
+    return y[:n].astype(np.float32)
+
+
+def narrowband_many(clips: list[np.ndarray], codec: str, sr: int = 16000, gap_s: float = 0.5) -> list[np.ndarray]:
+    """Phone channel for many clips at once: sr -> 8 kHz -> codec -> back to sr, same lengths.
+
+    The clips are joined with `gap_s` of silence (so codec state cannot carry from one clip
+    into the next), coded in one ffmpeg run, and split again. Because the codec delay is
+    compensated, the split points stay exact. This is only band-limiting plus codec;
+    noise, echo and packet loss come from the full channel simulator.
+    """
+    gap = np.zeros(int(gap_s * SR), dtype=np.float32)
+    parts, bounds, pos = [gap], [], len(gap)
+    for c in clips:
+        c8 = resample(c.astype(np.float32), sr, SR)
+        parts += [c8, gap]
+        bounds.append((pos, pos + len(c8)))
+        pos += len(c8) + len(gap)
+    coded = apply_codec(np.concatenate(parts), codec)
+    return [_fit(resample(coded[s:e], SR, sr), len(c)) for (s, e), c in zip(bounds, clips)]

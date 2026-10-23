@@ -1,0 +1,17 @@
+# Pipecat demo stack, installed in its own venv (.venv-demo) on the Dev box.
+# Kept apart from requirements.txt because pipecat 1.13 pins older onnxruntime (~=1.24.3),
+# soundfile (~=0.13.1) and soxr (~=1.0.0) than the research stack uses.
+#
+#   python -m venv .venv-demo
+#   .venv-demo\Scripts\python -m pip install -r requirements-demo.txt
+#   .venv-demo\Scripts\python -m pip install -e . --no-deps
+#
+# Silero VAD and SmallWebRTCTransport ship with pipecat-ai[webrtc]. The "local-smart-turn" extra
+# is left out on purpose: it pulls torch + torchaudio + coremltools (~2.5 GB), and the turn models
+# here only need transformers' numpy WhisperFeatureExtractor.
+pipecat-ai[webrtc,runner]==1.13.0
+transformers==5.20.2
+huggingface_hub==2.3.0
+
+pytest==9.1.1
+pyarrow==26.0.0   # tests only: tests/test_pipecat_ext.py reads a real clip from the Smart Turn test set

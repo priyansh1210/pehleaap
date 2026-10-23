@@ -33,3 +33,34 @@ Output of `python scripts/env_check.py --markdown` on each machine. Re-run after
 ## GPU box (RTX 4060)
 
 Pending: on that machine, clone the repo, create the venv, then run `python scripts\env_check.py --markdown` and paste the table here. The `gpu dedicated VRAM (GB)` row is the number training batch sizes are based on.
+
+### First-time setup and the first job (PowerShell on the GPU box)
+
+Needs git and Python 3.11.9 (same as the Dev box). Everything else comes from the repo.
+
+```powershell
+git clone https://github.com/priyansh1210/pehleaap D:\pehleaap
+cd D:\pehleaap
+python -m venv .venv
+.venv\Scripts\python -m pip install --timeout 30 --retries 10 -r requirements.txt
+
+# ffmpeg full build with AMR-NB. Unzipped to this path, pehleaap finds it without PEHLEAAP_FFMPEG.
+curl.exe -L -C - --retry 5 -o $env:TEMP\ffmpeg.zip https://github.com/GyanD/codexffmpeg/releases/download/9.0.2/ffmpeg-9.0.2-full_build-shared.zip
+Expand-Archive $env:TEMP\ffmpeg.zip D:\tools
+
+.venv\Scripts\python -m pytest                              # all pass (the pipecat tests skip here)
+.venv\Scripts\python scripts\env_check.py --markdown        # paste the table above
+```
+
+**Job 1: end-of-turn baselines, clean vs phone line** (Smart Turn v3.2 + 4 community Hinglish models
+on all 31.5k test clips; 2.5 h on the laptop, too heavy for its 8 GB RAM). The first run downloads the
+4.8 GB test set, checking each shard's sha256.
+
+```powershell
+.venv\Scripts\python scripts\eval_clip_baselines.py --models chhotu_int8 --limit-shards 1 --out smoke   # smoke test, a few minutes
+.venv\Scripts\python scripts\eval_clip_baselines.py --threads 8 *> runs\clip_baselines.log              # --threads = physical cores
+```
+
+Each shard's predictions are saved as it finishes (`runs\clip_baselines\shards\`). If the run stops
+(sleep, reboot, Ctrl+C), rerun the same command and it resumes. When it is done, bring back
+`runs\clip_baselines\report.md` and `results.json` (small) to the Dev box, e.g. into `docs\results\`.
