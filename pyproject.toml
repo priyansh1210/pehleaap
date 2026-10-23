@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pehleaap"
+version = "0.1.0"
+description = "Turn-taking (end-of-turn, barge-in, backchannel, hold) for Hinglish 8 kHz telephony voice agents"
+requires-python = ">=3.11"
+license = { text = "BSD-2-Clause" }
+
+[tool.setuptools.packages.find]
+include = ["pehleaap*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
