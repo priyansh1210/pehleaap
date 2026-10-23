@@ -1,0 +1,7 @@
+- [User profile](user-profile.md) — the user (they/them) builds pehleaap: Hinglish telephony turn-taking recipe + benchmark
+- [pehleaap status](pehleaap-status.md) — locked decisions, schedule (wk1 = Oct 26 2026), done/pending; plan in docs/PLAN.md
+- [Two-machine setup](two-machine-setup.md) — Dev laptop (GTX 1650) vs RTX 4060 GPU box; VRAM unconfirmed (plan assumes 8 GB); who does what
+- [Shared memory](shared-memory.md) — memory lives in git (this folder) so both machines share it; pull at start, commit + push before switching
+- [Smart Turn repro result](smart-turn-repro-result.md) — v3.2 repro PASS; Hindi test set is 100% synthetic TTS, 18.2% cut-in rate
+- [Git workflow](git-workflow.md) — user commits and raises PRs from copy-paste commands; no gh; repo priyansh1210/pehleaap (public)
+- [Dev environment](dev-environment.md) — per-machine tool paths, venvs, Windows gotchas (cp1252, PowerShell 5.1 stderr, flaky network, 8 GB RAM)
