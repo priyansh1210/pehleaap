@@ -16,11 +16,10 @@ and the week-by-week schedule, is in [`docs/PLAN.md`](docs/PLAN.md).
 | Two-track clock alignment and drift checks | `pehleaap/audio/align.py`, `scripts/check_alignment.py` |
 | Consent forms (EN/HI), recording protocol, scenario cards, fake-PII cards | `docs/` |
 | Community Hinglish end-of-turn models (deveshu, abhishek, codewithmoin, Chhotu) behind one interface | `pehleaap/baselines/turn_models.py` |
-| Baselines on clean vs 8 kHz G.711 / AMR-NB audio (heavy: runs on the GPU box) | `scripts/eval_clip_baselines.py`, runbook in `docs/machines.md` |
+| Baselines on clean vs 8 kHz G.711 / AMR-NB audio (heavy: runs on the GPU box until Oct 28) | `scripts/eval_clip_baselines.py`, runbook in `docs/machines.md` |
 | Real-time phone line (G.711 bit-identical to ffmpeg, ~6 ms delay) | `pehleaap/telephony/realtime.py` |
 | Pipecat demo skeleton: browser call → phone line → Silero VAD → any turn model → ding | `demo/bot.py`, `pehleaap/pipecat_ext/` |
 | Labeling engine v0: Silero VAD → IPUs → SHIFT / HOLD / BC / INTERRUPT / HOLD_REQ events (JSONL). Duration rules only until ASR runs; no NOISE_ECHO yet | `pehleaap/labeling/`, `configs/labeling.yaml`, `scripts/label_session.py` |
-| Two-machine helpers (sync, remote jobs, checkpoint fetch) | `scripts/*.ps1`. **Untested until the GPU box is set up.** |
 
 ## Setup (both machines, Windows)
 
@@ -34,23 +33,17 @@ python -m venv .venv
 You also need an **ffmpeg full build** that includes `libopencore_amrnb`, for the AMR-NB telephony codec,
 e.g. the gyan.dev `full_build-shared` build. Put it on `PATH` or set `PEHLEAAP_FFMPEG` to `ffmpeg.exe`.
 
-## Two machines
+## Compute
 
-| | Dev box (laptop) | GPU box (RTX 4060) |
+| | Dev box (laptop) | Kaggle (from Oct 29, 2026) |
 |---|---|---|
 | Does | code, tests, labeling UI, eval on small slices, Pipecat demo, recording checks | all training, batch ASR, augmentation precompute, full eval sweeps |
-| Code | edit, commit, push | `git pull` only (`scripts/run_job.cmd` pulls automatically) |
-| Data | masters `data/raw` (recordings) | receives `data/raw`, produces derived data |
+| Code | edit, commit, push | jobs clone a pinned commit (`scripts/kaggle_job.py`, to come) |
+| Data | masters `data/raw` (recordings) | private Kaggle datasets, checked against the manifests |
 
-```powershell
-$env:PEHLEAAP_GPU_SHARE = "\\GPUBOX\pehleaap-data"   # or a portable SSD path
-.\scripts\sync_data.ps1 raw                          # push recordings
-.\scripts\remote.ps1 -Detach train.train_eot --config configs\train_eot.yaml
-.\scripts\fetch_ckpt.ps1 <run_id>                    # bring back ONNX + metrics
-```
-
+The RTX 4060 GPU box is only available until Oct 28, 2026, and runs the baseline eval (`docs/machines.md`).
 Audio never goes in git. `data/manifests/*.jsonl` (sha256 per file) does, and
-`python scripts\env_check.py --verify-data` proves both machines hold the same data.
+`python scripts\env_check.py --verify-data` proves a machine or job holds the same data.
 
 **Shared Claude Code memory.** Claude Code's memory is normally per machine. Here it lives in git instead:
 `CLAUDE.md` plus `memory/`. Run `powershell -ExecutionPolicy Bypass -File scripts\setup_claude_memory.ps1` once
