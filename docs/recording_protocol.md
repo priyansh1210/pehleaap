@@ -103,6 +103,7 @@ Add one row per session to `data/raw/sessions.csv`:
 After each recording day:
 ```
 python scripts/check_alignment.py data/raw/sessions/S017/S017_SPK031_agent.flac data/raw/sessions/S017/S017_SPK032_customer.flac
+python scripts/label_session.py data/raw/sessions/S017     # automatic turn-taking labels -> data/labels/S017/
 python -c "from pehleaap.manifest import build_manifest; build_manifest('raw')"
 ```
 Then commit `data/manifests/raw.jsonl` (checksums only, no audio) and sync `data/raw` to the GPU box.
