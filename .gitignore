@@ -1,5 +1,5 @@
-# Python
-.venv/
+# Python (.venv = research/training stack, .venv-demo = Pipecat demo stack)
+.venv*/
 __pycache__/
 *.pyc
 .pytest_cache/

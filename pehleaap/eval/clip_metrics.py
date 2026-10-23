@@ -9,6 +9,17 @@ analysis uses.
 from collections import defaultdict
 
 import numpy as np
+from scipy.stats import rankdata
+
+
+def roc_auc(labels: np.ndarray, probs: np.ndarray) -> float:
+    """Threshold-free ranking quality (Mann-Whitney U); NaN unless both classes are present."""
+    labels = np.asarray(labels).astype(bool)
+    n_pos, n_neg = int(labels.sum()), int((~labels).sum())
+    if n_pos == 0 or n_neg == 0:
+        return float("nan")
+    ranks = rankdata(probs)
+    return float((ranks[labels].sum() - n_pos * (n_pos + 1) / 2) / (n_pos * n_neg))
 
 
 def binary_metrics(labels: np.ndarray, probs: np.ndarray, threshold: float = 0.5) -> dict:
@@ -32,6 +43,8 @@ def binary_metrics(labels: np.ndarray, probs: np.ndarray, threshold: float = 0.5
         # Conventional rates. FP here = "turn complete" predicted on an unfinished turn = cut-in.
         "fpr": fp / (fp + tn) if fp + tn else 0.0,
         "fnr": fn / (fn + tp) if fn + tp else 0.0,
+        "balanced_accuracy": 100.0 * (0.5 * tn / (tn + fp) + 0.5 * tp / (tp + fn)) if (tn + fp) and (tp + fn) else float("nan"),
+        "auc": roc_auc(labels, probs),
     }
 
 

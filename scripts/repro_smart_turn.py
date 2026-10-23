@@ -9,24 +9,19 @@ no number this harness produces on our own data can be trusted.
 """
 
 import argparse
-import io
 import json
 import sys
 import time
 from pathlib import Path
 
 import numpy as np
-import pyarrow.parquet as pq
-import soundfile as sf
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from pehleaap.audio.io import resample  # noqa: E402
-from pehleaap.baselines.smart_turn import SAMPLE_RATE, SmartTurnONNX, download_weights  # noqa: E402
+from pehleaap.baselines.smart_turn import SmartTurnONNX, download_weights  # noqa: E402
+from pehleaap.data import smart_turn_testset  # noqa: E402
 from pehleaap.eval.clip_metrics import binary_metrics, grouped_metrics  # noqa: E402
-from pehleaap.paths import EXTERNAL_DIR, RUNS_DIR  # noqa: E402
-
-DATASET = "pipecat-ai/smart-turn-data-v3.2-test"
+from pehleaap.paths import RUNS_DIR  # noqa: E402
 
 # benchmarks/smart-turn-v3.2-cpu.md (int8 model). fp/fn are % of all samples, as Smart Turn defines them.
 PUBLISHED = {
@@ -36,37 +31,12 @@ PUBLISHED = {
     },
 }
 
-META_COLUMNS = ["id", "language", "endpoint_bool", "synthetic", "dataset", "midfiller", "endfiller"]
 
-
-def download_test_set() -> Path:
-    """Fetch the test shards, keeping any already on disk whose sha256 matches the Hub's."""
-    from huggingface_hub import HfApi, hf_hub_download
-
-    from pehleaap.manifest import sha256_file
-
-    local = EXTERNAL_DIR / "smart-turn-data-v3.2-test"
-    for entry in HfApi().list_repo_tree(DATASET, repo_type="dataset", path_in_repo="data", expand=True):
-        path = local / entry.path
-        if path.exists() and path.stat().st_size == entry.size and sha256_file(path) == entry.lfs.sha256:
-            continue
-        print(f"downloading {entry.path}", flush=True)
-        hf_hub_download(DATASET, entry.path, repo_type="dataset", local_dir=local)
-    return local
-
-
-def iter_clips(root: Path, langs: list[str], limit: int | None):
-    """Yield (metadata dict, 16 kHz audio) for the requested languages, one shard at a time."""
+def iter_clips(langs: list[str], limit: int | None):
+    """Yield (metadata dict, 16 kHz audio) for the requested languages."""
     count = 0
-    for shard in sorted((root / "data").glob("*.parquet")):
-        table = pq.read_table(shard, columns=META_COLUMNS + ["audio"], filters=[("language", "in", langs)])
-        meta = table.select(META_COLUMNS).to_pylist()
-        audio = table.column("audio").to_pylist()
-        for m, a in zip(meta, audio):
-            x, sr = sf.read(io.BytesIO(a["bytes"]), dtype="float32", always_2d=True)
-            x = x.mean(axis=1)
-            if sr != SAMPLE_RATE:
-                x = resample(x, sr, SAMPLE_RATE)
+    for metas, clips in smart_turn_testset.iter_shards(langs):
+        for m, x in zip(metas, clips):
             yield m, x
             count += 1
             if limit and count >= limit:
@@ -85,12 +55,12 @@ def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     model = SmartTurnONNX(download_weights("3.2", args.variant), threads=args.threads)
-    root = download_test_set()
+    smart_turn_testset.download()
 
     metas, probs = [], []
     t0 = time.time()
     batch_meta, batch_audio = [], []
-    for m, x in iter_clips(root, args.langs, args.limit):
+    for m, x in iter_clips(args.langs, args.limit):
         batch_meta.append(m)
         batch_audio.append(x)
         if len(batch_audio) == 32:
