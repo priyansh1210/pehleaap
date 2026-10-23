@@ -1,6 +1,6 @@
 ---
 name: pehleaap-status
-description: "Locked decisions, 8-week schedule with dates, and what is done/pending (PR #1 + #2 merged; shared memory added 2026-10-24)"
+description: "Locked decisions, 8-week schedule with dates, and what is done/pending (PR #1, #2, #3 merged by 2026-10-24)"
 metadata:
   type: project
 ---
@@ -25,7 +25,8 @@ saves per shard); real-time phone line (`pehleaap/telephony/realtime.py`, G.711 
 Pipecat 1.13 (`requirements-demo.txt`); `pehleaap/pipecat_ext/` (ClipModelTurnAnalyzer, PhoneLineProcessor); `demo/bot.py` ding bot
 (serves :7860; offline end-to-end test passes; Smart Turn parity with Pipecat's own analyzer < 1e-3). 26 tests in .venv, 4 more in .venv-demo.
 
-**Done 2026-10-24 (branch shared-memory):** project memory moved into the repo so both machines share it ([[shared-memory]]).
+**Done 2026-10-24 (PR #3, merge c8f4606):** project memory moved into the repo so both machines share it ([[shared-memory]]).
+Dev box is set up (autoMemoryDirectory -> D:/pehleaap/memory); the GPU box still needs `scripts\setup_claude_memory.ps1`.
 
 **Decision (user, 2026-10-24):** the full baseline eval (~2.5 h, too heavy for the laptop's 8 GB RAM) runs on the GPU box; runbook in
 `docs/machines.md`. The laptop runs the demo and small smoke tests.
