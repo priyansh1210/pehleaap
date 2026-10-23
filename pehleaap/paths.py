@@ -11,20 +11,22 @@ MANIFEST_DIR = DATA_DIR / "manifests"
 WEIGHTS_DIR = REPO_ROOT / "weights"
 RUNS_DIR = REPO_ROOT / "runs"
 
-# Default install location used on the Dev box; override with PEHLEAAP_FFMPEG on other machines.
-_DEFAULT_FFMPEG = Path(r"D:\tools\ffmpeg-9.0.2-full_build-shared\bin\ffmpeg.exe")
+# Where the runbooks unzip the ffmpeg full build: D:\tools on the Dev box, ~\tools on the GPU box.
+_FFMPEG_BUILD = Path("ffmpeg-9.0.2-full_build-shared") / "bin" / "ffmpeg.exe"
+_DEFAULT_FFMPEGS = [Path(r"D:\tools") / _FFMPEG_BUILD, Path.home() / "tools" / _FFMPEG_BUILD]
 
 
 def ffmpeg_bin() -> str:
-    """Return the ffmpeg executable: $PEHLEAAP_FFMPEG, then PATH, then the Dev box default."""
+    """Return the ffmpeg executable: $PEHLEAAP_FFMPEG, then PATH, then the runbook install locations."""
     env = os.environ.get("PEHLEAAP_FFMPEG")
     if env:
         return env
     found = shutil.which("ffmpeg")
     if found:
         return found
-    if _DEFAULT_FFMPEG.exists():
-        return str(_DEFAULT_FFMPEG)
+    for path in _DEFAULT_FFMPEGS:
+        if path.exists():
+            return str(path)
     raise FileNotFoundError(
         "ffmpeg not found. Install a full build (needs libopencore_amrnb) and set PEHLEAAP_FFMPEG."
     )

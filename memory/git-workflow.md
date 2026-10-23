@@ -1,0 +1,20 @@
+---
+name: git-workflow
+description: User commits, pushes and raises PRs themselves from copy-paste PowerShell commands; no gh; branch naming; post-merge routine
+metadata:
+  type: feedback
+---
+
+The user runs git commit/push and raises PRs themselves. When work is ready, give PowerShell copy-paste commands:
+branch, `git add`, a commit message piped from a here-string (`@' … '@ | git commit -F -`, closing `'@` at column 0, ASCII only because
+PowerShell 5.1 pipes as ASCII) with the Co-Authored-By trailer, push, and the PR link
+`https://github.com/priyansh1210/pehleaap/compare/main...<branch>?expand=1` with a ready-to-paste title and description.
+
+After a merge the user deletes the remote branch and asks me to switch to main: `git fetch --prune`, `git checkout main`,
+`git pull --ff-only`, `git branch -d <branch>`.
+
+**Why:** on 2026-10-24 they asked "give me commands to commit it and raise pr", then ran them and merged PR #1 (week1-foundation) and
+PR #2 (week1-baselines, merge dcdd96e).
+**How to apply:** don't commit or push on my own unless asked. `gh` is not installed on the Dev box, so PRs go through the browser link.
+Repo: https://github.com/priyansh1210/pehleaap (**public**, default branch `main`). Feature branches are named like `week1-foundation`.
+Memory changes in `memory/` travel through the same commits ([[shared-memory]]).

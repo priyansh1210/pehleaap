@@ -4,7 +4,7 @@
 #   .\scripts\remote.ps1 -Detach train.train_eot --config configs\train_eot.yaml   # survives logout
 #
 # Needs OpenSSH Server on the GPU box and an ssh alias (default "gpu") in ~/.ssh/config.
-# Override with $env:PEHLEAAP_GPU_HOST and $env:PEHLEAAP_GPU_REPO.
+# Override with $env:PEHLEAAP_GPU_HOST and $env:PEHLEAAP_GPU_REPO (the repo path on the GPU box).
 param(
     [switch]$Detach,
     [Parameter(Mandatory, Position = 0)][string]$Module,
@@ -12,7 +12,7 @@ param(
 )
 
 $GpuHost = if ($env:PEHLEAAP_GPU_HOST) { $env:PEHLEAAP_GPU_HOST } else { "gpu" }
-$Repo = if ($env:PEHLEAAP_GPU_REPO) { $env:PEHLEAAP_GPU_REPO } else { "D:\pehleaap" }
+$Repo = if ($env:PEHLEAAP_GPU_REPO) { $env:PEHLEAAP_GPU_REPO } else { "C:\Users\FITT\pehleaap" }
 $Job = "$Repo\scripts\run_job.cmd $Module $($Rest -join ' ')"
 
 if (-not $Detach) {

@@ -4,7 +4,7 @@
 param([Parameter(Mandatory, Position = 0)][string]$RunId)
 
 $GpuHost = if ($env:PEHLEAAP_GPU_HOST) { $env:PEHLEAAP_GPU_HOST } else { "gpu" }
-$Repo = if ($env:PEHLEAAP_GPU_REPO) { $env:PEHLEAAP_GPU_REPO } else { "D:\pehleaap" }
+$Repo = if ($env:PEHLEAAP_GPU_REPO) { $env:PEHLEAAP_GPU_REPO } else { "C:\Users\FITT\pehleaap" }
 $Dest = Join-Path (Resolve-Path "$PSScriptRoot\..") "runs\$RunId"
 New-Item -ItemType Directory -Force $Dest | Out-Null
 
