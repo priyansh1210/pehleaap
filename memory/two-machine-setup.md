@@ -1,6 +1,6 @@
 ---
 name: two-machine-setup
-description: "Dev laptop vs RTX 4060 GPU box: specs, repo paths, roles; GPU box available only until 2026-10-28; VRAM (\"20 GB\") unconfirmed"
+description: "Compute: Dev laptop for code/demo, Kaggle T4 for all heavy jobs from 2026-10-29, RTX 4060 GPU box only until 2026-10-28 (baseline eval)"
 metadata:
   node_type: memory
   type: project
@@ -8,22 +8,20 @@ metadata:
   modified: 2026-10-23T22:42:10.287Z
 ---
 
-Two machines (decided 2026-10-23). The GitHub repo is the only thing they share ([[shared-memory]]).
-
-**The GPU box is only available until 2026-10-28** (user, 2026-10-24). Weeks 2–8 training, batch ASR and full evals
-need another home after that; see [[pehleaap-status]] for what was decided. Anything that must run on the GPU box has to finish by Oct 28.
+Compute (revised 2026-10-24). The GitHub repo is the only thing shared between machines ([[shared-memory]]).
 
 - **Dev box** = laptop, repo at `D:\pehleaap`: i5-11300H 4C/8T, GTX 1650 4 GB (Turing, no native bf16 → fp16), 7.8 GB RAM,
-  ~450 GB free on D:. Used for code, tests, labeling UI, eval on slices, Pipecat demo, CPU benchmark #1.
-- **GPU box**, repo at `C:\Users\FITT\pehleaap` (the user said the exact path may differ; check before relying on it): RTX 4060.
-  The user says it has "20 GB VRAM". Every 4060 has 8 GB dedicated (the 4060 Ti has 8 or 16 GB), so 20 GB is almost certainly
-  Task Manager's dedicated+shared figure. **Not yet confirmed**: run `python scripts\env_check.py --markdown` there and paste it into
-  docs/machines.md. Used for all training, batch ASR, augmentation precompute, full eval sweeps. Kaggle/Colab is only a fallback.
+  ~450 GB free on D:. Code, tests, labeling + verify UI, eval on slices, Pipecat demo, smoke runs, CPU benchmark #1.
+- **Kaggle, from 2026-10-29** (user's choice, 2026-10-24): all training, batch ASR, augmentation precompute (CPU sessions, no GPU
+  quota), full eval sweeps. T4 16 GB (two per session; use T4, Turing like the Dev box) or P100 16 GB; no bf16 → fp16 AMP + GradScaler;
+  ~29 GB RAM, 4 vCPUs; ~30 GPU-h/week (varies; user to check in account settings), 12 h sessions. Recordings go up as a private
+  dataset; jobs clone a pinned commit. Runner `scripts/kaggle_job.py` not written yet. Details: docs/PLAN.md §3a, docs/machines.md.
+- **GPU box** (RTX 4060, "20 GB VRAM" = almost certainly dedicated+shared; 8 GB dedicated): **only available until 2026-10-28**.
+  It runs the baseline eval (docs/machines.md Job 1) and nothing else. Repo path was `C:\Users\FITT\pehleaap` (may differ).
 
-**Why:** the laptop can't train in reasonable time. Batch sizes in docs/PLAN.md §3a are sized for 8 GB.
-**How to apply:** if env_check shows 16 GB, double the batches; don't plan around 20 GB. Develop on the Dev box; on the GPU box, run
-and monitor jobs (runbook: docs/machines.md "GPU box"). If a fix is needed on the GPU box, make it on a branch and push before switching
-back, so the machines never diverge. remote.ps1 / fetch_ckpt.ps1 default to the GPU box path above (override with PEHLEAAP_GPU_REPO);
-they and sync_data.ps1 are untested until OpenSSH/Tailscale and PEHLEAAP_GPU_SHARE are set up.
+**Why:** the laptop can't train in reasonable time, and the GPU box leaves on Oct 28; Kaggle was the plan's fallback and the
+consent forms already name private Kaggle datasets.
+**How to apply:** don't plan jobs on the GPU box after Oct 28. Size batches for 16 GB fp16, checkpoint every 30 min and resume across
+sessions, keep within the weekly GPU-hour budget in PLAN §3a. Never make a Kaggle dataset with audio public.
 
 Related: [[pehleaap-status]], [[dev-environment]].

@@ -13,8 +13,11 @@ metadata:
 - Smart Turn v3.2 test set (4.8 GB, CC-BY-4.0) in `data/external/smart-turn-data-v3.2-test`; weights in `weights/` (both gitignored).
 - No winget, no 7-Zip, no gh. Use `curl.exe` and `Expand-Archive` (zip builds).
 
-**GPU box** (repo `C:\Users\FITT\pehleaap`, may differ): not set up yet. Runbook in docs/machines.md puts ffmpeg under `~\tools`,
-which `ffmpeg_bin()` also checks. Fill in real paths here once it is set up.
+**GPU box** (only until 2026-10-28; repo `C:\Users\FITT\pehleaap`, may differ): baseline eval only. Runbook in docs/machines.md puts
+ffmpeg under `~\tools`, which `ffmpeg_bin()` also checks.
+
+**Kaggle** (from 2026-10-29): API token goes in `%USERPROFILE%\.kaggle\kaggle.json` on the Dev box (secret, never in git).
+Kaggle CLI not installed yet; it comes with `scripts/kaggle_job.py`.
 
 Gotchas:
 - Windows PowerShell 5.1 wraps any stderr line (e.g. the HF "unauthenticated requests" warning) as `NativeCommandError`. This is not a failure; check the exit code.
@@ -24,6 +27,6 @@ Gotchas:
   and run pip with `--timeout 30 --retries 10 --progress-bar off`, logging to a file in the background.
 - A curl-downloaded parquet shard was silently bad; the sha256 check against the HF tree API caught it. Keep checksum checks.
 - Dev box has 8 GB RAM: Claude Code killed a ~2 GB eval run plus a pip install for low memory (with Chrome open). Run heavy jobs one at
-  a time, and full evals on the GPU box.
+  a time, and full evals on Kaggle (the GPU box until Oct 28).
 
 Related: [[two-machine-setup]], [[pehleaap-status]].

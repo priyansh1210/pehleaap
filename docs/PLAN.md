@@ -28,13 +28,13 @@ On top of these, 8 kHz codecs and speakerphone echo cause false barge-ins.
 
 | Area | Decision |
 |---|---|
-| Compute | **Two machines** (see §3a). The **Dev box** is this laptop: GTX 1650 4 GB, 8 GB RAM, used for code, tests, labeling UI, eval and the Pipecat demo. The **GPU box** has an RTX 4060, used for all training, batch ASR and heavy evaluation sweeps. Free Kaggle/Colab is a fallback only. |
+| Compute | **Dev box + Kaggle** (see §3a; revised Oct 24). The **Dev box** is this laptop: GTX 1650 4 GB, 8 GB RAM, used for code, tests, labeling UI, eval and the Pipecat demo. The RTX 4060 **GPU box** is only available until Oct 28, 2026, so it runs the week-1 baseline eval only. From Oct 29, all training, batch ASR and heavy evaluation sweeps run on **Kaggle** (T4 16 GB, about 30 GPU-hours a week). |
 | Recording | Bulk two-channel recording over a browser or app at 16 kHz or higher, with telephony simulated afterwards. A small real-phone (PSTN) set of about 1-2 h, used only as a test set. |
 | Speakers | 40 or more distinct adult speakers, targeting about 15-20 h. |
 | Demo | A web call with an 8 kHz telephony simulator in the pipeline and a baseline/ours toggle, plus recorded real-phone side-by-sides. |
 
 **Dev box (this machine):** Windows 11, i5-11300H (4 cores / 8 threads), GTX 1650 4 GB, 8 GB RAM, Python 3.11.9 at `D:\python`, git present, ffmpeg not installed, about 460 GB free on D:. `D:\pehleaap` is empty and is not a git repo.
-**GPU box:** RTX 4060, reported as "20 GB VRAM". Every RTX 4060 and 4060 Laptop has **8 GB dedicated**. The 4060 Ti exists in 8 GB and 16 GB versions. A "20 GB" figure is almost certainly Windows Task Manager's "GPU memory", which adds dedicated memory to *shared* system RAM, and shared RAM is too slow for training. **The plan assumes 8 GB dedicated.** Confirm with `nvidia-smi` on day 1 (§3a).
+**GPU box (until Oct 28, 2026 only):** RTX 4060, reported as "20 GB VRAM" (almost certainly Task Manager's dedicated plus *shared* figure; every 4060 has 8 GB dedicated). It runs the week-1 baseline eval only.
 
 ---
 
@@ -150,48 +150,66 @@ D:\pehleaap\
   recorder/    (fallback only) aiortc relay that records each track on the server clock
   notebooks/   kaggle_train_eot.ipynb  kaggle_train_multitask.ipynb  kaggle_asr.ipynb
   benchmark/   scorer/  label_schema.json  splits/  README.md
-  scripts/     env_check.py  sync_data.ps1  remote.ps1 (run a job on the GPU box)  fetch_ckpt.ps1
+  scripts/     env_check.py  kaggle_job.py (push a job to Kaggle, fetch its output)  label_session.py
   tests/
-  requirements.txt (shared)  requirements-gpu.txt (CUDA torch build + training extras)
+  requirements.txt (shared, CUDA 12.6 torch)  requirements-demo.txt (Pipecat)
 ```
 
 ---
 
-## 3a. Two-machine setup (develop on the Dev box, train on the GPU box)
+## 3a. Compute: develop on the Dev box, run heavy jobs on Kaggle
+
+The RTX 4060 GPU box is only available until **Oct 28, 2026**, so it runs the week-1 baseline eval and nothing
+else (`docs/machines.md`). From **Oct 29, all heavy jobs run on Kaggle** (decided with the user on Oct 24, 2026).
+Kaggle was the original plan's fallback, and the consent forms already name private Kaggle datasets as storage.
 
 ### Specs and roles
 
-| | **Dev box** (this laptop) | **GPU box** |
+| | **Dev box** (this laptop) | **Kaggle** (from Oct 29) |
 |---|---|---|
-| GPU | GTX 1650, 4 GB (Turing, fp16 only) | RTX 4060, **8 GB dedicated assumed** (Ada, bf16/fp16, much faster) |
-| RAM | 8 GB | Unknown; check with `env_check.py` |
-| CPU | i5-11300H, 4C/8T | Unknown; check |
-| Role | Write code, unit tests, the Gradio label-verification app, the eval harness on small slices, the **Pipecat demo**, the recording pilot and alignment checks, smoke runs (overfit 64 clips, 1 epoch on 1% of data), **CPU benchmark #1** | **All real training**: EOT fine-tune, multi-task head, per-frame model, Tier B VAP. **Batch ASR** (faster-whisper large-v3 `int8_float16`, about 4-5 GB, or IndicConformer). Precomputing the augmentation variants. Full evaluation sweeps (every system × condition × threshold). **CPU benchmark #2** |
-| Never does | Full training runs, which would be too slow, run out of memory and block development | Interactive development. Code is edited only on the Dev box and pulled. |
+| GPU | GTX 1650, 4 GB (Turing, fp16 only) | **T4 16 GB** (two per session) or P100 16 GB. Use the T4: it has fp16 tensor cores and the same Turing architecture as the Dev box. Neither does bf16. The pinned torch 2.14.1+cu126 includes sm_60 and sm_75 kernels (checked). |
+| RAM / CPU | 8 GB / i5-11300H, 4C/8T | About 29 GB / 4 shared vCPUs |
+| Limits | None | About 30 GPU-hours a week (the figure varies; check it in the account settings), 12 h per session. CPU-only sessions don't use GPU quota. |
+| Role | Write code, unit tests, labeling and the Gradio label-verification app, recording and alignment checks, the eval harness on small slices, the **Pipecat demo**, smoke runs (overfit 64 clips, 1 epoch on 1% of data), **CPU benchmark #1** | **All real training**: EOT fine-tune, multi-task head, per-frame model, Tier B VAP. **Batch ASR** (faster-whisper large-v3 `int8_float16`, about 4-5 GB, or IndicConformer). Precomputing the augmentation variants (CPU sessions). Full evaluation sweeps (every system × condition × threshold). |
+| Never does | Full training runs, which would be too slow, run out of memory and block development | Interactive development. A job runs a pinned commit cloned from GitHub. |
 
-### What fits in 8 GB (planned batch sizes)
+### What fits in 16 GB (planned batch sizes)
 
-All training uses AMP bf16, gradient accumulation up to Smart Turn's effective batch of 384, and gradient checkpointing if needed.
+All training uses **fp16 AMP with a gradient scaler** (no bf16 on the T4 or the GTX 1650), gradient accumulation
+up to Smart Turn's effective batch of 384, gradient checkpointing if needed, and a checkpoint at least every
+30 min so a job can resume in the next session.
 
 | Job | Model | Planned batch | Notes |
 |---|---|---|---|
-| EOT fine-tune | Whisper-tiny encoder, 8 s, (80,800) mel | 128 | About 2-3 GB at bf16. Raise to 256 if there's headroom. |
-| Multi-task, two-channel | 2 encoder passes per sample | 64 | Grad-accum ×6 |
+| EOT fine-tune | Whisper-tiny encoder, 8 s, (80,800) mel | 192 × grad-accum 2 | About 4-5 GB at fp16. Drop to 128 × 3 if it doesn't fit. |
+| Multi-task, two-channel | 2 encoder passes per sample | 128 × grad-accum 3 | |
 | Per-frame CNN-GRU | About 1M params, 20 s chunks | 256 | Trivial |
-| Batch ASR | faster-whisper large-v3 int8_float16 | n/a | Fits; runs overnight over all sessions |
-| Tier B VAP | CPC + transformer, 20 s stereo | 16-32 | Feasible; the reason Tier B is now realistic |
+| Batch ASR | faster-whisper large-v3 int8_float16 | n/a | Fits on a T4 |
+| Tier B VAP | CPC + transformer, 20 s stereo | 32 | Resumes across sessions |
 
-If `nvidia-smi` shows **16 GB** (a 4060 Ti 16 GB), double the batches and drop gradient checkpointing. Nothing else changes.
+### GPU-hour budget (about 30 h a week)
+
+Rough guesses, to be replaced by measured throughput after the first week-3 run:
+
+| Week | Jobs | Estimate |
+|---|---|---|
+| 2 | Batch ASR on the sessions recorded so far (both channels) | 2-4 h |
+| 3 | EOT v0 fine-tune plus one rerun; ASR on new sessions | 6-10 h |
+| 4 | Multi-task head, per-frame model; ASR on new sessions | 10-15 h |
+| 5 | Export, int8 calibration, threshold sweeps | 2-4 h |
+| 6 | Full eval plus ablations (no agent channel, no telephony augmentation, no Hinglish real data, 16 kHz vs band-limited) | 20-30 h: the tightest week. Start ablations in week 5 if quota is left. |
+| 7-8 | Tier B, only if the week-6 gate passes | Whatever is left |
 
 ### Workflow and sync
 
-1. **Code:** a private GitHub repo. Develop on the Dev box, `git push`, then `git pull` on the GPU box. Never edit code on the GPU box. Each training run records its git commit hash in `runs/<id>/meta.json`.
-2. **Data:** large and private, so never put it in git. `data/raw` (recordings) is mastered on the Dev box, which is where recording and verification happen. `scripts/sync_data.ps1` mirrors it to the GPU box with `robocopy /MIR` over a LAN SMB share, or a portable SSD if the boxes aren't on the same network. `data/manifests/*.jsonl`, with a sha256 per file, **is** committed, so both machines can confirm they hold identical data (`env_check.py --verify-data`).
-3. **Derived data** (augmented variants, mel caches, ASR outputs) is generated **on the GPU box** and stays there. Only ASR transcripts and labels (small JSONL) are synced back to the Dev box for verification in Gradio.
-4. **Running jobs:** enable Windows OpenSSH Server on the GPU box. Use Tailscale if the boxes aren't on the same LAN. Then `scripts/remote.ps1 train_eot configs/train_eot.yaml` runs `ssh gpu "cd D:\pehleaap && git pull && .venv\Scripts\python -m pehleaap.train.train_eot --config ..."` in the background and logs to `runs/`. An alternative is to run Claude Code on the GPU box itself for long jobs.
-5. **Checkpoints back:** `scripts/fetch_ckpt.ps1 <run_id>` copies `best.pt`, the `*.onnx` files (8-32 MB) and `metrics.csv` to the Dev box for evaluation and the demo.
-6. **Environment parity:** both machines use Python 3.11.9, the shared `requirements.txt` and pinned versions. The GPU box adds `requirements-gpu.txt` (CUDA 12.x torch). `scripts/env_check.py` prints the GPU name, **dedicated VRAM**, CUDA/cuDNN, torch, onnxruntime and pipecat versions, ffmpeg AMR-NB support, RAM, CPU and free disk. Run it on both boxes on day 1 and commit the output to `docs/machines.md`.
-7. **Logging:** set `WANDB_MODE=offline` by default (Smart Turn's `train.py` expects W&B) and also write local CSVs. A W&B account is optional, for viewing GPU-box runs from the Dev box.
+1. **Code:** the public GitHub repo. Develop on the Dev box and push. A Kaggle job clones the repo at a given commit and never edits code. Each training run records its git commit hash in `runs/<id>/meta.json`.
+2. **Data:** large and private, so never put it in git. `data/raw` (recordings) is mastered on the Dev box, which is where recording and verification happen. It is uploaded with the Kaggle CLI as a **private** Kaggle dataset (`pehleaap-raw`), with a new dataset version after each recording day. Never make it public: audio is only released for speakers who opted in. `data/manifests/*.jsonl`, with a sha256 per file, **is** committed, and every job checks the attached dataset against it before training (`env_check.py --verify-data`).
+3. **Derived data** (ASR outputs, augmented variants, mel caches) is written to the job's output. Anything later jobs need is published as its own private dataset (e.g. `pehleaap-aug`). Only ASR transcripts and labels (small JSONL) come back to the Dev box for verification in Gradio.
+4. **Running jobs:** `scripts/kaggle_job.py` (to be written in week 1-2) pushes a script kernel from the Dev box with the Kaggle CLI, with GPU and internet on and the data datasets attached. The kernel clones the repo at the current commit, installs the pinned environment, runs one `pehleaap` module and saves `runs/<id>/` as its output. The runner polls the status, so no browser is needed. The Kaggle API token lives in `%USERPROFILE%\.kaggle\` on the Dev box, never in git.
+5. **Results back:** `kaggle kernels output` downloads `meta.json`, `metrics.csv`, `best.pt` and the `*.onnx` files (8-32 MB) into `runs/<id>/` on the Dev box, for evaluation and the demo.
+6. **Session limits:** a job that may run past one 12 h session attaches the previous job's output and resumes from its last checkpoint.
+7. **Environment parity:** both use Python 3.11.9 and the same pinned `requirements.txt` (CUDA 12.6 torch). Each job installs it into a venv (with `uv`, for speed). The week-1 smoke job confirms this works on Kaggle's image. `scripts/env_check.py` prints the GPU name, **dedicated VRAM**, CUDA, torch, onnxruntime and pipecat versions, ffmpeg AMR-NB support, RAM, CPU and free disk, and its output is saved with every run.
+8. **Logging:** set `WANDB_MODE=offline` by default (Smart Turn's `train.py` expects W&B) and also write local CSVs.
 
 ---
 
@@ -234,7 +252,7 @@ If `nvidia-smi` shows **16 GB** (a 4060 Ti 16 GB), double the batches and drop g
 ### 4.2 Automatic labeling (`labeling/`)
 
 1. **Per-channel VAD → IPUs.** Run Silero on the clean 16 kHz source. Merge gaps < 200 ms and drop segments < 100 ms.
-2. **ASR with word timestamps.** Run faster-whisper large-v3 or AI4Bharat IndicConformer **on the GPU box** (local, so no data goes to a third party). Sarvam is optional, with consent.
+2. **ASR with word timestamps.** Run faster-whisper large-v3 or AI4Bharat IndicConformer **on Kaggle** (in our own private session, so no ASR provider sees the audio). Sarvam is optional, with consent.
 3. **Event rules** (`events.py`; the thresholds are in config):
    - **SHIFT (EOT = 1):** the customer pauses ≥ 200 ms, and the next non-BC IPU belongs to the other speaker.
    - **HOLD (EOT = 0):** the customer resumes first. The other speaker's backchannels are ignored.
@@ -255,7 +273,7 @@ If `nvidia-smi` shows **16 GB** (a 4060 Ti 16 GB), double the batches and drop g
 - **Critical detail:** codecs add priming delay. `codecs.py` measures it by cross-correlation and removes it, so labels stay within 1 ms. There is a unit test for this.
 - **Noise sources:** MUSAN, DEMAND and ESC-50 (check each license), plus about 1 h of self-recorded Indian street, traffic, TV and market noise.
 - **ffmpeg:** use the gyan.dev *full* build and confirm `ffmpeg -codecs | findstr amr` lists libopencore-amrnb. If AMR is missing, fall back to WSL2 Ubuntu ffmpeg.
-- **Precompute augmented variants to disk on the GPU box** (CPU-bound, run overnight) so the GPU isn't left idle waiting on augmentation during training.
+- **Precompute augmented variants in Kaggle CPU sessions** (CPU-bound, and CPU sessions don't use GPU quota) and publish them as a private dataset, so the GPU isn't left idle waiting on augmentation during training.
 
 ### 4.4 Extra training sources
 
@@ -340,7 +358,7 @@ All evaluation is **causal**: a decision at time t uses audio ≤ t only, follow
 - Pin to one core with `psutil.Process().cpu_affinity([0])` and set ONNX Runtime `intra_op_num_threads=1`.
 - Measure ms/frame (per-frame model) and ms/event (EOT-only and two-channel heads), fp32 and int8.
 - **Streams/core** = 1 / (frame_cost × 100/s + event_cost × event_rate), at a measured event rate per stream. Report the CPU model.
-- Run the benchmark on **both machines' CPUs**: the laptop i5-11300H and the GPU box's CPU. Two data points are more credible than one. GPU inference numbers are reported separately, because platform companies care about CPU.
+- Run the benchmark on **two CPUs**: the laptop i5-11300H and a second machine (a Kaggle vCPU, labeled as shared and virtualized, or any other machine available in week 5). Two data points are more credible than one. GPU inference numbers are reported separately, because platform companies care about CPU.
 
 **English check:** run the EOT head on the **TurnBench dev** set to show English doesn't regress catastrophically.
 
@@ -364,7 +382,7 @@ All evaluation is **causal**: a decision at time t uses audio ≤ t only, follow
 **Week 1 (Foundation)**
 
 - Repo scaffold (private GitHub), venv, ffmpeg full build, `pipecat-ai[silero,webrtc]`, onnxruntime, torch (CUDA for the GTX 1650).
-- **GPU box setup:** clone the repo, create the venv plus `requirements-gpu.txt`, run `env_check.py` on both boxes (this confirms the real VRAM), set up OpenSSH or Tailscale, test the `sync_data.ps1` round trip, and run a smoke training job (Smart Turn v3.2 for 100 steps).
+- **Compute setup (revised Oct 24):** the GPU box runs the baseline eval before Oct 28. Kaggle: an account with phone verification (needed for GPU and internet), the API token on the Dev box, `scripts/kaggle_job.py`, and a smoke job that clones the repo, installs the pinned environment and runs pytest and `env_check.py` on a T4. A 100-step Smart Turn training smoke job follows once the training code exists.
 - Smart Turn v3.2 ONNX plus three community models running offline. LiveKit v1-mini attempted (time-boxed to 1 day).
 - Eval harness skeleton with synthetic stereo unit tests.
 - Pipecat SmallWebRTC bot skeleton with a telephony-sim processor.
@@ -377,7 +395,7 @@ All evaluation is **causal**: a decision at time t uses audio ≤ t only, follow
 **Week 2 (Data engine)**
 
 - Recording sessions (Diwali week, around Nov 8, is a good time for family sessions).
-- Pipeline: IPU → events → ASR **on the GPU box** (overnight batches) → lexicon labels → digit spans.
+- Pipeline: IPU → events → ASR **on Kaggle** → lexicon labels → digit spans.
 - Gradio verify app.
 - Full telephony augmentation chain with the codec-delay unit test.
 - First PSTN sessions.
@@ -386,7 +404,7 @@ All evaluation is **causal**: a decision at time t uses audio ≤ t only, follow
 **Week 3 (First model)**
 
 - Baselines evaluated on the data so far.
-- **Tier A EOT v0:** fine-tune v3.2 **on the GPU box (RTX 4060)** with bf16, batch 128 and grad-accum ×3 for an effective 384, lr 5e-5, cosine schedule, 4 epochs. Smoke-test on the Dev box first. The data mix is telephony-augmented v3.2 en+hi, our SHIFT/HOLD clips (upweighted) and HingCoS truncation negatives.
+- **Tier A EOT v0:** fine-tune v3.2 **on Kaggle (T4)** with fp16 AMP, batch 192 and grad-accum ×2 for an effective 384, lr 5e-5, cosine schedule, 4 epochs. Smoke-test on the Dev box first. The data mix is telephony-augmented v3.2 en+hi, our SHIFT/HOLD clips (upweighted) and HingCoS truncation negatives.
 - Human verification of about 2,000 events.
 - **Freeze the speaker-disjoint split and `prereg.md`.**
 - Target: about 12 h recorded.
@@ -445,9 +463,9 @@ All evaluation is **causal**: a decision at time t uses audio ≤ t only, follow
 | Track misalignment or clock drift breaks timing labels | Single-clock capture (Craig/Zoom/server), start and end claps, and an automatic drift check that rejects sessions over 10 ms. |
 | Noisy weak labels | Verified-only test set, κ reported, and lexicon rules kept in config. |
 | Speaker overfitting | Speaker-disjoint splits, clustered bootstrap, and per-speaker results in the appendix. |
-| The GPU box is a single point of failure: unavailable, or shared with someone else | Checkpoint every epoch and resume from it. Keep a Kaggle notebook version of every training script, tested once in week 3, as a fallback. |
-| The GPU box has only 8 GB VRAM, not 20 | Batch sizes in §3a assume 8 GB. Grad-accum and checkpointing absorb the rest, so no plan change is needed. |
-| The two machines drift apart (data or package versions) | Manifests with sha256, pinned requirements, `env_check.py --verify-data` before every training run, and the git hash recorded per run. |
+| Kaggle limits: the weekly GPU quota, 12 h sessions, policy changes | Checkpoint every 30 min and resume across sessions. Stay within the GPU-hour budget in §3a and start ablations early if quota is left. Fallbacks: paid Colab for overflow, the Dev box for small fine-tunes. |
+| No bf16 on Kaggle's GPUs | fp16 AMP with a gradient scaler: the same code path as the Dev box's GTX 1650. |
+| The Dev box and Kaggle jobs drift apart (data or package versions) | Manifests with sha256, pinned requirements, `env_check.py --verify-data` before every training run, and the git hash recorded per run. |
 | 8 GB RAM | HF datasets in streaming/memory-mapped mode, sharded manifests, and no full-dataset loads. |
 | LiveKit or Krisp baselines can't run standalone | Each is time-boxed to 1 day, then documented as "not evaluable openly". |
 | Codec delay corrupts labels | Delay measured and compensated, with a unit test. |
@@ -477,7 +495,7 @@ All evaluation is **causal**: a decision at time t uses audio ≤ t only, follow
 
 1. Run `git init` in `D:\pehleaap`, then scaffold the layout in §3, add `.gitignore`, and pin requirements, including `requirements-gpu.txt` and the `scripts/` helpers.
 2. Install the ffmpeg full build and verify AMR-NB. Create the venv and install torch (CUDA), onnxruntime, pipecat-ai, silero-vad, transformers, datasets, gradio, soundfile, librosa and psutil.
-2b. **The user runs this on the GPU box:** clone the repo, `python scripts\env_check.py`, and paste the output back. That confirms the real VRAM, RAM and CPU. Then set up OpenSSH Server (or Tailscale) so the Dev box can launch jobs there.
+2b. **(Revised Oct 24.)** The GPU box only runs the baseline eval, before Oct 28. The user creates and phone-verifies a Kaggle account and puts its API token on the Dev box.
 3. Download the Smart Turn v3.2 ONNX and the v3.2 test set (Hindi+English slices). Write `baselines/smart_turn.py` and `eval/` with tests. Reproduce the published accuracy.
 4. Draft `docs/consent_*.md`, `recording_protocol.md`, scenario cards and fake-PII cards, ready for the user to review before any recording.
 5. Prepare the Craig and Zoom pilot instructions for the user to run with one pair, plus `audio/align.py` to check that recording.
