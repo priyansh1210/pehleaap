@@ -51,6 +51,11 @@ $env:PEHLEAAP_GPU_SHARE = "\\GPUBOX\pehleaap-data"   # or a portable SSD path
 Audio never goes in git. `data/manifests/*.jsonl` (sha256 per file) does, and
 `python scripts\env_check.py --verify-data` proves both machines hold the same data.
 
+**Shared Claude Code memory.** Claude Code's memory is normally per machine. Here it lives in git instead:
+`CLAUDE.md` plus `memory/`. Run `powershell -ExecutionPolicy Bypass -File scripts\setup_claude_memory.ps1` once
+per machine; a SessionStart hook (`.claude/settings.json`) pulls the latest commit when a session starts.
+Commit and push before switching machines.
+
 ## Week-1 commands
 
 ```powershell

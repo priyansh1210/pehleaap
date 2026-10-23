@@ -25,3 +25,7 @@ runs/
 
 # Secrets
 .env
+
+# Claude Code: per-machine settings (autoMemoryDirectory) and personal notes stay out of git.
+.claude/settings.local.json
+CLAUDE.local.md
