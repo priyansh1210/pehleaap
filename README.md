@@ -19,6 +19,7 @@ and the week-by-week schedule, is in [`docs/PLAN.md`](docs/PLAN.md).
 | Baselines on clean vs 8 kHz G.711 / AMR-NB audio (heavy: runs on the GPU box) | `scripts/eval_clip_baselines.py`, runbook in `docs/machines.md` |
 | Real-time phone line (G.711 bit-identical to ffmpeg, ~6 ms delay) | `pehleaap/telephony/realtime.py` |
 | Pipecat demo skeleton: browser call → phone line → Silero VAD → any turn model → ding | `demo/bot.py`, `pehleaap/pipecat_ext/` |
+| Labeling engine v0: Silero VAD → IPUs → SHIFT / HOLD / BC / INTERRUPT / HOLD_REQ events (JSONL). Duration rules only until ASR runs; no NOISE_ECHO yet | `pehleaap/labeling/`, `configs/labeling.yaml`, `scripts/label_session.py` |
 | Two-machine helpers (sync, remote jobs, checkpoint fetch) | `scripts/*.ps1`. **Untested until the GPU box is set up.** |
 
 ## Setup (both machines, Windows)
@@ -62,6 +63,7 @@ Commit and push before switching machines.
 .venv\Scripts\python scripts\repro_smart_turn.py               # must PASS before trusting the harness
 .venv\Scripts\python scripts\make_fake_pii_cards.py --sessions 60
 .venv\Scripts\python scripts\check_alignment.py trackA.flac trackB.flac
+.venv\Scripts\python scripts\label_session.py data\raw\sessions\S017   # -> data\labels\S017\events.jsonl
 ```
 
 ## Demo (Dev box)

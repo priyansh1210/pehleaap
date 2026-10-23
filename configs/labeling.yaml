@@ -1,0 +1,31 @@
+# Labeling thresholds (plan §4.2); field docs in pehleaap/labeling/config.py.
+# Tune on the pilot session, then freeze with the splits at the end of week 3.
+
+# VAD -> IPUs
+vad_sr: 16000
+vad_threshold: 0.5
+vad_neg_threshold: 0.35
+merge_gap_s: 0.2
+min_ipu_s: 0.1
+
+# SHIFT / HOLD
+min_pause_s: 0.2
+terminal_overlap_s: 0.3
+
+# BC
+bc_max_s: 1.0
+bc_max_notext_s: 0.6
+bc_context_s: 1.5
+bc_continue_s: 1.5
+
+# INTERRUPT
+interrupt_min_s: 1.0
+interrupt_min_words: 3
+yield_within_s: 2.0
+competitive_overlap_s: 1.0
+
+# HOLD_REQ
+hold_req_min_silence_s: 3.0
+
+# Digit spans
+digit_min_run: 3
