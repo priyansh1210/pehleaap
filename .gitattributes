@@ -1,0 +1,2 @@
+# Shell scripts run under Git Bash (e.g. the Claude Code SessionStart hook) and break with CRLF line endings.
+*.sh text eol=lf

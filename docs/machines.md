@@ -36,21 +36,29 @@ Pending: on that machine, clone the repo, create the venv, then run `python scri
 
 ### First-time setup and the first job (PowerShell on the GPU box)
 
-Needs git and Python 3.11.9 (same as the Dev box). Everything else comes from the repo.
+Needs git (with Git Bash, which Claude Code also uses) and Python 3.11.9 (same as the Dev box). Everything else
+comes from the repo. The repo goes in your user folder, `C:\Users\FITT\pehleaap` (`$HOME\pehleaap`); if you put it
+elsewhere, set `PEHLEAAP_GPU_REPO` to that path on the Dev box for `remote.ps1` / `fetch_ckpt.ps1`.
 
 ```powershell
-git clone https://github.com/priyansh1210/pehleaap D:\pehleaap
-cd D:\pehleaap
+git clone https://github.com/priyansh1210/pehleaap $HOME\pehleaap
+cd $HOME\pehleaap
 python -m venv .venv
 .venv\Scripts\python -m pip install --timeout 30 --retries 10 -r requirements.txt
 
-# ffmpeg full build with AMR-NB. Unzipped to this path, pehleaap finds it without PEHLEAAP_FFMPEG.
+# ffmpeg full build with AMR-NB. Unzipped to ~\tools, pehleaap finds it without PEHLEAAP_FFMPEG.
 curl.exe -L -C - --retry 5 -o $env:TEMP\ffmpeg.zip https://github.com/GyanD/codexffmpeg/releases/download/9.0.2/ffmpeg-9.0.2-full_build-shared.zip
-Expand-Archive $env:TEMP\ffmpeg.zip D:\tools
+Expand-Archive $env:TEMP\ffmpeg.zip $HOME\tools
+
+# Shared Claude Code memory: point this machine's auto memory at the repo's memory\ folder (once).
+powershell -ExecutionPolicy Bypass -File scripts\setup_claude_memory.ps1
 
 .venv\Scripts\python -m pytest                              # all pass (the pipecat tests skip here)
 .venv\Scripts\python scripts\env_check.py --markdown        # paste the table above
 ```
+
+Then start Claude Code in `$HOME\pehleaap`. It loads `CLAUDE.md` and the shared `memory\`, and its SessionStart hook
+pulls the latest commit each time. Approve the project hook when Claude Code asks.
 
 **Job 1: end-of-turn baselines, clean vs phone line** (Smart Turn v3.2 + 4 community Hinglish models
 on all 31.5k test clips; 2.5 h on the laptop, too heavy for its 8 GB RAM). The first run downloads the
