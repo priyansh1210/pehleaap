@@ -24,6 +24,9 @@ def test_binary_metrics_match_smart_turn_definitions():
     assert m["accuracy"] + m["fp_pct_total"] + m["fn_pct_total"] == pytest.approx(100.0)
     assert m["fpr"] == pytest.approx(1 / 3)
     assert m["fnr"] == pytest.approx(0.5)
+    assert m["balanced_accuracy"] == pytest.approx(100 * (0.5 * 2 / 3 + 0.5 * 0.5))
+    # AUC: of the 6 positive/negative pairs, the positive scores higher in 4.
+    assert m["auc"] == pytest.approx(4 / 6)
 
 
 def test_grouped_metrics_splits_by_group():

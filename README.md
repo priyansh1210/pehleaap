@@ -15,6 +15,10 @@ and the week-by-week schedule, is in [`docs/PLAN.md`](docs/PLAN.md).
 | Clip metrics (Smart Turn definitions) and causal event-level EOT metrics (cut-in vs response gap) | `pehleaap/eval/` |
 | Two-track clock alignment and drift checks | `pehleaap/audio/align.py`, `scripts/check_alignment.py` |
 | Consent forms (EN/HI), recording protocol, scenario cards, fake-PII cards | `docs/` |
+| Community Hinglish end-of-turn models (deveshu, abhishek, codewithmoin, Chhotu) behind one interface | `pehleaap/baselines/turn_models.py` |
+| Baselines on clean vs 8 kHz G.711 / AMR-NB audio (heavy: runs on the GPU box) | `scripts/eval_clip_baselines.py`, runbook in `docs/machines.md` |
+| Real-time phone line (G.711 bit-identical to ffmpeg, ~6 ms delay) | `pehleaap/telephony/realtime.py` |
+| Pipecat demo skeleton: browser call → phone line → Silero VAD → any turn model → ding | `demo/bot.py`, `pehleaap/pipecat_ext/` |
 | Two-machine helpers (sync, remote jobs, checkpoint fetch) | `scripts/*.ps1`. **Untested until the GPU box is set up.** |
 
 ## Setup (both machines, Windows)
@@ -54,6 +58,22 @@ Audio never goes in git. `data/manifests/*.jsonl` (sha256 per file) does, and
 .venv\Scripts\python scripts\make_fake_pii_cards.py --sessions 60
 .venv\Scripts\python scripts\check_alignment.py trackA.flac trackB.flac
 ```
+
+## Demo (Dev box)
+
+Pipecat pins older onnxruntime/soundfile/soxr than the research stack, so the demo has its own venv:
+
+```powershell
+python -m venv .venv-demo
+.venv-demo\Scripts\python -m pip install -r requirements-demo.txt
+.venv-demo\Scripts\python -m pip install -e . --no-deps
+.venv-demo\Scripts\python -m pytest tests\test_pipecat_ext.py
+.venv-demo\Scripts\python demo\bot.py        # open http://localhost:7860, allow the mic, talk
+```
+
+Speak a sentence and stop: the bot dings when the turn model decides you've finished. A ding mid-sentence
+is a cut-in. Pick the model with `$env:PEHLEAAP_TURN_MODEL` (any name in `turn_models.REGISTRY`) and turn
+the simulated phone line off with `$env:PEHLEAAP_PHONE_LINE = "0"`.
 
 ## Licences and credits
 
