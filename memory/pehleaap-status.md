@@ -133,3 +133,16 @@ approval?); Craig vs Zoom pilot with one pair (`scripts/check_alignment.py`); st
 email; PSTN provider signup (Twilio dual-channel first); LiveKit v1-mini baseline (time-boxed to 1 day; started on the GPU box, see above); user to try the ding-bot demo by voice.
 Note: Pipecat's LocalSmartTurnAnalyzerV3 only fits Smart Turn's exact interface; abhishek's model would load there but give wrong
 probabilities (logits, no normalisation), so the demo uses ClipModelTurnAnalyzer.
+
+**GPU box, 2026-10-24 evening:** LiveKit v1-mini also run on the 8 chain conditions (`runs/livekit_v1mini_chain/`, 20 min;
+Hindi AUC 0.71 clean -> 0.60 at 5 dB noise, cut-in 76-82% throughout). Job 3 process died silently after shard 3 (~21:16-21:50;
+no traceback, no low-memory event: its PowerShell window was most likely closed or interrupted); resumed at 21:52 from Claude's
+session (log `runs/clip_baselines_chain_resume.log`), ETA ~00:15. Job 4 step 1 done: `prepare_eot_train.py` stored 77,808 clips
+(eng 63,835 train / 1,967 dev, hin 11,662 / 344; 15 GB in data/external/eot-train). Step 2 smoke PASSED (cuda bf16, 75,497 train
+clips, 226 steps/epoch, 57 clips/s with 4 workers while Job 3 ran; ONNX export OK). Full `eot_v0` training waits for Job 3.
+
+GPU box, 2026-10-25 00:01: Job 3 DONE; report `docs/results/week1_chain_baselines_report.md` (+ `_results.json`) covers all
+6 models. Smart Turn Hindi: -14 pts tandem AMR4.75->G.711, -17 mixed, -21 at 5 dB SNR (cut-in up to 63%). Codec/loss/AGC drops
+are mostly calibration (AUC 0.93-0.96, best thr ~0.95), but noise loses real information (AUC 0.86 at 5 dB; best-threshold acc
+still 12-14 pts below clean), so the fix is training on noisy phone audio (eot_v0), not recalibration alone. codewithmoin is
+the most robust (worst -7.6, AUC 0.944). chhotu collapses (-32 to -37). Next: full `train_eot.py --out eot_v0`, then eot_v0_eval.
