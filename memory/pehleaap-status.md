@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 0952188d-bc75-46ae-a49b-65b82c0ee291
-  modified: 2026-10-24T20:12:14.688Z
+  modified: 2026-10-24T21:24:55.696Z
 ---
 
 The full plan is in the repo at `docs/PLAN.md` (approved 2026-10-23). Don't duplicate it here; read it.
@@ -175,3 +175,17 @@ dev-set artifact). Shipped dev thresholds (0.44-0.57) ~= 0.5; no recalibration n
 training (run predated PR #14; rescoring matched best_dev exactly); original kept as runs/eot_v0/summary.orig.json (GPU box).
 Caveats: synthetic Hindi TTS, chains = training augmentation family. Weakest: 5 dB noise (-5.5 vs clean). model.onnx stays on the
 GPU box (runs/eot_v0/, 32 MB, not in git). Next: real-call validation, int8 quantisation, Pipecat demo wiring.
+**Backed up to the Dev box (2026-10-25 02:36, via Chrome Remote Desktop file transfer):** `weights/eot_v0/model.onnx`
+(sha256 38fbe51a…a40202) and `best.pt` (step 900, sha256 158b561e…5cf40c), gitignored. Checked on the Dev box: ONNX matches
+best.pt within 5e-6; clean Hindi shard 0 (n=132): eot_v0 93.9% / cut-in 3.4% / AUC 0.993 vs Smart Turn int8 93.2% / 11.9% / 0.986.
+int8 quantisation of eot_v0 is being written on the GPU box (pehleaap/models/quantize.py, scripts/quantize_eot.py): don't
+touch those files from the Dev box until that PR is merged. The GPU box also adds `onnx_with_state_dict()` to
+pehleaap/models/smart_turn.py (eot_v0 weights grafted into Pipecat's fp32 graph, for upstream-identical quantisation).
+
+**Demo wired to eot_v0 (2026-10-25 ~03:00, Dev box, uncommitted).** `turn_models.load_any(name)`: registry name, or
+weights/<name>/model.onnx / a .onnx path at threshold 0.5 (our models stay OUT of REGISTRY: eval defaults). pipecat_ext:
+`ModelSwitch` + `SwitchTurnAnalyzer` (active model decides; the others are scored on a background thread after the decision and
+logged as "would say"), models cached per process. demo/bot.py: loads PEHLEAAP_TURN_MODELS (default smart_turn_v3.2_int8,eot_v0;
+missing weights skipped with a warning), starts on eot_v0, `/switch` page + `/switch/state` + `POST /switch/{name}` on Pipecat's
+runner `app`. Tests: 6 pass in .venv-demo (incl. the end-to-end ding test), load_any test in .venv. Live check: server up, routes
+flip the active model. Not yet heard by the user.
