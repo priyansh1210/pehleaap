@@ -169,6 +169,17 @@ It only reads saved `predictions.csv` files, so run it on Jobs 1-2 now, and agai
 
 Bring back `runs\calibration_*\report.md` and `results.json` into `docs\results\`.
 
+**eot_v0 int8** (`quantize_eot.py`, about 8 min on CPU, done 2026-10-25). It puts the best checkpoint into Pipecat's fp32
+graph and quantises it with upstream's recipe. It then checks int8 against fp32 on dev and times both. The test-set check
+of the int8 file is a second step (about 75 min on CPU):
+
+```powershell
+.venv\Scripts\python scripts\quantize_eot.py --run eot_v0
+.venv\Scripts\python scripts\eval_clip_baselines.py --models smart_turn_v3.2_int8 --onnx eot_v0=runs\eot_v0\model_pipecat_graph.onnx eot_v0_int8=runs\eot_v0\model_int8.onnx --conditions clean g711_mulaw amrnb_7.95 amrnb_4.75 tandem_amr4.75 loss3_g711 agc_clip_g711 noise20_amr7.95 noise10_amr7.95 noise5_amr7.95 mixed --threads 24 --out eot_v0_int8_eval *> runs\eot_v0_int8_eval.log
+```
+
+Bring back `runs\eot_v0\quantize.json`. Results: `docs\results\week1_eot_v0_int8.md`.
+
 **ASR for the labeling engine** (`label_session.py --asr`: Whisper large-v3 through transformers, bf16 here, about a
 3 GB download on first use; after Job 4's evaluation, which keeps the CPU busy). Each speech segment is transcribed
 on its own and the words are cached as `words.jsonl` next to the labels, so relabeling never reruns ASR. Try it now
