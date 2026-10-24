@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 0952188d-bc75-46ae-a49b-65b82c0ee291
-  modified: 2026-10-24T16:07:53.778Z
+  modified: 2026-10-24T19:25:49.975Z
 ---
 
 The full plan is in the repo at `docs/PLAN.md` (approved 2026-10-23). Don't duplicate it here; read it.
@@ -127,6 +127,14 @@ predictions.csv only, phone subset, seconds). Runbook in docs/machines.md after 
 Local check (132 Hindi clips, one shard): Smart Turn AMR 4.75 card 86.4 → 89.4 cross-fitted, cut-in 28.8% → 16.9%, phone/hin
 threshold 0.93. "Deployment thresholds" in the report are tuned on test clips = reference only; train_eot.py now writes dev-tuned
 thresholds per channel/language into summary.json (`dev_thresholds`) and `best_threshold` per dev row. 102 tests pass.
+Merged as PR #14. Follow-up (2026-10-25, uncommitted): `calibrate_thresholds.py --shipped eot_v0=runs/eot_v0/summary.json` adds a
+"shipped" variant = the fine-tuned model scored with its own dev-tuned thresholds (fair "as deployed" number; missing keys → card).
+
+**eot_v0 training (GPU box, started 2026-10-25 00:33):** 904 steps (226/epoch, 75,497 train clips), bf16. Dev (344 Hindi clips,
+±1.6 pt noise): phone/hin 81.4 → ~91-93 acc, cut-in 29% → ~8-9%; clean dev slipped ~2-3 pt but AUC stays 0.99, and the published
+model scores 97.1 on clean Hindi dev vs 90.3 on test, so dev clips were likely in upstream's training data (judge clean cost on
+the test set only). GPU box session was given a prompt to run the eval, calibration_all, write docs/results/week1_eot_v0_report.md
+and commit on branch `eot-v0-results`.
 
 **Pending, week 1:** user to review the consent forms (contact details, deletion date, college ethics
 approval?); Craig vs Zoom pilot with one pair (`scripts/check_alignment.py`); start recruiting and booking >=15 sessions; HingCoS access

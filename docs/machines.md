@@ -164,7 +164,7 @@ It only reads saved `predictions.csv` files, so run it on Jobs 1-2 now, and agai
 
 ```powershell
 .venv\Scripts\python scripts\calibrate_thresholds.py --runs clip_baselines clip_baselines_codecs --out calibration_codecs
-.venv\Scripts\python scripts\calibrate_thresholds.py --runs clip_baselines clip_baselines_codecs clip_baselines_chain eot_v0_eval --out calibration_all
+.venv\Scripts\python scripts\calibrate_thresholds.py --runs clip_baselines clip_baselines_codecs clip_baselines_chain eot_v0_eval --shipped eot_v0=runs\eot_v0\summary.json --out calibration_all
 ```
 
 Bring back `runs\calibration_*\report.md` and `results.json` into `docs\results\`.
