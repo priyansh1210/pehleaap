@@ -1,6 +1,6 @@
 ---
 name: pehleaap-status
-description: "Locked decisions (compute = Dev box + Kaggle from Oct 29), 8-week schedule with dates, done/pending (PR #1-#5 merged; GPU-box baseline eval done 2026-10-24)"
+description: "Locked decisions (compute = Dev box + Kaggle from Oct 29), 8-week schedule with dates, done/pending (PR #1-#6 merged; GPU-box baseline eval done + merged 2026-10-24)"
 metadata:
   node_type: memory
   type: project
@@ -51,16 +51,20 @@ session built from real Smart Turn Hindi clips: every SHIFT/HOLD/INTERRUPT right
 recording, not on TTS. Not built yet: NOISE_ECHO (speakerphone sessions will show spurious BC/INTERRUPT), ASR hookup
 (text rules wait for it), Gradio verify app.
 
-**Done 2026-10-24 (GPU box, Job 1, 73 min CPU-only, `--threads 24`):** full clean vs phone-line baseline eval, all 31.5k clips.
+**Done 2026-10-24 (GPU box, Job 1, 73 min CPU-only, `--threads 24`; PR #6, merge c397b8e):** full clean vs phone-line baseline eval, all 31.5k clips.
 Saved in `docs/results/week1_clip_baselines_report.md` + `_results.json`. Every wrapper matches its card within 0.15 pt (eng and hin).
 Phone line (G.711 mu-law / AMR-NB 7.95), Hindi (all synthetic TTS): Smart Turn acc 90.3 -> 86.4 / 82.8, cut-in 17.7% -> 27.5% / 35.3%;
 chhotu collapses (-23 to -27 pt, cut-in up to 66%); deveshu and codewithmoin hold up (<=2.3 pt drop); abhishek is weak everywhere
 (60 eng / 68 hin) and flat across conditions. Narrowband + codec only, no noise/echo/loss yet; in-distribution for the community models.
 Cite Smart Turn's phone-line drop with that scope (synthetic Hindi, its own test set).
 
-**Pending, week 1:** user to create + phone-verify a Kaggle account, put the API token in
-`%USERPROFILE%\.kaggle\kaggle.json` on the Dev box and note the weekly GPU quota; me: `scripts/kaggle_job.py` + a smoke job on a T4; user to review the consent forms (contact details, deletion date, college ethics
+**In progress 2026-10-24 (GPU box, user OK'd using its last days for more baseline evals):** (a) Job 2, codec sweep: `scripts/eval_clip_baselines.py --conditions clean g711_alaw amrnb_4.75 amrnb_12.2 gsm_fr opus_8k --threads 24 --out clip_baselines_codecs`, log `runs/clip_baselines_codecs.log` (est. 2-2.5 h; all 5 codecs smoke-tested OK). Results go to docs/results/ as a new week1 codec report; Job 1 results stay unchanged. (b) LiveKit `v1-mini` attempt (1-day limit), using livekit-agents + livekit-plugins-turn-detector 1.8.9 in a scratch venv first, not `.venv`. (c) `scripts/kaggle_job.py` will be written on the **Dev box** (user's choice), then smoke-tested there once the token is in place.
+
+**Kaggle account created + phone-verified (2026-10-24, on the Dev box).** No `kaggle.json` on the GPU box (not needed there).
+
+**Pending, week 1:** user to confirm the API token is at
+`%USERPROFILE%\.kaggle\kaggle.json` on the Dev box and note the weekly GPU quota; me (on the Dev box): `scripts/kaggle_job.py` + a smoke job on a T4; user to review the consent forms (contact details, deletion date, college ethics
 approval?); Craig vs Zoom pilot with one pair (`scripts/check_alignment.py`); start recruiting and booking >=15 sessions; HingCoS access
-email; PSTN provider signup (Twilio dual-channel first); LiveKit v1-mini baseline (time-boxed to 1 day); user to try the ding-bot demo by voice.
+email; PSTN provider signup (Twilio dual-channel first); LiveKit v1-mini baseline (time-boxed to 1 day; started on the GPU box, see above); user to try the ding-bot demo by voice.
 Note: Pipecat's LocalSmartTurnAnalyzerV3 only fits Smart Turn's exact interface; abhishek's model would load there but give wrong
 probabilities (logits, no normalisation), so the demo uses ClipModelTurnAnalyzer.
