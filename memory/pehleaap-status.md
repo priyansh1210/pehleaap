@@ -1,6 +1,6 @@
 ---
 name: pehleaap-status
-description: "Locked decisions (compute = Dev box + Kaggle from Oct 29), 8-week schedule with dates, done/pending (PR #1-#5 merged; GPU-box baseline eval done 2026-10-24)"
+description: "Locked decisions (compute = Dev box + Kaggle from Oct 29), 8-week schedule with dates, done/pending (PR #1-#6 merged; GPU-box baseline eval done + merged 2026-10-24)"
 metadata:
   node_type: memory
   type: project
@@ -51,7 +51,7 @@ session built from real Smart Turn Hindi clips: every SHIFT/HOLD/INTERRUPT right
 recording, not on TTS. Not built yet: NOISE_ECHO (speakerphone sessions will show spurious BC/INTERRUPT), ASR hookup
 (text rules wait for it), Gradio verify app.
 
-**Done 2026-10-24 (GPU box, Job 1, 73 min CPU-only, `--threads 24`):** full clean vs phone-line baseline eval, all 31.5k clips.
+**Done 2026-10-24 (GPU box, Job 1, 73 min CPU-only, `--threads 24`; PR #6, merge c397b8e):** full clean vs phone-line baseline eval, all 31.5k clips.
 Saved in `docs/results/week1_clip_baselines_report.md` + `_results.json`. Every wrapper matches its card within 0.15 pt (eng and hin).
 Phone line (G.711 mu-law / AMR-NB 7.95), Hindi (all synthetic TTS): Smart Turn acc 90.3 -> 86.4 / 82.8, cut-in 17.7% -> 27.5% / 35.3%;
 chhotu collapses (-23 to -27 pt, cut-in up to 66%); deveshu and codewithmoin hold up (<=2.3 pt drop); abhishek is weak everywhere
