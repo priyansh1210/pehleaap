@@ -263,6 +263,15 @@ Rough guesses, to be replaced by measured throughput after the first week-3 run:
    - **INTERRUPT:** the customer starts speaking while the agent speaks, with an IPU ≥ 1 s or ≥ 3 words. The agent either yields within 2 s or a competitive overlap persists.
    - **HOLD_REQ:** the hold-phrase regex on the transcript, followed by a silence ≥ 3 s. Verified by a human.
    - **NOISE_ECHO:** from real speakerphone sessions where customer-VAD fires with high coherence to the agent channel, plus synthesized cases (§4.3).
+     - **Built (Oct 25):** `labeling/echo.py`, run by `label_session.py` on every session in both directions. It works on 10 ms frames, because the echo of the agent's last words usually runs straight into the customer's reply and VAD merges the two. Steps:
+       - The call's echo delay and gain are voted by 1 s windows whose loudness follows the other speaker's at a fixed delay.
+       - Frames the delayed agent loudness, plus reverb, explains are echo, and only while the agent was really talking.
+       - The rest is speech, so merged IPUs are re-cut.
+     - Simulated checks:
+       - All 26 turn ends and holds of a stitched TTS session came back intact under strong echo.
+       - Echo-free sessions show no echo.
+       - Speakerphone barge-ins are found 5 of 6 times with the echo 15 dB down, but only 2 of 6 with AEC off (3 dB): there, talking over the echo is hard to tell from echo.
+     - Every NOISE_ECHO event goes to human verification. TV and traffic noise still only come from verification (the `noise_echo` correction).
    - **Digit spans:** tag IPUs from the ASR digits (Hindi and English number words) so breakdowns are possible.
 4. **Human verification** (`verify_app.py`; built Oct 25 as a small local web page on Python's standard library instead of Gradio, which would have added ~20 packages to every machine's install. It's keyboard-driven, serves on 127.0.0.1 only, and plays each event in stereo with both speakers' loudness drawn. Logic in `labeling/verify.py`; `--summary` writes `events_verified.jsonl` and reports kappa):
    - About 2,000 events: all BC, INTERRUPT, HOLD_REQ and PSTN events, plus a random SHIFT/HOLD sample.
