@@ -30,10 +30,37 @@ Output of `python scripts/env_check.py --markdown` on each machine. Re-run after
 | ffmpeg codecs | libopencore_amrnb, libgsm, libopus, pcm_mulaw, pcm_alaw |
 | git commit | no commits |
 
-## GPU box (RTX 4060): until Oct 28, 2026
+## GPU box (RTX 4000 SFF Ada, 20 GB): until Oct 28, 2026
 
 This box is only available until Oct 28, so it runs Job 1 below and nothing else. From Oct 29, heavy jobs run on
-Kaggle (next section). Paste its `env_check.py --markdown` table here for the record.
+Kaggle (next section). Repo at `C:\Users\FITT\Desktop\PRIYANSH!!\pehleaap`. Python 3.12.10 (the pins install and all
+tests pass on it). ffmpeg is a winget 9.0.1 full build on PATH, with the same codecs as the Dev box's 9.0.2.
+
+| Item | Value |
+|---|---|
+| host | DESKTOP-RTIKELL |
+| os | Windows 11 (10.0.26100) |
+| python | 3.12.10 |
+| cpu | Intel(R) Core(TM) Ultra 9 285 |
+| cpu_cores | 24 physical / 24 logical |
+| ram_gb | 63.4 |
+| disk_free_gb | 102 |
+| gpu (nvidia-smi) | NVIDIA RTX 4000 SFF Ada Generation, 20475 MiB, 581.42 |
+| torch | 2.14.1+cu126 |
+| cuda (torch build) | 12.6 |
+| gpu dedicated VRAM (GB) | 20.0 |
+| gpu compute capability | 8.9 |
+| bf16 native | True |
+| numpy | 2.4.6 |
+| onnxruntime | 1.31.0 |
+| transformers | 5.20.2 |
+| datasets | 5.1.0 |
+| soxr | 1.1.0 |
+| soundfile | 0.14.0 |
+| pipecat | not installed |
+| ffmpeg | ffmpeg version 9.0.1-full_build-www.gyan.dev Copyright (c) 2000-2026 the FFmpeg developers |
+| ffmpeg codecs | libopencore_amrnb, libgsm, libopus, pcm_mulaw, pcm_alaw |
+| git commit | 5f5c935 |
 
 ### First-time setup and the first job (PowerShell on the GPU box)
 

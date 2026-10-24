@@ -13,8 +13,9 @@ metadata:
 - Smart Turn v3.2 test set (4.8 GB, CC-BY-4.0) in `data/external/smart-turn-data-v3.2-test`; weights in `weights/` (both gitignored).
 - No winget, no 7-Zip, no gh. Use `curl.exe` and `Expand-Archive` (zip builds).
 
-**GPU box** (only until 2026-10-28; repo `C:\Users\FITT\pehleaap`, may differ): baseline eval only. Runbook in docs/machines.md puts
-ffmpeg under `~\tools`, which `ffmpeg_bin()` also checks.
+**GPU box** (only until 2026-10-28; repo `C:\Users\FITT\Desktop\PRIYANSH!!\pehleaap`): baseline eval only. Python 3.12.10 via `py`
+(venv `.venv`, pins install fine, 64 tests pass). ffmpeg 9.0.1 gyan.dev full build from winget is on PATH (amrnb/gsm/opus present),
+so no `~\tools` install. Has winget. The auto-mode classifier blocked running `setup_claude_memory.ps1` for me: the user runs it.
 
 **Kaggle** (from 2026-10-29): API token goes in `%USERPROFILE%\.kaggle\kaggle.json` on the Dev box (secret, never in git).
 Kaggle CLI not installed yet; it comes with `scripts/kaggle_job.py`.
