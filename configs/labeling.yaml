@@ -29,3 +29,17 @@ hold_req_min_silence_s: 3.0
 
 # Digit spans
 digit_min_run: 3
+
+# NOISE_ECHO: speakerphone echo of the other speaker
+echo_max_delay_s: 0.8
+echo_window_s: 1.0
+echo_min_corr: 0.8
+echo_min_windows: 3
+echo_lag_spread_s: 0.02
+echo_min_other_active: 0.5
+echo_margin_db: 6.0
+echo_tail_db_per_10ms: 1.0
+echo_tail_s: 0.3
+echo_min_s: 0.3
+echo_doubletalk_corr: 0.6
+echo_local_s: 0.3

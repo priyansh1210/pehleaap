@@ -11,7 +11,8 @@ from pehleaap.eval.eot_events import HOLD, SHIFT, PauseEvent
 BC = "bc"  # short listener response while the other speaker holds the floor
 INTERRUPT = "interrupt"  # the speaker started a real attempt to talk inside the other's IPU
 HOLD_REQ = "hold_req"  # "ek minute": a hold phrase, then the speaker stays quiet for a while
-TYPES = (SHIFT, HOLD, BC, INTERRUPT, HOLD_REQ)
+NOISE_ECHO = "noise_echo"  # "speech" on this channel that is really the other speaker's voice echoing back (speakerphone)
+TYPES = (SHIFT, HOLD, BC, INTERRUPT, HOLD_REQ, NOISE_ECHO)
 
 
 @dataclass
@@ -38,6 +39,8 @@ class Event:
     scenario: str | None = None
     codec: str = "clean"
     snr_bucket: str = "clean"
+    echo_lag_s: float | None = None  # noise_echo: the echo's delay behind the other speaker
+    echo_corr: float | None = None  # noise_echo: how closely its loudness follows the other speaker's (0-1)
 
     @property
     def event_id(self) -> str:

@@ -18,6 +18,8 @@ class IPU:
     end: float
     text: str | None = None  # None until ASR has run; "" if ASR heard no words in it
     n_words: int | None = None
+    echo_lag_s: float | None = None  # set when labeling/echo.py finds it is the other speaker's echo, not speech
+    echo_corr: float | None = None  # ... and how closely its loudness follows theirs at that delay
 
     @property
     def dur(self) -> float:
