@@ -195,6 +195,15 @@ Check in `runs\tts_labels\TTS01\`: `ipus.jsonl` texts look like the Hindi that w
 (`asr.retried_loops`). If the GPU runs out of memory, add `--asr-batch-size 4`. Real sessions later:
 `label_session.py "data\raw\sessions\S0*" --asr`.
 
+**Recorded sessions, with transcripts** (`process_session.py --asr`). Copy each session folder from the Dev box
+(`data\raw\sessions\<session>\`, plus `data\raw\sessions.csv` and `speakers.csv`, which stay private and out of git),
+then run the same pipeline as on the Dev box with ASR on: it re-checks, relabels with Whisper large-v3 transcripts (so
+the backchannel, hold-request and digit rules apply) and rewrites the label folder with this machine's paths.
+
+```powershell
+.venv\Scripts\python scripts\process_session.py "data\raw\sessions\S0*" --asr
+```
+
 **Turn models on recorded sessions** (`eval_sessions.py`: the main metric, plan §6; once sessions are recorded,
 labelled and, ideally, checked with `verify_app.py`). Every labelled customer pause is replayed to each model at
 0.2-2 s after it starts, through each phone condition; the report gives cut-in rate, response gap and missed turn
