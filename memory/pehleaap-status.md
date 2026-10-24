@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 0952188d-bc75-46ae-a49b-65b82c0ee291
-  modified: 2026-10-24T19:25:49.975Z
+  modified: 2026-10-24T20:12:14.688Z
 ---
 
 The full plan is in the repo at `docs/PLAN.md` (approved 2026-10-23). Don't duplicate it here; read it.
@@ -127,7 +127,7 @@ predictions.csv only, phone subset, seconds). Runbook in docs/machines.md after 
 Local check (132 Hindi clips, one shard): Smart Turn AMR 4.75 card 86.4 → 89.4 cross-fitted, cut-in 28.8% → 16.9%, phone/hin
 threshold 0.93. "Deployment thresholds" in the report are tuned on test clips = reference only; train_eot.py now writes dev-tuned
 thresholds per channel/language into summary.json (`dev_thresholds`) and `best_threshold` per dev row. 102 tests pass.
-Merged as PR #14. Follow-up (2026-10-25, uncommitted): `calibrate_thresholds.py --shipped eot_v0=runs/eot_v0/summary.json` adds a
+Merged as PR #14. Follow-up (2026-10-25, PR #16, merge 9688c68): `calibrate_thresholds.py --shipped eot_v0=runs/eot_v0/summary.json` adds a
 "shipped" variant = the fine-tuned model scored with its own dev-tuned thresholds (fair "as deployed" number; missing keys → card).
 
 **eot_v0 training (GPU box, started 2026-10-25 00:33):** 904 steps (226/epoch, 75,497 train clips), bf16. Dev (344 Hindi clips,
@@ -135,6 +135,18 @@ Merged as PR #14. Follow-up (2026-10-25, uncommitted): `calibrate_thresholds.py 
 model scores 97.1 on clean Hindi dev vs 90.3 on test, so dev clips were likely in upstream's training data (judge clean cost on
 the test set only). GPU box session was given a prompt to run the eval, calibration_all, write docs/results/week1_eot_v0_report.md
 and commit on branch `eot-v0-results`.
+Training ended 00:57, best = step 900 (phone/hin dev 92.7, cut-in 8.7%); summary.json lacked dev_thresholds (run predated PR #14),
+so the GPU box was told to rescore best.pt on dev with train_eot's evaluate() and add them before calibrating with --shipped.
+
+**ASR hookup (2026-10-25 night, Dev box, uncommitted).** `pehleaap/labeling/asr.py` + `label_session.py --asr` (words cached as
+data/labels/<session>/words.jsonl; `--asr-refresh`, `--asr-model`, `--asr-language`, `--asr-batch-size`), `pehleaap/device.py`
+(precision_for moved out of train_eot), `scripts/make_tts_session.py` (stand-in session from Hindi TTS test clips, in runs/).
+Whisper via transformers pipeline (no new deps), per-IPU with 0.3 s pad (Whisper hallucinates Devanagari on pure silence: seen),
+max_new_tokens = 20/s of the longest clip in a length-sorted batch (word timestamps keep all cross-attentions: a loop OOM'd the
+GTX 1650 at batch 16), default batch 8. transformers 5.20.2's temperature fallback + word timestamps crashes (IndexError in
+_extract_token_timestamps) → own retry: zlib compression ratio > 2.4 → decode again with no_repeat_ngram_size=3, keep the less
+repetitive text. Smoke with whisper-tiny on a stitched TTS session: words all inside their padded IPUs; loops fixed (183 → 86
+words). Large-v3 quality/speed still unmeasured: GPU box runbook step in docs/machines.md. 109 tests pass.
 
 **Pending, week 1:** user to review the consent forms (contact details, deletion date, college ethics
 approval?); Craig vs Zoom pilot with one pair (`scripts/check_alignment.py`); start recruiting and booking >=15 sessions; HingCoS access

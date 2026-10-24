@@ -169,6 +169,21 @@ It only reads saved `predictions.csv` files, so run it on Jobs 1-2 now, and agai
 
 Bring back `runs\calibration_*\report.md` and `results.json` into `docs\results\`.
 
+**ASR for the labeling engine** (`label_session.py --asr`: Whisper large-v3 through transformers, bf16 here, about a
+3 GB download on first use; after Job 4's evaluation, which keeps the CPU busy). Each speech segment is transcribed
+on its own and the words are cached as `words.jsonl` next to the labels, so relabeling never reruns ASR. Try it now
+on a stand-in session stitched from Hindi TTS test clips; run it on the pilot and every session once they're recorded.
+
+```powershell
+.venv\Scripts\python scripts\make_tts_session.py
+.venv\Scripts\python scripts\label_session.py runs\tts_session\TTS01 --asr --out runs\tts_labels
+```
+
+Check in `runs\tts_labels\TTS01\`: `ipus.jsonl` texts look like the Hindi that was said (Devanagari or romanized),
+`summary.json` gives the ASR time (`asr.seconds`) and how many segments looped and were decoded again
+(`asr.retried_loops`). If the GPU runs out of memory, add `--asr-batch-size 4`. Real sessions later:
+`label_session.py "data\raw\sessions\S0*" --asr`.
+
 ## Kaggle (from Oct 29, 2026)
 
 All training, batch ASR, augmentation precompute and full eval sweeps (plan §3a). Measured by the smoke job

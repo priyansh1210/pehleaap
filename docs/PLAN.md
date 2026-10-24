@@ -255,6 +255,7 @@ Rough guesses, to be replaced by measured throughput after the first week-3 run:
 
 1. **Per-channel VAD → IPUs.** Run Silero on the clean 16 kHz source. Merge gaps < 200 ms and drop segments < 100 ms.
 2. **ASR with word timestamps.** Run faster-whisper large-v3 or AI4Bharat IndicConformer **on Kaggle** (in our own private session, so no ASR provider sees the audio). Sarvam is optional, with consent.
+   - **Built (Oct 25):** `labeling/asr.py`, run by `label_session.py --asr` on the GPU box (or Kaggle). Whisper large-v3 through transformers, so there's no new dependency. Each IPU is transcribed on its own with 0.3 s of padding, because Whisper invents text over silence. Words keep track times and attach to IPUs by midpoint; they're cached in `words.jsonl`. Output is capped at 20 tokens per second of audio. A segment whose text loops (Whisper's compression-ratio test) is decoded again with no 3-word sequence allowed twice; transformers' temperature fallback crashes together with word timestamps. IndicConformer stays the alternative to compare on the pilot recording.
 3. **Event rules** (`events.py`; the thresholds are in config):
    - **SHIFT (EOT = 1):** the customer pauses ≥ 200 ms, and the next non-BC IPU belongs to the other speaker.
    - **HOLD (EOT = 0):** the customer resumes first. The other speaker's backchannels are ignored.
