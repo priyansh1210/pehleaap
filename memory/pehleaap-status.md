@@ -175,3 +175,10 @@ dev-set artifact). Shipped dev thresholds (0.44-0.57) ~= 0.5; no recalibration n
 training (run predated PR #14; rescoring matched best_dev exactly); original kept as runs/eot_v0/summary.orig.json (GPU box).
 Caveats: synthetic Hindi TTS, chains = training augmentation family. Weakest: 5 dB noise (-5.5 vs clean). model.onnx stays on the
 GPU box (runs/eot_v0/, 32 MB, not in git). Next: real-call validation, int8 quantisation, Pipecat demo wiring.
+
+**eot_v0 int8 (GPU box, 2026-10-25 03:30):** `scripts/quantize_eot.py` -> runs/eot_v0/model_int8.onnx (8.7 MB, not in git); doc
+`docs/results/week1_eot_v0_int8.md`. Upstream recipe (QDQ, entropy, Conv/MatMul/Gemm only, 1024 CLEAN train clips) on eot_v0 weights
+grafted into Pipecat's fp32 graph (`onnx_with_state_dict`, matches TorchScript export within 3e-6). Dev: int8 costs 0.6-2.0 pts;
+phone/hin 92.2 -> 90.1 but cut-in 8.7% -> 16.9% (dev-tuned int8 threshold not done). Pipecat's own int8 loses more (phone/hin
+82.0 -> 71.8). Latency 1 thread: fp32 56.9 ms, int8 28.6 ms = Smart Turn int8. Gotcha: quantising all op types / phone-mix
+calibration shifted probs -0.1..-0.2 (up to -23 pts). Test-set eval of int8 not run yet (~75 min CPU).

@@ -52,19 +52,15 @@ class SmartTurnV3(nn.Module):
         return self.classifier((hidden * weights).sum(dim=1)).squeeze(-1)
 
 
-def state_dict_from_onnx(path: str | Path) -> dict[str, torch.Tensor]:
-    """Weights of an upstream fp32 ONNX export, as a SmartTurnV3 state dict."""
-    import onnx
-    from onnx import numpy_helper
-
-    graph = onnx.load(str(path)).graph
-    init = {i.name: numpy_helper.to_array(i) for i in graph.initializer}
+def _onnx_weight_map(graph) -> dict[str, tuple[str, bool]]:
+    """SmartTurnV3 state-dict name -> (ONNX initializer name, stored transposed) for an upstream fp32 export."""
+    init = {i.name for i in graph.initializer}
     consumers: dict[str, list] = {}
     for node in graph.node:
         for name in node.input:
             consumers.setdefault(name, []).append(node)
 
-    state = {k.removeprefix("inner."): v for k, v in init.items() if k.startswith("inner.")}
+    names = {k.removeprefix("inner."): (k, False) for k in init if k.startswith("inner.")}
     k_layer = 0
     for node in graph.node:
         weight = [x for x in node.input if x in init and not x.startswith("inner.")] if node.op_type == "MatMul" else []
@@ -79,10 +75,44 @@ def state_dict_from_onnx(path: str | Path) -> dict[str, torch.Tensor]:
             k_layer += 1
         else:
             name = bias.removeprefix("inner.").removesuffix(".bias") + ".weight"
-        if name in state:
+        if name in names:
             raise ValueError(f"two ONNX weights map to {name}")
-        state[name] = init[weight[0]].T  # MatMul stores (in, out); nn.Linear wants (out, in)
+        names[name] = (weight[0], True)  # MatMul stores (in, out); nn.Linear wants (out, in)
+    return names
+
+
+def state_dict_from_onnx(path: str | Path) -> dict[str, torch.Tensor]:
+    """Weights of an upstream fp32 ONNX export, as a SmartTurnV3 state dict."""
+    import onnx
+    from onnx import numpy_helper
+
+    graph = onnx.load(str(path)).graph
+    init = {i.name: numpy_helper.to_array(i) for i in graph.initializer}
+    state = {name: init[src].T if transposed else init[src] for name, (src, transposed) in _onnx_weight_map(graph).items()}
     return {k: torch.from_numpy(np.array(v)) for k, v in state.items()}  # a writable, contiguous copy
+
+
+def onnx_with_state_dict(template: str | Path, state: dict[str, torch.Tensor], out_path: str | Path) -> Path:
+    """Upstream's fp32 ONNX graph (`template`) with the weights of `state`: the reverse of
+    `state_dict_from_onnx`, so a fine-tuned model ships in exactly the graph Pipecat publishes."""
+    import onnx
+    from onnx import numpy_helper
+
+    model = onnx.load(str(template))
+    names = _onnx_weight_map(model.graph)
+    if set(names) != set(state):
+        raise ValueError(f"state dict and graph disagree: {sorted(set(names) ^ set(state))[:5]}")
+    by_init = {src: (name, transposed) for name, (src, transposed) in names.items()}
+    for init in model.graph.initializer:
+        if init.name in by_init:
+            name, transposed = by_init[init.name]
+            value = state[name].detach().cpu().float().numpy()
+            value = np.ascontiguousarray(value.T if transposed else value)
+            if tuple(value.shape) != tuple(init.dims):
+                raise ValueError(f"{name}: shape {value.shape} vs graph {tuple(init.dims)}")
+            init.CopyFrom(numpy_helper.from_array(value.astype(numpy_helper.to_array(init).dtype), init.name))
+    onnx.save(model, str(out_path))
+    return Path(out_path)
 
 
 def from_published(onnx_path: str | Path | None = None) -> SmartTurnV3:
