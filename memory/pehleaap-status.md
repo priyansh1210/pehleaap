@@ -58,7 +58,9 @@ chhotu collapses (-23 to -27 pt, cut-in up to 66%); deveshu and codewithmoin hol
 (60 eng / 68 hin) and flat across conditions. Narrowband + codec only, no noise/echo/loss yet; in-distribution for the community models.
 Cite Smart Turn's phone-line drop with that scope (synthetic Hindi, its own test set).
 
-**Pending, week 1:** user to create + phone-verify a Kaggle account, put the API token in
+**Kaggle account created + phone-verified (2026-10-24, on the Dev box).** No `kaggle.json` on the GPU box (not needed there).
+
+**Pending, week 1:** user to confirm the API token is at
 `%USERPROFILE%\.kaggle\kaggle.json` on the Dev box and note the weekly GPU quota; me: `scripts/kaggle_job.py` + a smoke job on a T4; user to review the consent forms (contact details, deletion date, college ethics
 approval?); Craig vs Zoom pilot with one pair (`scripts/check_alignment.py`); start recruiting and booking >=15 sessions; HingCoS access
 email; PSTN provider signup (Twilio dual-channel first); LiveKit v1-mini baseline (time-boxed to 1 day); user to try the ding-bot demo by voice.
