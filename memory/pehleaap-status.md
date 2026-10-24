@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 0952188d-bc75-46ae-a49b-65b82c0ee291
-  modified: 2026-10-24T21:49:09.791Z
+  modified: 2026-10-24T21:58:51.160Z
 ---
 
 The full plan is in the repo at `docs/PLAN.md` (approved 2026-10-23). Don't duplicate it here; read it.
@@ -198,7 +198,7 @@ behaviour the benchmark predicts. The 3.2 s beep after a "wait" is Pipecat's sil
 The user asked "were the demo results good": answered honestly (right direction, matches the benchmark, but ~20 decisions from
 one speaker on a clean line; the real test is labelled real recordings). The user works through the night, no breaks (2026-10-25).
 
-**Label-check app (2026-10-25 ~03:30, Dev box, uncommitted).** `pehleaap/labeling/verify.py` (needs_review: all BC/INTERRUPT/
+**Label-check app (2026-10-25 ~03:30, Dev box; PR #20, merge f284dc5).** `pehleaap/labeling/verify.py` (needs_review: all BC/INTERRUPT/
 HOLD_REQ + PSTN sessions (device "pstn" in sessions.csv) + md5(event_id) 10% of SHIFT/HOLD; double_annotated: independent 10%
 hash; verdicts appended to data/labels/<session>/verify/<annotator>.jsonl, last wins; apply_verdicts: correct → verified,
 wrong → retyped, "none"/unsure/unchecked → dropped; cohens_kappa) and `scripts/verify_app.py` (stdlib ThreadingHTTPServer on
@@ -214,3 +214,13 @@ grafted into Pipecat's fp32 graph (`onnx_with_state_dict`, matches TorchScript e
 phone/hin 92.2 -> 90.1 but cut-in 8.7% -> 16.9% (dev-tuned int8 threshold not done). Pipecat's own int8 loses more (phone/hin
 82.0 -> 71.8). Latency 1 thread: fp32 56.9 ms, int8 28.6 ms = Smart Turn int8. Gotcha: quantising all op types / phone-mix
 calibration shifted probs -0.1..-0.2 (up to -23 pts). Test-set eval of int8 not run yet (~75 min CPU).
+
+**Session evaluation (2026-10-25 ~04:00, Dev box, uncommitted): the main metric for real recordings.** CHAIN conditions moved
+from eval_clip_baselines.py into `pehleaap/telephony/conditions.py` (identical code; the script imports them, tests pass).
+`pehleaap/eval/sessions.py`: condition_track (whole track through a condition; chain seed = "<session>_<channel>"),
+checkpoint_windows/probs (last 8 s up to pause start + 0.2/0.3/0.5/0.8/1.2/2.0 s; NaN once the speaker resumed).
+`scripts/eval_sessions.py`: verified labels if present (else marked UNVERIFIED), --channels (default customer), per condition
+and model: cut-in / median & p90 gap / missed at the model's threshold, cut-in at matched 0.5 / 0.8 s gap (threshold sweep),
+silence-timeout floor (VAD on the clean recording, so condition-independent); hard timeout 3 s (Pipecat's fallback).
+Smoke on a stitched 20-turn TTS session (TTS02): works, but numbers are meaningless: stitched Smart Turn clips are half
+deliberately unfinished, and the stitched holds are all short (flatters the timeout). Runbook in docs/machines.md.

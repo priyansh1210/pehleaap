@@ -195,6 +195,20 @@ Check in `runs\tts_labels\TTS01\`: `ipus.jsonl` texts look like the Hindi that w
 (`asr.retried_loops`). If the GPU runs out of memory, add `--asr-batch-size 4`. Real sessions later:
 `label_session.py "data\raw\sessions\S0*" --asr`.
 
+**Turn models on recorded sessions** (`eval_sessions.py`: the main metric, plan §6; once sessions are recorded,
+labelled and, ideally, checked with `verify_app.py`). Every labelled customer pause is replayed to each model at
+0.2-2 s after it starts, through each phone condition; the report gives cut-in rate, response gap and missed turn
+ends, the cut-in rate at a matched 0.5 / 0.8 s gap, and the silence-timeout bot as the floor. Copy each session's
+label folder (`data\labels\<session>\`, small) and its audio to the GPU box first; the audio paths in `summary.json`
+must point at its copy (relabel there with `label_session.py` to rewrite them).
+
+```powershell
+.venv\Scripts\python scripts\eval_sessions.py "data\labels\S0*" --models smart_turn_v3.2_int8 eot_v0 --conditions clean g711_mulaw amrnb_7.95 noise10_amr7.95 mixed --threads 24 --out sessions_week2
+```
+
+`eot_v0` loads from `runs\eot_v0\model.onnx` via `weights\eot_v0\model.onnx`: copy it there first
+(`New-Item -ItemType Directory -Force weights\eot_v0; Copy-Item runs\eot_v0\model.onnx weights\eot_v0\`).
+
 ## Kaggle (from Oct 29, 2026)
 
 All training, batch ASR, augmentation precompute and full eval sweeps (plan §3a). Measured by the smoke job
