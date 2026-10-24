@@ -271,7 +271,15 @@ Rough guesses, to be replaced by measured throughput after the first week-3 run:
 
 - **Chain:** RIR (optional) → noise at SNR ∈ {clean, 20, 10, 5, 0} dB → speakerphone echo (agent channel → RIR → soft clipping → residual-AEC attenuation at ERLE 10-30 dB → mixed into the customer channel) → AGC/clipping → band-pass 300-3400 Hz → resample to 8 kHz → codec ∈ {G.711 μ-law, A-law, AMR-NB 4.75/7.95/12.2 kbps, GSM-FR, Opus 8k} → packet loss 0-5% with PLC → jitter.
 - **Critical detail:** codecs add priming delay. `codecs.py` measures it by cross-correlation and removes it, so labels stay within 1 ms. There is a unit test for this.
-- **Noise sources:** MUSAN, DEMAND and ESC-50 (check each license), plus about 1 h of self-recorded Indian street, traffic, TV and market noise.
+- **Built (Oct 24):** `telephony/pipeline.py` with `configs/augment.yaml`. Every stage keeps length and timing, and a test checks the whole chain stays within 1 ms. Details beyond the line above:
+  - SNR is measured at the mic, full band, against the speech's *active* level (frames within 30 dB of the loudest), since a customer track is mostly silence.
+  - The echo reference is band-limited first, because the agent's voice reached the phone over the network. Before the canceller the echo sits at the customer's own speech level; ERLE takes it down from there. The round-trip delay is 0.1-0.5 s.
+  - AGC is causal, with a fast attack and a slow release, so the gain creeps up in pauses and lifts the background noise, as real phones do.
+  - About half of the non-G.711 draws are transcoded to G.711 μ-law (tandem coding at the operator's gateway).
+  - Packet loss uses a two-state Gilbert model (bursts of 1-3 packets). Jitter means a **fixed** jitter buffer: a packet later than the buffer (packets queue behind a delay spike) is concealed like a lost one. Adaptive buffers that stretch silences are not modelled, since they would move later turn boundaries.
+  - Concealment (after G.711 Appendix I) runs on the decoded 8 kHz audio for every codec. This approximates AMR's and Opus's built-in PLC.
+  - Each draw (`ChannelParams`) carries a seed and is saved with the example, so any augmented clip can be rebuilt exactly. `scripts/augment_examples.py` writes examples to listen to.
+- **Noise sources:** MUSAN, DEMAND and ESC-50 (check each license), plus about 1 h of self-recorded Indian street, traffic, TV and market noise. They go in `data/external/noise/`; until then the chain uses synthetic white, pink and brown noise and mains hum.
 - **ffmpeg:** use the gyan.dev *full* build and confirm `ffmpeg -codecs | findstr amr` lists libopencore-amrnb. If AMR is missing, fall back to WSL2 Ubuntu ffmpeg.
 - **Precompute augmented variants in Kaggle CPU sessions** (CPU-bound, and CPU sessions don't use GPU quota) and publish them as a private dataset, so the GPU isn't left idle waiting on augmentation during training.
 

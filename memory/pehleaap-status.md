@@ -1,11 +1,11 @@
 ---
 name: pehleaap-status
-description: "Locked decisions (compute = Dev box + Kaggle from Oct 29), 8-week schedule with dates, done/pending (PR #1-#7 merged; GPU-box baseline eval done; Kaggle runner on branch kaggle-runner)"
+description: "Locked decisions (compute = Dev box + Kaggle from Oct 29), 8-week schedule with dates, done/pending (PR #1-#8 merged; GPU-box baseline eval done; Kaggle runner merged + smoke-tested)"
 metadata:
   node_type: memory
   type: project
   originSessionId: 0952188d-bc75-46ae-a49b-65b82c0ee291
-  modified: 2026-10-23T22:53:34.850Z
+  modified: 2026-10-24T12:10:32.038Z
 ---
 
 The full plan is in the repo at `docs/PLAN.md` (approved 2026-10-23). Don't duplicate it here; read it.
@@ -61,9 +61,9 @@ Cite Smart Turn's phone-line drop with that scope (synthetic Hindi, its own test
 **In progress 2026-10-24 (GPU box, user OK'd using its last days for more baseline evals):** (a) Job 2, codec sweep: `scripts/eval_clip_baselines.py --conditions clean g711_alaw amrnb_4.75 amrnb_12.2 gsm_fr opus_8k --threads 24 --out clip_baselines_codecs`, log `runs/clip_baselines_codecs.log` (est. 2-2.5 h; all 5 codecs smoke-tested OK). Results go to docs/results/ as a new week1 codec report; Job 1 results stay unchanged. (b) LiveKit `v1-mini` attempt (1-day limit), using livekit-agents + livekit-plugins-turn-detector 1.8.9 in a scratch venv first, not `.venv`. (c) the Kaggle runner was written on the **Dev box** (user's choice); see below.
 
 **Kaggle (Dev box, 2026-10-24):** account created + phone-verified; API token at `%USERPROFILE%\.kaggle\access_token` on the Dev box
-only (none on the GPU box); quota 30 GPU-h/week, 20 TPU-h; login works. Runner written on branch `kaggle-runner` (not yet pushed or merged)
-and smoke-tested on Kaggle: 2× T4 14.6 GB, 31 GB RAM, 2C/4T, full env install ~1 min, 63/64 tests pass on commit 5f5c935 (the
-failure is fixed locally, see ffmpeg below; re-run after the user pushes):
+only (none on the GPU box); quota 30 GPU-h/week, 20 TPU-h; login works. Runner merged (PR #8, merge e4cbe86)
+and smoke-tested on Kaggle: 2× T4 14.6 GB, 31 GB RAM, 2C/4T, full env install ~1 min; on e4cbe86 (CPU session) 68 passed,
+1 skipped, whole job 1.4 min:
 `scripts/kaggle_job.py` (run/status/fetch/quota; private script kernel `pehleaap-<name>`, waits, downloads to runs/kaggle/<name>/output)
 + `scripts/kaggle_job_template.py` (clones the pushed commit, uv 0.12.24 venv with Python 3.11.9 + requirements.txt, runs the command,
 saves job.log/env_check.md/job.json/runs). ffmpeg on Kaggle: Ubuntu 6.1.1 has libgsm but no AMR-NB; johnvansickle 7.0.2 static
@@ -71,8 +71,16 @@ and all BtbN Linux builds have AMR-NB but no libgsm; no conda. Fix: template fet
 PEHLEAAP_FFMPEG_EXTRA and `paths.ffmpeg_bin(encoder)` picks the first build with each encoder. /kaggle/input layout still unknown
 (no dataset attached yet).
 
-**Pending, week 1:** user to push `kaggle-runner`, then I re-run the smoke job (CPU) on that commit and the user raises the PR;
-user to review the consent forms (contact details, deletion date, college ethics
+**Done 2026-10-24 (Dev box, not yet committed): phone-line augmentation chain** (plan §4.3, a week-2 deliverable done early).
+`pehleaap/telephony/{noise,echo,channel,pipeline}.py`, `configs/augment.yaml` (test: equals the defaults), `scripts/augment_examples.py`
+(writes listening examples of Hindi Smart Turn clips to runs/augment_examples/), `apply_codec_many` in codecs.py; 19 new tests (87 pass).
+Checked: whole chain within 0.12 ms of the input timing; echo lands at its set delay (0.300 s measured); 24 ms/clip batched (2 s clips),
+13.5 s for a 25-min track. Jitter model: FIFO queueing behind exponential delay spikes, fixed buffer = jitter x 3.5-6 → 0.3-7% late.
+The first AR(1)-smoothed version almost never produced late packets, so it was replaced. Noise is synthetic (white/pink/brown/hum) until noise datasets
+go in data/external/noise/ (licenses from memory, verify before downloading: MUSAN CC BY 4.0, DEMAND CC BY-SA 3.0, ESC-50 CC BY-NC 3.0; which to use is the user's call).
+Not done: eval_clip_baselines conditions using the full chain; Pipecat live demo still G.711 only.
+
+**Pending, week 1:** user to review the consent forms (contact details, deletion date, college ethics
 approval?); Craig vs Zoom pilot with one pair (`scripts/check_alignment.py`); start recruiting and booking >=15 sessions; HingCoS access
 email; PSTN provider signup (Twilio dual-channel first); LiveKit v1-mini baseline (time-boxed to 1 day; started on the GPU box, see above); user to try the ding-bot demo by voice.
 Note: Pipecat's LocalSmartTurnAnalyzerV3 only fits Smart Turn's exact interface; abhishek's model would load there but give wrong

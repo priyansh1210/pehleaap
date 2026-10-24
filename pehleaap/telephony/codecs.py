@@ -72,30 +72,38 @@ def apply_codec(x: np.ndarray, codec: str) -> np.ndarray:
     y = _roundtrip(x, codec)
     d = codec_delay_samples(codec)
     y = y[d:] if d >= 0 else np.concatenate([np.zeros(-d, dtype=np.float32), y])
-    return _fit(y, len(x))
+    return fit_length(y, len(x))
 
 
-def _fit(y: np.ndarray, n: int) -> np.ndarray:
+def fit_length(y: np.ndarray, n: int) -> np.ndarray:
     """Trim or zero-pad to exactly n samples."""
     if len(y) < n:
         y = np.concatenate([y, np.zeros(n - len(y), dtype=np.float32)])
     return y[:n].astype(np.float32)
 
 
-def narrowband_many(clips: list[np.ndarray], codec: str, sr: int = 16000, gap_s: float = 0.5) -> list[np.ndarray]:
-    """Phone channel for many clips at once: sr -> 8 kHz -> codec -> back to sr, same lengths.
+def apply_codec_many(clips: list[np.ndarray], codec: str, gap_s: float = 0.5) -> list[np.ndarray]:
+    """`apply_codec` on many 8 kHz clips in one ffmpeg run (much faster than one run per clip).
 
-    The clips are joined with `gap_s` of silence (so codec state cannot carry from one clip
-    into the next), coded in one ffmpeg run, and split again. Because the codec delay is
-    compensated, the split points stay exact. This is only band-limiting plus codec;
-    noise, echo and packet loss come from the full channel simulator.
+    The clips are joined with `gap_s` of silence, so codec state can't carry from one clip into
+    the next, coded once and split again. Because the codec delay is compensated, the split
+    points stay exact.
     """
     gap = np.zeros(int(gap_s * SR), dtype=np.float32)
     parts, bounds, pos = [gap], [], len(gap)
     for c in clips:
-        c8 = resample(c.astype(np.float32), sr, SR)
-        parts += [c8, gap]
-        bounds.append((pos, pos + len(c8)))
-        pos += len(c8) + len(gap)
+        parts += [c.astype(np.float32), gap]
+        bounds.append((pos, pos + len(c)))
+        pos += len(c) + len(gap)
     coded = apply_codec(np.concatenate(parts), codec)
-    return [_fit(resample(coded[s:e], SR, sr), len(c)) for (s, e), c in zip(bounds, clips)]
+    return [coded[s:e] for s, e in bounds]
+
+
+def narrowband_many(clips: list[np.ndarray], codec: str, sr: int = 16000, gap_s: float = 0.5) -> list[np.ndarray]:
+    """Phone channel for many clips at once: sr -> 8 kHz -> codec -> back to sr, same lengths.
+
+    This is only band-limiting plus codec; noise, echo and packet loss come from the full
+    chain in `pipeline.py`.
+    """
+    coded = apply_codec_many([resample(c.astype(np.float32), sr, SR) for c in clips], codec, gap_s)
+    return [fit_length(resample(y, SR, sr), len(c)) for y, c in zip(coded, clips)]
