@@ -1,0 +1,50 @@
+{
+  "best_step": 900,
+  "best_dev": [
+    {
+      "condition": "clean",
+      "language": "eng",
+      "n": 1967,
+      "accuracy": 97.41,
+      "auc": 0.9934,
+      "cut_in": 0.032,
+      "missed_end": 0.02
+    },
+    {
+      "condition": "clean",
+      "language": "hin",
+      "n": 344,
+      "accuracy": 95.06,
+      "auc": 0.9889,
+      "cut_in": 0.0598,
+      "missed_end": 0.0375
+    },
+    {
+      "condition": "phone",
+      "language": "eng",
+      "n": 1967,
+      "accuracy": 93.75,
+      "auc": 0.9805,
+      "cut_in": 0.0795,
+      "missed_end": 0.046
+    },
+    {
+      "condition": "phone",
+      "language": "hin",
+      "n": 344,
+      "accuracy": 92.73,
+      "auc": 0.9771,
+      "cut_in": 0.087,
+      "missed_end": 0.0563
+    }
+  ],
+  "dev_score": 93.24000000000001,
+  "steps": 904,
+  "dev_thresholds": {
+    "clean/eng": 0.4827,
+    "clean/hin": 0.5741,
+    "phone/eng": 0.515,
+    "phone/hin": 0.4395
+  },
+  "dev_thresholds_note": "recomputed after training with train_eot.evaluate() on best.pt (step 900), same dev keys and seed; accuracies matched best_dev exactly. The run predated PR #14."
+}
