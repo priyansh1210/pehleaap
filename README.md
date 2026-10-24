@@ -24,6 +24,7 @@ and the week-by-week schedule, is in [`docs/PLAN.md`](docs/PLAN.md).
 | Phone-line augmentation chain: room reverb, noise at an SNR bucket, speakerphone echo, AGC, clipping, band-pass, codecs (with G.711 tandem), packet loss + jitter with concealment. Keeps timing within 1 ms; synthetic noise until noise datasets are added | `pehleaap/telephony/pipeline.py`, `configs/augment.yaml`, `scripts/augment_examples.py` |
 | Pipecat demo: browser call → phone line → Silero VAD → turn model → ding, with a live switch between Smart Turn v3.2 and eot_v0 (`/switch`); the other model's verdict is logged at every pause | `demo/bot.py`, `pehleaap/pipecat_ext/` |
 | Labeling engine v0: Silero VAD → IPUs → SHIFT / HOLD / BC / INTERRUPT / HOLD_REQ events (JSONL). With `--asr`, Whisper large-v3 transcribes each speech segment so the backchannel, hold-request and digit rules apply; no NOISE_ECHO yet | `pehleaap/labeling/`, `configs/labeling.yaml`, `scripts/label_session.py`, `scripts/make_tts_session.py` |
+| Label checking by ear: a local page that plays each event (agent left, customer right) with both speakers' loudness drawn; one key per verdict, 10% double-annotated for Cohen's kappa, verified events written per session | `scripts/verify_app.py`, `pehleaap/labeling/verify.py` |
 
 ## Setup (both machines, Windows)
 
