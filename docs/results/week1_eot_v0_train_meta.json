@@ -1,0 +1,35 @@
+{
+  "commit": "148e778cc3b0253343d96130ee4c4ae2aab48eba+uncommitted",
+  "config": {
+    "data_dir": "data/external/eot-train",
+    "langs": [
+      "eng",
+      "hin"
+    ],
+    "hin_repeat": 2,
+    "augment_config": "configs/augment.yaml",
+    "p_phone": 0.8,
+    "epochs": 4,
+    "batch_size": 384,
+    "micro_batch": 192,
+    "lr": 5e-05,
+    "weight_decay": 0.01,
+    "warmup_ratio": 0.1,
+    "grad_clip": 1.0,
+    "num_workers": 20,
+    "eval_every_steps": 100,
+    "dev_limit": null,
+    "checkpoint_minutes": 30.0,
+    "seed": 0,
+    "precision": "auto"
+  },
+  "device": "NVIDIA RTX 4000 SFF Ada Generation",
+  "precision": "bf16",
+  "torch": "2.14.1+cu126",
+  "n_train": 75497,
+  "n_dev": 2311,
+  "steps_per_epoch": 226,
+  "total_steps": 904,
+  "max_steps": null,
+  "started": "2026-10-25 00:35:32"
+}
