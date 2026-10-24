@@ -37,7 +37,7 @@ CODECS: dict[str, tuple[str, list[str]]] = {
 def _roundtrip(x: np.ndarray, codec: str) -> np.ndarray:
     """Encode and decode with ffmpeg, without any delay compensation."""
     ext, enc_args = CODECS[codec]
-    ff = ffmpeg_bin()
+    ff = ffmpeg_bin(encoder=enc_args[enc_args.index("-c:a") + 1])
     with tempfile.TemporaryDirectory() as tmp:
         src, coded, dec = Path(tmp) / "in.wav", Path(tmp) / f"coded.{ext}", Path(tmp) / "out.wav"
         sf.write(src, np.clip(x, -1.0, 1.0), SR, subtype="PCM_16")
