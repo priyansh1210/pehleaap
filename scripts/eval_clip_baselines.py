@@ -2,10 +2,12 @@
 
 Two jobs:
 1. Validate each wrapper: on clean audio, accuracy must match its model card (within 1 pt).
-2. Telephony stress test: the same clips band-limited to 8 kHz and passed through G.711 and
-   AMR-NB. This is a first look at the phone-line domain shift. It is not the project's main
-   evaluation: the community models were trained on this corpus (so it's in-distribution for
-   them), and every Hindi clip here is TTS.
+2. Telephony stress test: the same clips over a simulated phone line. A codec name as the
+   condition (g711_mulaw, amrnb_7.95, ...) means band-limiting plus that codec only; the CHAIN
+   conditions below add gateway transcoding, packet loss, AGC/clipping and MUSAN noise through
+   the full augmentation chain (telephony/pipeline.py). This is a first look at the phone-line
+   domain shift. It is not the project's main evaluation: the community models were trained on
+   this corpus (so it's in-distribution for them), and every Hindi clip here is TTS.
 
 Heavy (~0.5 s per clip for all five models on the laptop's 4 cores, ~2.5 h in total), so the full
 run belongs on the GPU box. Each shard's predictions are saved as soon as it finishes, and a rerun
@@ -14,6 +16,7 @@ skips shards already done, so an interrupted run resumes where it stopped.
     python scripts/eval_clip_baselines.py --threads 8                      # everything
     python scripts/eval_clip_baselines.py --models chhotu_int8 --limit-shards 1 --out smoke
     python scripts/eval_clip_baselines.py --report-only                    # rebuild report from saved shards
+    python scripts/eval_clip_baselines.py --conditions clean tandem_amr4.75 noise10_amr7.95 --out clip_baselines_chain
 """
 
 import argparse
@@ -31,8 +34,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from pehleaap.baselines.turn_models import REGISTRY, load  # noqa: E402
 from pehleaap.data import smart_turn_testset  # noqa: E402
 from pehleaap.eval.clip_metrics import binary_metrics  # noqa: E402
-from pehleaap.paths import RUNS_DIR  # noqa: E402
-from pehleaap.telephony.codecs import narrowband_many  # noqa: E402
+from pehleaap.paths import REPO_ROOT, RUNS_DIR  # noqa: E402
+from pehleaap.telephony.codecs import CODECS, narrowband_many  # noqa: E402
+from pehleaap.telephony.noise import NoiseBank  # noqa: E402
+from pehleaap.telephony.pipeline import AugmentConfig, ChannelParams, load_config, phone_channel_many, sample_params  # noqa: E402
 
 # Clean accuracy (%) at each card's own threshold on smart-turn-v3.2-test.
 CARD_ACCURACY = {
@@ -45,6 +50,38 @@ CARD_ACCURACY = {
 
 CODEC_CHUNK = 200  # clips per ffmpeg run
 
+# Full-chain conditions: name -> (description, ChannelParams fields; None = a random draw from
+# configs/augment.yaml). Unlisted fields keep their defaults: G.711 mu-law, no noise, no loss.
+# Each clip's noise file, offset and random draws come from a seed hashed from its id, the same
+# in every condition, so the SNR sweep compares each clip with itself.
+CHAIN = {
+    "tandem_amr4.75": ("AMR-NB 4.75 kbit/s, then G.711 mu-law (transcoding at the operator's gateway)", {"codec": ("amrnb_4.75", "g711_mulaw")}),
+    "loss3_g711": ("G.711 mu-law, 3% of 20 ms packets lost in bursts of about 2, concealed", {"loss_rate": 0.03, "loss_burst": 2.0}),
+    "agc_clip_g711": (
+        "Phone AGC towards -16 dBFS (up to +20 dB), clipped at 0.25 of full scale, G.711 mu-law",
+        {"agc_target_dbfs": -16.0, "agc_max_gain_db": 20.0, "clip_level": 0.25},
+    ),
+    "noise20_amr7.95": ("MUSAN noise at 20 dB SNR, AMR-NB 7.95", {"codec": ("amrnb_7.95",), "snr_bucket": "20", "snr_db": 20.0}),
+    "noise10_amr7.95": ("MUSAN noise at 10 dB SNR, AMR-NB 7.95", {"codec": ("amrnb_7.95",), "snr_bucket": "10", "snr_db": 10.0}),
+    "noise5_amr7.95": ("MUSAN noise at 5 dB SNR, AMR-NB 7.95", {"codec": ("amrnb_7.95",), "snr_bucket": "5", "snr_db": 5.0}),
+    "mixed": ("One random chain per clip from configs/augment.yaml (no speakerphone echo: the clips have no agent track)", None),
+}
+
+
+def describe(cond: str) -> str:
+    if cond in CHAIN:
+        return CHAIN[cond][0]
+    return "Band-limited to 8 kHz, then this codec; nothing else" if cond in CODECS else "Original 16 kHz audio"
+
+
+def chain_params(meta: dict, cond: str, noises: list[str], cfg: AugmentConfig) -> ChannelParams:
+    seed = int(hashlib.md5(meta["id"].encode()).hexdigest()[:8], 16)
+    fields = CHAIN[cond][1]
+    if fields is None:
+        return sample_params(cfg, np.random.default_rng(seed), noises, speakerphone=False)
+    noise = noises[seed % len(noises)] if "snr_db" in fields else None
+    return ChannelParams(seed=seed, noise=noise, **fields)
+
 
 def in_phone_subset(meta: dict) -> bool:
     """All Hindi clips, plus a fixed ~25% hash sample of English, for the codec conditions."""
@@ -53,20 +90,25 @@ def in_phone_subset(meta: dict) -> bool:
     return int(hashlib.md5(meta["id"].encode()).hexdigest(), 16) % 4 == 0
 
 
-def phone_line(clips: list[np.ndarray], codec: str) -> list[np.ndarray]:
+def phone_line(clips: list[np.ndarray], metas: list[dict], cond: str, bank: NoiseBank | None, cfg: AugmentConfig) -> list[np.ndarray]:
     out = []
     for i in range(0, len(clips), CODEC_CHUNK):
-        out += narrowband_many(clips[i : i + CODEC_CHUNK], codec)
+        chunk = clips[i : i + CODEC_CHUNK]
+        if cond in CODECS:
+            out += narrowband_many(chunk, cond)
+        else:
+            params = [chain_params(m, cond, bank.names, cfg) for m in metas[i : i + CODEC_CHUNK]]
+            out += phone_channel_many(chunk, params, smart_turn_testset.SAMPLE_RATE, bank=bank)
     return out
 
 
-def predict_shard(models: dict, metas: list[dict], clips: list[np.ndarray], conditions: list[str]) -> pd.DataFrame:
+def predict_shard(models: dict, metas: list[dict], clips: list[np.ndarray], conditions: list[str], bank, cfg) -> pd.DataFrame:
     records = []
     for cond in conditions:
         idx = list(range(len(metas))) if cond == "clean" else [i for i, m in enumerate(metas) if in_phone_subset(m)]
         audio = [clips[i] for i in idx]
         if cond != "clean":
-            audio = phone_line(audio, cond)
+            audio = phone_line(audio, [metas[i] for i in idx], cond, bank, cfg)
         probs = {name: model.predict_batch(audio) for name, model in models.items()}
         for j, i in enumerate(idx):
             m = metas[i]
@@ -116,6 +158,15 @@ def main() -> None:
     ap.add_argument("--report-only", action="store_true", help="rebuild the report from saved shards")
     args = ap.parse_args()
     sys.stdout.reconfigure(encoding="utf-8")  # the report has non-ASCII; Windows pipes and logs default to cp1252
+    unknown = [c for c in args.conditions if c != "clean" and c not in CODECS and c not in CHAIN]
+    if unknown:
+        raise SystemExit(f"unknown conditions {unknown}; choose from clean, {', '.join(CODECS)}, {', '.join(CHAIN)}")
+    cfg = load_config(REPO_ROOT / "configs" / "augment.yaml")
+    bank = None
+    if any(c in CHAIN for c in args.conditions):
+        bank = NoiseBank(sr=smart_turn_testset.SAMPLE_RATE)
+        if not bank.files:
+            raise SystemExit("the chain conditions use MUSAN noise: run scripts/get_noise.py first")
 
     out_dir = RUNS_DIR / args.out
     shard_dir = out_dir / "shards"
@@ -137,7 +188,7 @@ def main() -> None:
         if df is None:
             if models is None:
                 models = {name: load(name, threads=args.threads) for name in names}
-            df = predict_shard(models, *smart_turn_testset.read_shard(shard, args.langs), args.conditions)
+            df = predict_shard(models, *smart_turn_testset.read_shard(shard, args.langs), args.conditions, bank, cfg)
             saved.with_suffix(".json").write_text(json.dumps({"langs": args.langs}))
             tmp = saved.with_suffix(".tmp")
             df.to_csv(tmp, index=False)
@@ -176,7 +227,8 @@ def main() -> None:
             "",
             "## 2. Phone-line stress test (all Hindi + 25% hash sample of English)",
             "",
-            "Narrowband 8 kHz + codec only (no noise, echo or packet loss yet).",
+            *[f"- `{c}`: {describe(c)}" for c in args.conditions if c != "clean"],
+            *([f"- Noise: {len(bank.files)} MUSAN noise files (CC BY 4.0), checked against `data/manifests/noise_musan.jsonl`"] if bank else []),
             "",
             "| Model | Lang | Condition | n | Acc | Δ acc vs clean | Cut-in rate | Missed-end rate | AUC |",
             "|---|---|---|---|---|---|---|---|---|",
@@ -193,7 +245,8 @@ def main() -> None:
     else:
         rows = []
 
-    (out_dir / "results.json").write_text(json.dumps({"validation": validation, "phone": rows}, indent=2))
+    conditions = {c: describe(c) for c in args.conditions}
+    (out_dir / "results.json").write_text(json.dumps({"conditions": conditions, "validation": validation, "phone": rows}, indent=2))
     (out_dir / "report.md").write_text("\n".join(lines), encoding="utf-8")
     print("\n".join(lines))
 

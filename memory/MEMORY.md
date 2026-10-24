@@ -1,6 +1,7 @@
 - [User profile](user-profile.md) — the user (they/them) builds pehleaap: Hinglish telephony turn-taking recipe + benchmark
-- [pehleaap status](pehleaap-status.md) — locked decisions (compute = Dev box + Kaggle from Oct 29), schedule (wk1 = Oct 26 2026), done/pending (baseline eval done + merged, PR #6, Oct 24); plan in docs/PLAN.md
-- [Compute setup](two-machine-setup.md) — Dev laptop (GTX 1650) for code/demo; Kaggle T4 for heavy jobs from Oct 29; GPU box (RTX 4000 Ada 20 GB, 24 cores, 63 GB RAM) only until Oct 28 2026
+- [pehleaap status](pehleaap-status.md) — locked decisions (compute = GPU box while it lasts, Kaggle fallback), schedule (wk1 = Oct 26 2026), done/pending (baseline eval done + merged, PR #6, Oct 24); plan in docs/PLAN.md
+- [Compute setup](two-machine-setup.md) — Dev laptop (GTX 1650) for code/demo; GPU box (RTX 4000 Ada 20 GB) for main runs + fine-tuning while it lasts (end unknown); Kaggle T4 = fallback
+- [Don't disturb GPU-box runs](gpu-box-runs-untouched.md) — Dev-box changes must never change a GPU-box job's results; keep scripts backward compatible, verify identical outputs
 - [Shared memory](shared-memory.md) — memory lives in git (this folder) so both machines share it; pull at start, commit + push before switching
 - [Smart Turn repro result](smart-turn-repro-result.md) — v3.2 repro PASS; Hindi test set is 100% synthetic TTS, 18.2% cut-in rate
 - [Git workflow](git-workflow.md) — user commits and raises PRs from copy-paste commands; no gh; repo priyansh1210/pehleaap (public)
