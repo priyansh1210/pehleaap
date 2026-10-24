@@ -5,7 +5,7 @@ a training recipe plus a benchmark. Plan: `docs/PLAN.md`. Machines and runbooks:
 
 ## Shared memory (both machines)
 
-The repo is the only thing shared between machines (the Dev laptop; the RTX 4060 GPU box until Oct 28, 2026), so project memory lives in git,
+The repo is the only thing shared between machines (the Dev laptop; the RTX 4000 Ada GPU box until Oct 28, 2026), so project memory lives in git,
 in `memory/`. Its index is imported here:
 
 @memory/MEMORY.md

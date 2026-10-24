@@ -1,6 +1,6 @@
 ---
 name: two-machine-setup
-description: "Compute: Dev laptop for code/demo, Kaggle T4 for all heavy jobs from 2026-10-29, RTX 4060 GPU box only until 2026-10-28 (baseline eval)"
+description: "Compute: Dev laptop for code/demo, Kaggle T4 for all heavy jobs from 2026-10-29, RTX 4000 Ada GPU box only until 2026-10-28 (baseline eval)"
 metadata:
   node_type: memory
   type: project
@@ -16,8 +16,11 @@ Compute (revised 2026-10-24). The GitHub repo is the only thing shared between m
   quota), full eval sweeps. T4 16 GB (two per session; use T4, Turing like the Dev box) or P100 16 GB; no bf16 → fp16 AMP + GradScaler;
   ~29 GB RAM, 4 vCPUs; ~30 GPU-h/week (varies; user to check in account settings), 12 h sessions. Recordings go up as a private
   dataset; jobs clone a pinned commit. Runner `scripts/kaggle_job.py` not written yet. Details: docs/PLAN.md §3a, docs/machines.md.
-- **GPU box** (RTX 4060, "20 GB VRAM" = almost certainly dedicated+shared; 8 GB dedicated): **only available until 2026-10-28**.
-  It runs the baseline eval (docs/machines.md Job 1) and nothing else. Repo path was `C:\Users\FITT\pehleaap` (may differ).
+- **GPU box** (checked 2026-10-24 by env_check: **RTX 4000 SFF Ada, 20 GB dedicated**, bf16; Core Ultra 9 285 24 cores;
+  63 GB RAM; ~100 GB free on C:; Python 3.12.10): **only available until 2026-10-28**. It runs the baseline eval
+  (docs/machines.md Job 1) and nothing else. Repo at `C:\Users\FITT\Desktop\PRIYANSH!!\pehleaap`.
+  Earlier notes called it an RTX 4060 with 8 GB dedicated; env_check proved that wrong. Job 1 is CPU-only (onnxruntime
+  CPUExecutionProvider), so the 24 cores set its speed (`--threads 24`) and the GPU sits idle during it.
 
 **Why:** the laptop can't train in reasonable time, and the GPU box leaves on Oct 28; Kaggle was the plan's fallback and the
 consent forms already name private Kaggle datasets.

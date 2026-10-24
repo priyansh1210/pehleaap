@@ -1,6 +1,6 @@
 ---
 name: pehleaap-status
-description: "Locked decisions (compute = Dev box + Kaggle from Oct 29), 8-week schedule with dates, done/pending (PR #1-#4 merged; Kaggle switch on branch kaggle-compute)"
+description: "Locked decisions (compute = Dev box + Kaggle from Oct 29), 8-week schedule with dates, done/pending (PR #1-#5 merged; GPU-box baseline eval done 2026-10-24)"
 metadata:
   node_type: memory
   type: project
@@ -10,7 +10,7 @@ metadata:
 
 The full plan is in the repo at `docs/PLAN.md` (approved 2026-10-23). Don't duplicate it here; read it.
 
-**Locked decisions (user-chosen):** compute = Dev box + **Kaggle from 2026-10-29** (changed 2026-10-24: the RTX 4060 GPU box is
+**Locked decisions (user-chosen):** compute = Dev box + **Kaggle from 2026-10-29** (changed 2026-10-24: the GPU box (RTX 4000 Ada 20 GB) is
 only available until Oct 28 and runs the baseline eval only; [[two-machine-setup]]);
 recording = bulk browser/app two-track recording (Craig on Discord or Zoom per-participant files) with telephony simulated afterwards,
 plus a 1–2 h real-PSTN set used only for testing; 40+ speakers (~17–20 h); demo = web call with 8 kHz telephony simulation + baseline/ours toggle,
@@ -30,7 +30,9 @@ Pipecat 1.13 (`requirements-demo.txt`); `pehleaap/pipecat_ext/` (ClipModelTurnAn
 (serves :7860; offline end-to-end test passes; Smart Turn parity with Pipecat's own analyzer < 1e-3). 26 tests in .venv, 4 more in .venv-demo.
 
 **Done 2026-10-24 (PR #3, merge c8f4606):** project memory moved into the repo so both machines share it ([[shared-memory]]).
-Dev box is set up (autoMemoryDirectory -> D:/pehleaap/memory); the GPU box still needs `scripts\setup_claude_memory.ps1`.
+Dev box is set up (autoMemoryDirectory -> D:/pehleaap/memory); GPU box (2026-10-24): repo cloned, `.venv` built, 64 tests pass,
+smoke eval passed (chhotu, 1 shard, 39 s), full Job 1 started with `--threads 24`; `setup_claude_memory.ps1` done there too (autoMemoryDirectory ->
+C:/Users/FITT/Desktop/PRIYANSH!!/pehleaap/memory). From Bash `!`, use forward slashes: `scripts/setup_claude_memory.ps1`.
 
 **Decision (user, 2026-10-24):** the full baseline eval (~2.5 h, too heavy for the laptop's 8 GB RAM) runs on the GPU box; runbook in
 `docs/machines.md`. The laptop runs the demo and small smoke tests.
@@ -49,8 +51,14 @@ session built from real Smart Turn Hindi clips: every SHIFT/HOLD/INTERRUPT right
 recording, not on TTS. Not built yet: NOISE_ECHO (speakerphone sessions will show spurious BC/INTERRUPT), ASR hookup
 (text rules wait for it), Gradio verify app.
 
-**Pending, week 1:** user to run the baseline eval on the GPU box before Oct 28 (runbook in docs/machines.md; setup_claude_memory only
-if running Claude Code there) and bring back report.md; user to create + phone-verify a Kaggle account, put the API token in
+**Done 2026-10-24 (GPU box, Job 1, 73 min CPU-only, `--threads 24`):** full clean vs phone-line baseline eval, all 31.5k clips.
+Saved in `docs/results/week1_clip_baselines_report.md` + `_results.json`. Every wrapper matches its card within 0.15 pt (eng and hin).
+Phone line (G.711 mu-law / AMR-NB 7.95), Hindi (all synthetic TTS): Smart Turn acc 90.3 -> 86.4 / 82.8, cut-in 17.7% -> 27.5% / 35.3%;
+chhotu collapses (-23 to -27 pt, cut-in up to 66%); deveshu and codewithmoin hold up (<=2.3 pt drop); abhishek is weak everywhere
+(60 eng / 68 hin) and flat across conditions. Narrowband + codec only, no noise/echo/loss yet; in-distribution for the community models.
+Cite Smart Turn's phone-line drop with that scope (synthetic Hindi, its own test set).
+
+**Pending, week 1:** user to create + phone-verify a Kaggle account, put the API token in
 `%USERPROFILE%\.kaggle\kaggle.json` on the Dev box and note the weekly GPU quota; me: `scripts/kaggle_job.py` + a smoke job on a T4; user to review the consent forms (contact details, deletion date, college ethics
 approval?); Craig vs Zoom pilot with one pair (`scripts/check_alignment.py`); start recruiting and booking >=15 sessions; HingCoS access
 email; PSTN provider signup (Twilio dual-channel first); LiveKit v1-mini baseline (time-boxed to 1 day); user to try the ding-bot demo by voice.

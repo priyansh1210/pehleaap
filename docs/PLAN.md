@@ -28,13 +28,13 @@ On top of these, 8 kHz codecs and speakerphone echo cause false barge-ins.
 
 | Area | Decision |
 |---|---|
-| Compute | **Dev box + Kaggle** (see §3a; revised Oct 24). The **Dev box** is this laptop: GTX 1650 4 GB, 8 GB RAM, used for code, tests, labeling UI, eval and the Pipecat demo. The RTX 4060 **GPU box** is only available until Oct 28, 2026, so it runs the week-1 baseline eval only. From Oct 29, all training, batch ASR and heavy evaluation sweeps run on **Kaggle** (T4 16 GB, about 30 GPU-hours a week). |
+| Compute | **Dev box + Kaggle** (see §3a; revised Oct 24). The **Dev box** is this laptop: GTX 1650 4 GB, 8 GB RAM, used for code, tests, labeling UI, eval and the Pipecat demo. The **GPU box** (RTX 4000 SFF Ada, 20 GB) is only available until Oct 28, 2026, so it runs the week-1 baseline eval only. From Oct 29, all training, batch ASR and heavy evaluation sweeps run on **Kaggle** (T4 16 GB, about 30 GPU-hours a week). |
 | Recording | Bulk two-channel recording over a browser or app at 16 kHz or higher, with telephony simulated afterwards. A small real-phone (PSTN) set of about 1-2 h, used only as a test set. |
 | Speakers | 40 or more distinct adult speakers, targeting about 15-20 h. |
 | Demo | A web call with an 8 kHz telephony simulator in the pipeline and a baseline/ours toggle, plus recorded real-phone side-by-sides. |
 
 **Dev box (this machine):** Windows 11, i5-11300H (4 cores / 8 threads), GTX 1650 4 GB, 8 GB RAM, Python 3.11.9 at `D:\python`, git present, ffmpeg not installed, about 460 GB free on D:. `D:\pehleaap` is empty and is not a git repo.
-**GPU box (until Oct 28, 2026 only):** RTX 4060, reported as "20 GB VRAM" (almost certainly Task Manager's dedicated plus *shared* figure; every 4060 has 8 GB dedicated). It runs the week-1 baseline eval only.
+**GPU box (until Oct 28, 2026 only):** RTX 4000 SFF Ada Generation, 20 GB dedicated VRAM (bf16), Core Ultra 9 285 (24 cores), 63 GB RAM (env_check, Oct 24; it is not an RTX 4060 as first reported). It runs the week-1 baseline eval only.
 
 ---
 
@@ -159,7 +159,7 @@ D:\pehleaap\
 
 ## 3a. Compute: develop on the Dev box, run heavy jobs on Kaggle
 
-The RTX 4060 GPU box is only available until **Oct 28, 2026**, so it runs the week-1 baseline eval and nothing
+The GPU box (RTX 4000 SFF Ada, 20 GB) is only available until **Oct 28, 2026**, so it runs the week-1 baseline eval and nothing
 else (`docs/machines.md`). From **Oct 29, all heavy jobs run on Kaggle** (decided with the user on Oct 24, 2026).
 Kaggle was the original plan's fallback, and the consent forms already name private Kaggle datasets as storage.
 
