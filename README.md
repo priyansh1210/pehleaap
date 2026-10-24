@@ -38,7 +38,7 @@ e.g. the gyan.dev `full_build-shared` build. Put it on `PATH` or set `PEHLEAAP_F
 | | Dev box (laptop) | Kaggle (from Oct 29, 2026) |
 |---|---|---|
 | Does | code, tests, labeling UI, eval on small slices, Pipecat demo, recording checks | all training, batch ASR, augmentation precompute, full eval sweeps |
-| Code | edit, commit, push | jobs clone a pinned commit (`scripts/kaggle_job.py`, to come) |
+| Code | edit, commit, push | jobs clone the pushed commit (`scripts/kaggle_job.py`) |
 | Data | masters `data/raw` (recordings) | private Kaggle datasets, checked against the manifests |
 
 The RTX 4060 GPU box is only available until Oct 28, 2026, and runs the baseline eval (`docs/machines.md`).
