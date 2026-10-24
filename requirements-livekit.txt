@@ -1,0 +1,23 @@
+# LiveKit turn-detector baseline, installed in its own venv (.venv-livekit) on the GPU box.
+# Kept apart from requirements.txt so livekit-agents never enters the research/training stack.
+# The LiveKit Model License only allows its models to be used with the LiveKit Agents framework
+# and forbids using their outputs to improve or develop other models: comparison numbers only,
+# never training data or labels. scripts/eval_livekit_v1mini.py drives the model only through
+# livekit-agents' public TurnDetector API.
+#
+#   python -m venv .venv-livekit
+#   .venv-livekit\Scripts\python -m pip install -r requirements-livekit.txt
+#   .venv-livekit\Scripts\python -m pip install -e . --no-deps
+livekit-agents==1.8.9
+
+# The pehleaap modules the eval reuses (test-set loader, phone-line conditions, metrics), at the
+# same versions as requirements.txt.
+numpy==2.4.6
+scipy==1.17.1
+soundfile==0.14.0
+soxr==1.1.0
+pyarrow==26.0.0
+pandas==3.1.0
+pyyaml==6.0.3
+onnxruntime==1.31.0
+huggingface_hub==2.3.0
