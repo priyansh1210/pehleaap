@@ -32,9 +32,10 @@ from pehleaap.audio.vad import SileroVAD, hop_s  # noqa: E402
 from pehleaap.eval.eot_events import timeout_curve  # noqa: E402
 from pehleaap.labeling.asr import AsrConfig, WhisperASR, read_words, transcribe, write_words  # noqa: E402
 from pehleaap.labeling.config import load_config  # noqa: E402
+from pehleaap.labeling.echo import split_echo  # noqa: E402
 from pehleaap.labeling.events import extract_events, overlap  # noqa: E402
 from pehleaap.labeling.ipu import attach_words, ipus_from_probs  # noqa: E402
-from pehleaap.labeling.schema import SHIFT, TYPES, to_pause_events, write_events  # noqa: E402
+from pehleaap.labeling.schema import NOISE_ECHO, SHIFT, TYPES, Event, to_pause_events, write_events  # noqa: E402
 from pehleaap.paths import DATA_DIR, REPO_ROOT  # noqa: E402
 
 ROLES = ("agent", "customer")
@@ -92,14 +93,34 @@ def label_session(session_dir: Path, out_root: Path, cfg, vad: SileroVAD, recogn
     if words is not None:
         for role in ROLES:
             attach_words(ipus[role], words.get(role, []))
-    events = [
-        replace(e, session=session, speaker=speakers[e.channel], device=devices[e.channel])
-        for e in extract_events(ipus, end_s, cfg)
+
+    # Speakerphone echo (labeling/echo.py): the customer's track first (their phone plays the agent out loud), then
+    # the agent's, checked against the customer's real speech only. Echo frames leave the speech the event rules see;
+    # IPUs that held both echo and speech are re-cut, so their words are attached again.
+    speech, echo, echo_delay = {}, {}, {}
+    speech["customer"], echo["customer"], echo_delay["customer"] = split_echo(
+        audio["customer"], audio["agent"], cfg.vad_sr, ipus["customer"], ipus["agent"], cfg)
+    speech["agent"], echo["agent"], echo_delay["agent"] = split_echo(
+        audio["agent"], audio["customer"], cfg.vad_sr, ipus["agent"], speech["customer"], cfg)
+    for role in ROLES:
+        if words is not None and echo_delay[role] is not None:
+            attach_words(speech[role], words.get(role, []))
+            attach_words(echo[role], words.get(role, []))
+    echo_events = [
+        Event(role, NOISE_ECHO, u.start, ipu_s=round(u.dur, 3), overlap_s=round(overlap(u, speech[other]), 3),
+              text=u.text, echo_lag_s=u.echo_lag_s, echo_corr=u.echo_corr)
+        for role, other in (("customer", "agent"), ("agent", "customer"))
+        for u in echo[role]
     ]
+    events = sorted(
+        (replace(e, session=session, speaker=speakers[e.channel], device=devices[e.channel])
+         for e in extract_events(speech, end_s, cfg) + echo_events),
+        key=lambda e: e.t_event,
+    )
 
     with open(out / "ipus.jsonl", "w", encoding="utf-8") as f:
         for role in ROLES:
-            for u in ipus[role]:
+            for u in sorted(speech[role] + echo[role], key=lambda u: u.start):  # echo segments carry echo_lag_s
                 f.write(json.dumps({"channel": role, **asdict(u)}, ensure_ascii=False) + "\n")
     write_events(out / "events.jsonl", events)
 
@@ -109,9 +130,11 @@ def label_session(session_dir: Path, out_root: Path, cfg, vad: SileroVAD, recogn
         "tracks": {role: str(p) for role, p in tracks.items()},
         "duration_s": round(end_s, 2),
         "vad_seconds": round(vad_s, 1),
-        "speech_s": {role: round(sum(u.dur for u in ipus[role]), 1) for role in ROLES},
-        "overlap_s": round(sum(overlap(u, ipus["customer"]) for u in ipus["agent"]), 1),
-        "n_ipus": {role: len(ipus[role]) for role in ROLES},
+        "speech_s": {role: round(sum(u.dur for u in speech[role]), 1) for role in ROLES},  # echo left out
+        "echo_s": {role: round(sum(u.dur for u in echo[role]), 1) for role in ROLES},
+        "overlap_s": round(sum(overlap(u, speech["customer"]) for u in speech["agent"]), 1),
+        "n_ipus": {role: len(speech[role]) for role in ROLES},
+        "echo_delay_s": echo_delay,  # None: no speakerphone echo found on that channel
         "asr": asr_info,  # None: duration rules only
         "n_words": {role: len(words.get(role, [])) for role in ROLES} if words is not None else None,
         "counts": {role: {ty: sum(e.channel == role and e.type == ty for e in events) for ty in TYPES} for role in ROLES},

@@ -1,7 +1,7 @@
 """Human verification of the automatic labels (plan §4.2 step 4).
 
-Which events a person checks: every BC, INTERRUPT and HOLD_REQ (the rules for them are the least
-certain), every event of a session listed as PSTN (the real-phone test set), and a fixed 10% of
+Which events a person checks: every BC, INTERRUPT, HOLD_REQ and NOISE_ECHO (the rules for them are
+the least certain), every event of a session listed as PSTN (the real-phone test set), and a fixed 10% of
 SHIFT/HOLD. A further 10%, picked by hash, is shown to a second annotator too, for Cohen's kappa.
 Both picks hash the event id, so they don't change as sessions are added.
 
@@ -17,13 +17,12 @@ import time
 from dataclasses import replace
 from pathlib import Path
 
-from pehleaap.labeling.schema import BC, HOLD, HOLD_REQ, INTERRUPT, SHIFT, TYPES, Event
+from pehleaap.labeling.schema import BC, HOLD, HOLD_REQ, INTERRUPT, NOISE_ECHO, SHIFT, TYPES, Event
 
-NOISE_ECHO = "noise_echo"  # speakerphone echo or noise that VAD took for speech (plan §4.2; no automatic rule yet)
 NONE = "none"  # not a turn-taking event at all
-LABELS = TYPES + (NOISE_ECHO, NONE)
+LABELS = TYPES + (NONE,)  # what an annotator can say an event really is (noise_echo also covers TV, traffic, coughs)
 CORRECT, WRONG, UNSURE = "correct", "wrong", "unsure"
-ALWAYS = (BC, INTERRUPT, HOLD_REQ)
+ALWAYS = (BC, INTERRUPT, HOLD_REQ, NOISE_ECHO)
 
 
 def _hash01(text: str) -> float:
