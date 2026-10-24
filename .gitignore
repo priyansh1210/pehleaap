@@ -1,4 +1,4 @@
-# Python (.venv = research/training stack, .venv-demo = Pipecat demo stack)
+# Python (.venv = research/training stack, .venv-demo = Pipecat demo stack, .venv-livekit = LiveKit baseline)
 .venv*/
 __pycache__/
 *.pyc
