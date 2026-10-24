@@ -82,7 +82,7 @@ def state_dict_from_onnx(path: str | Path) -> dict[str, torch.Tensor]:
         if name in state:
             raise ValueError(f"two ONNX weights map to {name}")
         state[name] = init[weight[0]].T  # MatMul stores (in, out); nn.Linear wants (out, in)
-    return {k: torch.from_numpy(np.ascontiguousarray(v)) for k, v in state.items()}
+    return {k: torch.from_numpy(np.array(v)) for k, v in state.items()}  # a writable, contiguous copy
 
 
 def from_published(onnx_path: str | Path | None = None) -> SmartTurnV3:
