@@ -16,8 +16,9 @@ and the week-by-week schedule, is in [`docs/PLAN.md`](docs/PLAN.md).
 | Two-track clock alignment and drift checks | `pehleaap/audio/align.py`, `scripts/check_alignment.py` |
 | Consent forms (EN/HI), recording protocol, scenario cards, fake-PII cards | `docs/` |
 | Community Hinglish end-of-turn models (deveshu, abhishek, codewithmoin, Chhotu) behind one interface | `pehleaap/baselines/turn_models.py` |
-| Baselines on clean vs 8 kHz G.711 / AMR-NB audio (heavy: runs on the GPU box until Oct 28) | `scripts/eval_clip_baselines.py`, runbook in `docs/machines.md` |
+| Baselines on clean vs 8 kHz G.711 / AMR-NB audio (heavy: runs on the GPU box) | `scripts/eval_clip_baselines.py`, runbook in `docs/machines.md` |
 | Real-time phone line (G.711 bit-identical to ffmpeg, ~6 ms delay) | `pehleaap/telephony/realtime.py` |
+| Smart Turn v3.2 in PyTorch, loaded from the published fp32 ONNX weights (matches it within 4e-6), as the starting point for fine-tuning | `pehleaap/models/smart_turn.py` |
 | Phone-line augmentation chain: room reverb, noise at an SNR bucket, speakerphone echo, AGC, clipping, band-pass, codecs (with G.711 tandem), packet loss + jitter with concealment. Keeps timing within 1 ms; synthetic noise until noise datasets are added | `pehleaap/telephony/pipeline.py`, `configs/augment.yaml`, `scripts/augment_examples.py` |
 | Pipecat demo skeleton: browser call → phone line → Silero VAD → any turn model → ding | `demo/bot.py`, `pehleaap/pipecat_ext/` |
 | Labeling engine v0: Silero VAD → IPUs → SHIFT / HOLD / BC / INTERRUPT / HOLD_REQ events (JSONL). Duration rules only until ASR runs; no NOISE_ECHO yet | `pehleaap/labeling/`, `configs/labeling.yaml`, `scripts/label_session.py` |
@@ -42,7 +43,7 @@ e.g. the gyan.dev `full_build-shared` build. Put it on `PATH` or set `PEHLEAAP_F
 | Code | edit, commit, push | jobs clone the pushed commit (`scripts/kaggle_job.py`) |
 | Data | masters `data/raw` (recordings) | private Kaggle datasets, checked against the manifests |
 
-The RTX 4060 GPU box is only available until Oct 28, 2026, and runs the baseline eval (`docs/machines.md`).
+The GPU box (RTX 4000 SFF Ada, 20 GB) runs the main evaluations and fine-tuning for as long as it is available (end date unknown); runbooks in `docs/machines.md`. Kaggle is the fallback.
 Audio never goes in git. `data/manifests/*.jsonl` (sha256 per file) does, and
 `python scripts\env_check.py --verify-data` proves a machine or job holds the same data.
 

@@ -1,17 +1,18 @@
 ---
 name: pehleaap-status
-description: "Locked decisions (compute = Dev box + Kaggle from Oct 29), 8-week schedule with dates, done/pending (PR #1-#8 merged; GPU-box baseline eval done; Kaggle runner merged + smoke-tested)"
+description: "Locked decisions (compute = GPU box while it lasts, Kaggle fallback), 8-week schedule with dates, done/pending (PR #1-#9 merged; GPU-box baseline eval done; Kaggle runner + augmentation chain merged)"
 metadata:
   node_type: memory
   type: project
   originSessionId: 0952188d-bc75-46ae-a49b-65b82c0ee291
-  modified: 2026-10-24T12:10:32.038Z
+  modified: 2026-10-24T13:49:34.363Z
 ---
 
 The full plan is in the repo at `docs/PLAN.md` (approved 2026-10-23). Don't duplicate it here; read it.
 
-**Locked decisions (user-chosen):** compute = Dev box + **Kaggle from 2026-10-29** (changed 2026-10-24: the GPU box (RTX 4000 Ada 20 GB) is
-only available until Oct 28 and runs the baseline eval only; [[two-machine-setup]]);
+**Locked decisions (user-chosen):** compute = develop on the Dev box; **main runs and fine-tuning on the GPU box (RTX 4000 Ada 20 GB)
+for as long as it is available** (user, 2026-10-24, later the same day: end date unknown, "i will try to work as much as i can on it");
+Kaggle (set up and smoke-tested) is the fallback the day it goes ([[two-machine-setup]], [[gpu-box-runs-untouched]]);
 recording = bulk browser/app two-track recording (Craig on Discord or Zoom per-participant files) with telephony simulated afterwards,
 plus a 1–2 h real-PSTN set used only for testing; 40+ speakers (~17–20 h); demo = web call with 8 kHz telephony simulation + baseline/ours toggle,
 plus recorded PSTN clips (no Indian phone number/KYC).
@@ -71,14 +72,36 @@ and all BtbN Linux builds have AMR-NB but no libgsm; no conda. Fix: template fet
 PEHLEAAP_FFMPEG_EXTRA and `paths.ffmpeg_bin(encoder)` picks the first build with each encoder. /kaggle/input layout still unknown
 (no dataset attached yet).
 
-**Done 2026-10-24 (Dev box, not yet committed): phone-line augmentation chain** (plan §4.3, a week-2 deliverable done early).
+**Done 2026-10-24 (Dev box; PR #9, merge 5bcb7ac): phone-line augmentation chain** (plan §4.3, a week-2 deliverable done early).
 `pehleaap/telephony/{noise,echo,channel,pipeline}.py`, `configs/augment.yaml` (test: equals the defaults), `scripts/augment_examples.py`
 (writes listening examples of Hindi Smart Turn clips to runs/augment_examples/), `apply_codec_many` in codecs.py; 19 new tests (87 pass).
 Checked: whole chain within 0.12 ms of the input timing; echo lands at its set delay (0.300 s measured); 24 ms/clip batched (2 s clips),
 13.5 s for a 25-min track. Jitter model: FIFO queueing behind exponential delay spikes, fixed buffer = jitter x 3.5-6 → 0.3-7% late.
 The first AR(1)-smoothed version almost never produced late packets, so it was replaced. Noise is synthetic (white/pink/brown/hum) until noise datasets
 go in data/external/noise/ (licenses from memory, verify before downloading: MUSAN CC BY 4.0, DEMAND CC BY-SA 3.0, ESC-50 CC BY-NC 3.0; which to use is the user's call).
-Not done: eval_clip_baselines conditions using the full chain; Pipecat live demo still G.711 only.
+Pipecat live demo still G.711 only.
+
+**In progress 2026-10-24 (Dev box, uncommitted): Job 3 prep.** User chose MUSAN only (license checked on openslr.org/17: CC BY 4.0).
+`scripts/get_noise.py` streams the 11 GB archive (order is music, speech, noise: noise is LAST, so the whole archive streams through),
+keeps musan/noise/ → data/external/noise/musan/, fetches 16 MB byte ranges over 4 connections (each retried on its own; 2.5 MB/s
+vs 1.2 for one stream; bytes checked identical to a plain download) and writes/verifies `data/manifests/noise_musan.jsonl`.
+Mirror: openslr.elda.org; trmal.net (3 MB/s) and www.openslr.org had expired TLS certs on 2026-10-24 (never disable
+verification). `eval_clip_baselines.py` gained CHAIN conditions (tandem_amr4.75, loss3_g711, agc_clip_g711, noise20/10/5_amr7.95,
+mixed); a clip's seed is hashed from its id, so the noise is paired across SNRs; ~50 ms/clip of augmentation. Job 3 runbook in
+docs/machines.md (after Job 2; ~2.5-3 h with --threads 24). Committed on branch `job3-chain-eval` WITHOUT the manifest (the user
+asked to commit before the download finished); `data/manifests/noise_musan.jsonl` follows in a small PR. **GPU box: don't run
+get_noise.py or Job 3 until that manifest PR is merged** (it would write its own untracked manifest, and the next pull would fail on it).
+
+**Fine-tuning prep (2026-10-24, Dev box, uncommitted; user asked "how can we do the fine tuning code here you dont know the results
+from the gpu box": answer, training code doesn't depend on eval results, which only tune config later and arrive via git).**
+Pipecat publishes Smart Turn v3.2 as ONNX only (HF pipecat-ai/smart-turn-v3: cpu=int8, gpu=fp32); training code is on GitHub
+(pipecat-ai/smart-turn train.py, commit 4786657: whisper-tiny encoder with max_source_positions 400, attention pool, classifier;
+lr 5e-5, 4 epochs, batch 384, warmup 0.2, wd 0.01, BCE pos_weight from batch stats; data pipecat-ai/smart-turn-data-v3.2-train,
+86 files, CC BY 4.0). `pehleaap/models/smart_turn.py` rebuilds it in PyTorch from the fp32 ONNX (MatMul weights unnamed and transposed,
+matched by the named bias after each; k_proj has no bias). Parity: max |p| diff 3.3e-6 on 256 real clips, 0 decision flips;
+tests/test_smart_turn_torch.py. Note int8 (our baseline) vs fp32 differ by up to 0.66 on single clips at equal accuracy:
+compare a fine-tune against both. Do NOT add an fp32 entry to turn_models.REGISTRY while GPU-box jobs use the default `--models`
+(saved shards would be recomputed). Next: training script (bf16 on the GPU box, fp16 on Kaggle), smoke-tested on the Dev box.
 
 **Pending, week 1:** user to review the consent forms (contact details, deletion date, college ethics
 approval?); Craig vs Zoom pilot with one pair (`scripts/check_alignment.py`); start recruiting and booking >=15 sessions; HingCoS access

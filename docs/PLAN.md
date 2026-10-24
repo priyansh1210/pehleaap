@@ -28,13 +28,13 @@ On top of these, 8 kHz codecs and speakerphone echo cause false barge-ins.
 
 | Area | Decision |
 |---|---|
-| Compute | **Dev box + Kaggle** (see §3a; revised Oct 24). The **Dev box** is this laptop: GTX 1650 4 GB, 8 GB RAM, used for code, tests, labeling UI, eval and the Pipecat demo. The **GPU box** (RTX 4000 SFF Ada, 20 GB) is only available until Oct 28, 2026, so it runs the week-1 baseline eval only. From Oct 29, all training, batch ASR and heavy evaluation sweeps run on **Kaggle** (T4 16 GB, about 30 GPU-hours a week). |
+| Compute | **Dev box + GPU box, Kaggle as fallback** (see §3a; revised Oct 24). The **Dev box** is this laptop: GTX 1650 4 GB, 8 GB RAM, used for code, tests, labeling UI, eval and the Pipecat demo. The **GPU box** (RTX 4000 SFF Ada, 20 GB) runs the main runs and the fine-tuning for as long as it is available; its end date is unknown (possibly around Oct 28, 2026). When it goes, training, batch ASR and heavy evaluation sweeps move to **Kaggle** (T4 16 GB, about 30 GPU-hours a week), which is already set up. |
 | Recording | Bulk two-channel recording over a browser or app at 16 kHz or higher, with telephony simulated afterwards. A small real-phone (PSTN) set of about 1-2 h, used only as a test set. |
 | Speakers | 40 or more distinct adult speakers, targeting about 15-20 h. |
 | Demo | A web call with an 8 kHz telephony simulator in the pipeline and a baseline/ours toggle, plus recorded real-phone side-by-sides. |
 
 **Dev box (this machine):** Windows 11, i5-11300H (4 cores / 8 threads), GTX 1650 4 GB, 8 GB RAM, Python 3.11.9 at `D:\python`, git present, ffmpeg not installed, about 460 GB free on D:. `D:\pehleaap` is empty and is not a git repo.
-**GPU box (until Oct 28, 2026 only):** RTX 4000 SFF Ada Generation, 20 GB dedicated VRAM (bf16), Core Ultra 9 285 (24 cores), 63 GB RAM (env_check, Oct 24; it is not an RTX 4060 as first reported). It runs the week-1 baseline eval only.
+**GPU box (end date unknown, possibly around Oct 28, 2026):** RTX 4000 SFF Ada Generation, 20 GB dedicated VRAM (bf16), Core Ultra 9 285 (24 cores), 63 GB RAM (env_check, Oct 24; it is not an RTX 4060 as first reported). It runs the main evaluations and fine-tuning while it lasts.
 
 ---
 
@@ -159,9 +159,11 @@ D:\pehleaap\
 
 ## 3a. Compute: develop on the Dev box, run heavy jobs on Kaggle
 
-The GPU box (RTX 4000 SFF Ada, 20 GB) is only available until **Oct 28, 2026**, so it runs the week-1 baseline eval and nothing
-else (`docs/machines.md`). From **Oct 29, all heavy jobs run on Kaggle** (decided with the user on Oct 24, 2026).
-Kaggle was the original plan's fallback, and the consent forms already name private Kaggle datasets as storage.
+**Revised again (user, Oct 24): the GPU box (RTX 4000 SFF Ada, 20 GB) runs the main runs and fine-tuning for as long as
+it is available.** Its end date is unknown (possibly around Oct 28, 2026), so GPU-heavy work is front-loaded onto it and
+`docs/machines.md` holds its job runbooks. Everything below describes Kaggle, the fallback, which takes over the day the GPU
+box goes. Kaggle was the original plan's fallback too, and the consent forms already name private Kaggle datasets as storage.
+Training code must therefore run on both: bf16 on the Ada card, fp16 AMP + GradScaler on Kaggle's T4, with the same checkpoints.
 
 ### Specs and roles
 
@@ -390,7 +392,7 @@ All evaluation is **causal**: a decision at time t uses audio ≤ t only, follow
 **Week 1 (Foundation)**
 
 - Repo scaffold (private GitHub), venv, ffmpeg full build, `pipecat-ai[silero,webrtc]`, onnxruntime, torch (CUDA for the GTX 1650).
-- **Compute setup (revised Oct 24):** the GPU box runs the baseline eval before Oct 28. Kaggle: an account with phone verification (needed for GPU and internet), the API token on the Dev box, `scripts/kaggle_job.py`, and a smoke job that clones the repo, installs the pinned environment and runs pytest and `env_check.py` on a T4. A 100-step Smart Turn training smoke job follows once the training code exists.
+- **Compute setup (revised Oct 24):** the GPU box runs the baseline evals and, while it lasts, fine-tuning. Kaggle, as the fallback: an account with phone verification (needed for GPU and internet), the API token on the Dev box, `scripts/kaggle_job.py`, and a smoke job that clones the repo, installs the pinned environment and runs pytest and `env_check.py` on a T4. A 100-step Smart Turn training smoke job follows once the training code exists.
 - Smart Turn v3.2 ONNX plus three community models running offline. LiveKit v1-mini attempted (time-boxed to 1 day).
 - Eval harness skeleton with synthetic stereo unit tests.
 - Pipecat SmallWebRTC bot skeleton with a telephony-sim processor.
@@ -503,7 +505,7 @@ All evaluation is **causal**: a decision at time t uses audio ≤ t only, follow
 
 1. Run `git init` in `D:\pehleaap`, then scaffold the layout in §3, add `.gitignore`, and pin requirements, including `requirements-gpu.txt` and the `scripts/` helpers.
 2. Install the ffmpeg full build and verify AMR-NB. Create the venv and install torch (CUDA), onnxruntime, pipecat-ai, silero-vad, transformers, datasets, gradio, soundfile, librosa and psutil.
-2b. **(Revised Oct 24.)** The GPU box only runs the baseline eval, before Oct 28. The user creates and phone-verifies a Kaggle account and puts its API token on the Dev box.
+2b. **(Revised Oct 24.)** The GPU box runs the baseline evals and, while it lasts, fine-tuning. The user creates and phone-verifies a Kaggle account (the fallback) and puts its API token on the Dev box.
 3. Download the Smart Turn v3.2 ONNX and the v3.2 test set (Hindi+English slices). Write `baselines/smart_turn.py` and `eval/` with tests. Reproduce the published accuracy.
 4. Draft `docs/consent_*.md`, `recording_protocol.md`, scenario cards and fake-PII cards, ready for the user to review before any recording.
 5. Prepare the Craig and Zoom pilot instructions for the user to run with one pair, plus `audio/align.py` to check that recording.
