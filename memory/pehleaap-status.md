@@ -1,11 +1,11 @@
 ---
 name: pehleaap-status
-description: "Locked decisions (compute = GPU box while it lasts, Kaggle fallback), 8-week schedule with dates, done/pending (PR #1-#9 merged; GPU-box baseline eval done; Kaggle runner + augmentation chain merged)"
+description: "Locked decisions (compute = GPU box while it lasts, Kaggle fallback), 8-week schedule with dates, done/pending (PR #1-#10 merged; GPU-box baseline eval done; Kaggle runner + augmentation chain merged)"
 metadata:
   node_type: memory
   type: project
   originSessionId: 0952188d-bc75-46ae-a49b-65b82c0ee291
-  modified: 2026-10-24T13:49:34.363Z
+  modified: 2026-10-24T14:06:36.563Z
 ---
 
 The full plan is in the repo at `docs/PLAN.md` (approved 2026-10-23). Don't duplicate it here; read it.
@@ -81,18 +81,23 @@ The first AR(1)-smoothed version almost never produced late packets, so it was r
 go in data/external/noise/ (licenses from memory, verify before downloading: MUSAN CC BY 4.0, DEMAND CC BY-SA 3.0, ESC-50 CC BY-NC 3.0; which to use is the user's call).
 Pipecat live demo still G.711 only.
 
-**In progress 2026-10-24 (Dev box, uncommitted): Job 3 prep.** User chose MUSAN only (license checked on openslr.org/17: CC BY 4.0).
+**Job 3 prep (2026-10-24, Dev box, merged in PR #10).** User chose MUSAN only (license checked on openslr.org/17: CC BY 4.0).
 `scripts/get_noise.py` streams the 11 GB archive (order is music, speech, noise: noise is LAST, so the whole archive streams through),
 keeps musan/noise/ → data/external/noise/musan/, fetches 16 MB byte ranges over 4 connections (each retried on its own; 2.5 MB/s
 vs 1.2 for one stream; bytes checked identical to a plain download) and writes/verifies `data/manifests/noise_musan.jsonl`.
 Mirror: openslr.elda.org; trmal.net (3 MB/s) and www.openslr.org had expired TLS certs on 2026-10-24 (never disable
 verification). `eval_clip_baselines.py` gained CHAIN conditions (tandem_amr4.75, loss3_g711, agc_clip_g711, noise20/10/5_amr7.95,
 mixed); a clip's seed is hashed from its id, so the noise is paired across SNRs; ~50 ms/clip of augmentation. Job 3 runbook in
-docs/machines.md (after Job 2; ~2.5-3 h with --threads 24). Committed on branch `job3-chain-eval` WITHOUT the manifest (the user
+docs/machines.md (after Job 2; ~2.5-3 h with --threads 24). Merged as PR #10 (merge bd2204c, which also brought in the GPU box's Job 2 branch) WITHOUT the manifest (the user
 asked to commit before the download finished); `data/manifests/noise_musan.jsonl` follows in a small PR. **GPU box: don't run
 get_noise.py or Job 3 until that manifest PR is merged** (it would write its own untracked manifest, and the next pull would fail on it).
+Download finished 2026-10-24 (11.09 GB streamed in 39 min, 934 files = 930 noise wavs + LICENSE/ANNOTATIONS/README, 687 MB);
+manifest goes in branch `musan-manifest` together with the **noise split**: `NoiseBank(part="train"|"test")` keeps 80/20 of the
+files by md5 of the path (749 train / 181 test); Job 3 uses only `part="test"`, training only `part="train"`, so no noise recording
+is shared. Licenses inside MUSAN noise: free-sound files public domain; sound-bible files per-file (e.g. CC BY 3.0, see its LICENSE)
+— fine for augmentation since the audio is never redistributed.
 
-**Fine-tuning prep (2026-10-24, Dev box, uncommitted; user asked "how can we do the fine tuning code here you dont know the results
+**Fine-tuning prep (2026-10-24, Dev box, merged in PR #10; user asked "how can we do the fine tuning code here you dont know the results
 from the gpu box": answer, training code doesn't depend on eval results, which only tune config later and arrive via git).**
 Pipecat publishes Smart Turn v3.2 as ONNX only (HF pipecat-ai/smart-turn-v3: cpu=int8, gpu=fp32); training code is on GitHub
 (pipecat-ai/smart-turn train.py, commit 4786657: whisper-tiny encoder with max_source_positions 400, attention pool, classifier;
