@@ -8,8 +8,11 @@ knows the codec). Thresholds are cross-fitted: each half of the clips is scored 
 tuned on the other half. Only the phone subset (all Hindi + 25% of English) is used, so clean and
 phone rows cover the same clips.
 
+`--shipped NAME=summary.json` also scores a fine-tuned model with the thresholds it ships with (tuned on its
+own dev clips by train_eot.py, so not on these): the fair "as deployed" number.
+
     python scripts/calibrate_thresholds.py --runs clip_baselines clip_baselines_codecs
-    python scripts/calibrate_thresholds.py --runs clip_baselines clip_baselines_codecs clip_baselines_chain eot_v0_eval --out calibration_all
+    python scripts/calibrate_thresholds.py --runs clip_baselines clip_baselines_codecs clip_baselines_chain eot_v0_eval --shipped eot_v0=runs/eot_v0/summary.json --out calibration_all
 """
 
 import argparse
@@ -51,7 +54,9 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--runs", nargs="+", required=True, help="eval_clip_baselines.py output folders under runs/")
     ap.add_argument("--out", default="calibration")
+    ap.add_argument("--shipped", nargs="*", default=[], metavar="NAME=SUMMARY_JSON", help="a fine-tuned model's summary.json with dev_thresholds")
     args = ap.parse_args()
+    shipped = {name: json.loads(Path(path).read_text(encoding="utf-8"))["dev_thresholds"] for name, path in (s.split("=", 1) for s in args.shipped)}
 
     df = load_predictions(args.runs)
     models = [c[2:] for c in df.columns if c.startswith("p_")]
@@ -69,21 +74,25 @@ def main() -> None:
     for model in models:
         sub = df[df[f"p_{model}"].notna()]
         card = REGISTRY[model].threshold if model in REGISTRY else 0.5
-        res = calibrate(sub, model, card)
+        res = calibrate(sub, model, card, shipped.get(model))
         th = deployment_thresholds(sub, model)
-        results["models"][model] = {"card_threshold": card, "deployment_thresholds": th, "rows": res.to_dict(orient="records")}
+        results["models"][model] = {"card_threshold": card, "deployment_thresholds": th, "shipped_thresholds": shipped.get(model),
+                                    "rows": res.to_dict(orient="records")}
+        has_shipped = model in shipped
         wide = res.pivot_table(index=["language", "condition"], columns="variant", values=["accuracy", "cut_in", "n"], aggfunc="first")
         lines += ["", f"## {model} (card threshold {card})", "",
                   "Thresholds tuned on all of these clips, per channel/language (reference only: these are test clips; a shipped model"
                   " takes its thresholds from dev data, as train_eot.py's summary.json does): " + ", ".join(f"{k} {v:.2f}" for k, v in sorted(th.items())), "",
-                  "| Lang | Condition | n | Acc card | channel | +lang | cond+lang | Cut-in card | Cut-in +lang |",
-                  "|---|---|---|---|---|---|---|---|---|"]
+                  *([f"Shipped thresholds (from its dev clips): " + ", ".join(f"{k} {v:.2f}" for k, v in sorted(shipped[model].items())), ""] if has_shipped else []),
+                  "| Lang | Condition | n | Acc card | channel | +lang | cond+lang | Cut-in card | Cut-in +lang |" + (" Acc shipped | Cut-in shipped |" if has_shipped else ""),
+                  "|---|---|---|---|---|---|---|---|---|" + ("---|---|" if has_shipped else "")]
         for lang, cond in sorted(wide.index, key=lambda k: (k[0], order[k[1]])):
             r = wide.loc[(lang, cond)]
             lines.append(
                 f"| {lang} | {cond} | {int(r[('n', 'card')])} | {r[('accuracy', 'card')]:.2f} | {r[('accuracy', 'channel')]:.2f} | "
                 f"{r[('accuracy', 'channel+language')]:.2f} | {r[('accuracy', 'condition+language')]:.2f} | "
                 f"{100 * r[('cut_in', 'card')]:.1f}% | {100 * r[('cut_in', 'channel+language')]:.1f}% |"
+                + (f" {r[('accuracy', 'shipped')]:.2f} | {100 * r[('cut_in', 'shipped')]:.1f}% |" if has_shipped else "")
             )
     out = RUNS_DIR / args.out
     out.mkdir(parents=True, exist_ok=True)
