@@ -23,7 +23,7 @@ and the week-by-week schedule, is in [`docs/PLAN.md`](docs/PLAN.md).
 | Phone-line fine-tuning of Smart Turn: English + Hindi training clips through the augmentation chain on the fly, resumable checkpoints, ONNX export scored by the baseline eval (`--onnx`). Smoke-tested on the Dev box; the real run is GPU box Job 4 | `scripts/prepare_eot_train.py`, `scripts/train_eot.py`, `pehleaap/train/`, `configs/train_eot.yaml` |
 | Phone-line augmentation chain: room reverb, noise at an SNR bucket, speakerphone echo, AGC, clipping, band-pass, codecs (with G.711 tandem), packet loss + jitter with concealment. Keeps timing within 1 ms; synthetic noise until noise datasets are added | `pehleaap/telephony/pipeline.py`, `configs/augment.yaml`, `scripts/augment_examples.py` |
 | Pipecat demo skeleton: browser call → phone line → Silero VAD → any turn model → ding | `demo/bot.py`, `pehleaap/pipecat_ext/` |
-| Labeling engine v0: Silero VAD → IPUs → SHIFT / HOLD / BC / INTERRUPT / HOLD_REQ events (JSONL). Duration rules only until ASR runs; no NOISE_ECHO yet | `pehleaap/labeling/`, `configs/labeling.yaml`, `scripts/label_session.py` |
+| Labeling engine v0: Silero VAD → IPUs → SHIFT / HOLD / BC / INTERRUPT / HOLD_REQ events (JSONL). With `--asr`, Whisper large-v3 transcribes each speech segment so the backchannel, hold-request and digit rules apply; no NOISE_ECHO yet | `pehleaap/labeling/`, `configs/labeling.yaml`, `scripts/label_session.py`, `scripts/make_tts_session.py` |
 
 ## Setup (both machines, Windows)
 
