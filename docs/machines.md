@@ -100,6 +100,22 @@ Each shard's predictions are saved as it finishes (`runs\clip_baselines\shards\`
 (sleep, reboot, Ctrl+C), rerun the same command and it resumes. When it is done, bring back
 `runs\clip_baselines\report.md` and `results.json` (small) to the Dev box, e.g. into `docs\results\`.
 
+**Job 3: the same baselines over the full phone-line chain** (after Job 2 has finished; about 2.5-3 h with
+`--threads 24`). It adds gateway transcoding, packet loss, AGC/clipping and MUSAN noise at 20/10/5 dB
+(`CHAIN` in `scripts/eval_clip_baselines.py`), plus one random chain per clip from `configs/augment.yaml`.
+The codec-only conditions are unchanged, so Job 1 and Job 2 numbers stay comparable. `get_noise.py` streams
+openslr's MUSAN archive, keeps only its noise part (about 0.7 GB) and checks every file against the committed
+`data/manifests/noise_musan.jsonl`. A rerun skips the download if the copy already checks out.
+
+```powershell
+git pull
+.venv\Scripts\python scripts\get_noise.py
+.venv\Scripts\python scripts\eval_clip_baselines.py --models chhotu_int8 --limit-shards 1 --conditions clean noise5_amr7.95 --out smoke_chain
+.venv\Scripts\python scripts\eval_clip_baselines.py --conditions clean tandem_amr4.75 loss3_g711 agc_clip_g711 noise20_amr7.95 noise10_amr7.95 noise5_amr7.95 mixed --threads 24 --out clip_baselines_chain *> runs\clip_baselines_chain.log
+```
+
+Bring back `runs\clip_baselines_chain\report.md` and `results.json`, as for Job 1.
+
 ## Kaggle (from Oct 29, 2026)
 
 All training, batch ASR, augmentation precompute and full eval sweeps (plan §3a). Measured by the smoke job

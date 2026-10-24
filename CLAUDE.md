@@ -5,7 +5,7 @@ a training recipe plus a benchmark. Plan: `docs/PLAN.md`. Machines and runbooks:
 
 ## Shared memory (both machines)
 
-The repo is the only thing shared between machines (the Dev laptop; the RTX 4000 Ada GPU box until Oct 28, 2026), so project memory lives in git,
+The repo is the only thing shared between machines (the Dev laptop; the RTX 4000 Ada GPU box while it lasts), so project memory lives in git,
 in `memory/`. Its index is imported here:
 
 @memory/MEMORY.md
@@ -23,8 +23,10 @@ in `memory/`. Its index is imported here:
 ## Working rules
 
 - The user commits, pushes and raises PRs from copy-paste PowerShell commands. Don't commit or push unless asked.
-- Develop on the Dev box. Training, batch ASR and full evaluations run on Kaggle (plan §3a); the GPU box only runs the
-  baseline eval, until Oct 28, 2026.
+- Develop on the Dev box. Main runs (full evaluations, fine-tuning, batch ASR) run on the GPU box for as long as it is
+  available (end date unknown, maybe around Oct 28, 2026); Kaggle is the ready fallback (plan §3a).
+- Nothing done on the Dev box may change a GPU-box job's results: keep the scripts its jobs use backward compatible, add new
+  behaviour behind new options, and check that existing outputs come out identical before handing a change over.
 - No real customer calls ever; fake PII only; adult, consenting speakers.
 - Tests: `.venv\Scripts\python -m pytest` (research stack); `.venv-demo\Scripts\python -m pytest tests\test_pipecat_ext.py` (Pipecat).
 - Windows: entry points that print non-ASCII call `sys.stdout.reconfigure(encoding="utf-8")` (pipes default to cp1252).
