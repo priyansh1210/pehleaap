@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 0952188d-bc75-46ae-a49b-65b82c0ee291
-  modified: 2026-10-24T20:12:14.688Z
+  modified: 2026-10-24T21:49:09.791Z
 ---
 
 The full plan is in the repo at `docs/PLAN.md` (approved 2026-10-23). Don't duplicate it here; read it.
@@ -175,6 +175,38 @@ dev-set artifact). Shipped dev thresholds (0.44-0.57) ~= 0.5; no recalibration n
 training (run predated PR #14; rescoring matched best_dev exactly); original kept as runs/eot_v0/summary.orig.json (GPU box).
 Caveats: synthetic Hindi TTS, chains = training augmentation family. Weakest: 5 dB noise (-5.5 vs clean). model.onnx stays on the
 GPU box (runs/eot_v0/, 32 MB, not in git). Next: real-call validation, int8 quantisation, Pipecat demo wiring.
+**Backed up to the Dev box (2026-10-25 02:36, via Chrome Remote Desktop file transfer):** `weights/eot_v0/model.onnx`
+(sha256 38fbe51a…a40202) and `best.pt` (step 900, sha256 158b561e…5cf40c), gitignored. Checked on the Dev box: ONNX matches
+best.pt within 5e-6; clean Hindi shard 0 (n=132): eot_v0 93.9% / cut-in 3.4% / AUC 0.993 vs Smart Turn int8 93.2% / 11.9% / 0.986.
+int8 quantisation of eot_v0 is being written on the GPU box (pehleaap/models/quantize.py, scripts/quantize_eot.py): don't
+touch those files from the Dev box until that PR is merged. The GPU box also adds `onnx_with_state_dict()` to
+pehleaap/models/smart_turn.py (eot_v0 weights grafted into Pipecat's fp32 graph, for upstream-identical quantisation).
+
+**Demo wired to eot_v0 (2026-10-25 ~03:00, Dev box; PR #19, merge c5aae30).** `turn_models.load_any(name)`: registry name, or
+weights/<name>/model.onnx / a .onnx path at threshold 0.5 (our models stay OUT of REGISTRY: eval defaults). pipecat_ext:
+`ModelSwitch` + `SwitchTurnAnalyzer` (active model decides; the others are scored on a background thread after the decision and
+logged as "would say"), models cached per process. demo/bot.py: loads PEHLEAAP_TURN_MODELS (default smart_turn_v3.2_int8,eot_v0;
+missing weights skipped with a warning), starts on eot_v0, `/switch` page + `/switch/state` + `POST /switch/{name}` on Pipecat's
+runner `app`. Tests: 6 pass in .venv-demo (incl. the end-to-end ding test), load_any test in .venv. Live check: server up, routes
+flip the active model.
+**User's live test (2026-10-25 03:04-03:07, one speaker, mic → simulated G.711):** the beep (bot takes the turn) confused the
+user at first: explain it as "the bot would start answering now" (no TTS yet). Clear sentence ends: both models END ~0.3 s after
+speech (VAD stop 0.2 s + ~0.1 s inference; eot_v0 fp32 ~95 ms vs Smart Turn int8 ~130 ms on the laptop CPU, 1 thread). The user
+confirmed 3 mid-sentence pauses: eot_v0 said wait at all 3 (p 0.06/0.08/0.26) where Smart Turn said END (0.71/0.91/0.93), and
+Smart Turn, while deciding, actually cut in once. Anecdotal (one speaker, a few turns), not a result to cite, but it's the
+behaviour the benchmark predicts. The 3.2 s beep after a "wait" is Pipecat's silence fallback when the caller stays quiet.
+The user asked "were the demo results good": answered honestly (right direction, matches the benchmark, but ~20 decisions from
+one speaker on a clean line; the real test is labelled real recordings). The user works through the night, no breaks (2026-10-25).
+
+**Label-check app (2026-10-25 ~03:30, Dev box, uncommitted).** `pehleaap/labeling/verify.py` (needs_review: all BC/INTERRUPT/
+HOLD_REQ + PSTN sessions (device "pstn" in sessions.csv) + md5(event_id) 10% of SHIFT/HOLD; double_annotated: independent 10%
+hash; verdicts appended to data/labels/<session>/verify/<annotator>.jsonl, last wins; apply_verdicts: correct → verified,
+wrong → retyped, "none"/unsure/unchecked → dropped; cohens_kappa) and `scripts/verify_app.py` (stdlib ThreadingHTTPServer on
+127.0.0.1:8765, single page: stereo clip agent L / customer R, loudness envelopes with event marker, keys 1/2/3, S H B I Q X 0
+for corrections, N/E/Space/arrows; `--all` for the pilot, `--double-only` for annotator 2, `--summary` → events_verified.jsonl +
+per-type auto-label accuracy + kappa). Not Gradio (would add ~20 packages to every install; plan §4.2 notes it). NOISE_ECHO and
+"none" exist only as correction labels (no automatic rule yet). Checked: 5 tests incl. a live-server test, page JS passes
+`node --check`; the Chrome extension was not connected, so the page hasn't been seen rendered by Claude.
 
 **eot_v0 int8 (GPU box, 2026-10-25 03:30):** `scripts/quantize_eot.py` -> runs/eot_v0/model_int8.onnx (8.7 MB, not in git); doc
 `docs/results/week1_eot_v0_int8.md`. Upstream recipe (QDQ, entropy, Conv/MatMul/Gemm only, 1024 CLEAN train clips) on eot_v0 weights
