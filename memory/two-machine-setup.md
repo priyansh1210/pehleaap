@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 0952188d-bc75-46ae-a49b-65b82c0ee291
-  modified: 2026-10-24T12:29:58.860Z
+  modified: 2026-10-24T13:52:58.786Z
 ---
 
 Compute (revised twice on 2026-10-24). The GitHub repo is the only thing shared between machines ([[shared-memory]]).
@@ -21,6 +21,9 @@ Compute (revised twice on 2026-10-24). The GitHub repo is the only thing shared 
 - **Kaggle** = the fallback, ready now: T4 16 GB (two per session) or P100; no bf16 → fp16 AMP + GradScaler; measured 2026-10-24:
   2× T4 14.6 GB usable, 31 GB RAM, 2 cores / 4 threads; 30 GPU-h/week (+20 TPU-h), 12 h sessions. Jobs clone a pushed commit via
   `scripts/kaggle_job.py` (Dev box only, where the API token is); smoke test passes. Details: docs/PLAN.md §3a, docs/machines.md.
+
+**Access (2026-10-24):** the user set up Chrome Remote Desktop, so they can reach the GPU box's screen from the Dev box at any
+time (to run runbook commands or talk to its own Claude Code session). Claude on the Dev box still can't run commands there.
 
 **Why:** the laptop can't train in reasonable time; the GPU box is much faster than Kaggle's T4 but may go any day.
 **How to apply:** front-load GPU-heavy work (evals, fine-tuning) onto the GPU box while it exists. Write training code that runs
