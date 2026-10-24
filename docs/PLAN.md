@@ -264,7 +264,7 @@ Rough guesses, to be replaced by measured throughput after the first week-3 run:
    - **HOLD_REQ:** the hold-phrase regex on the transcript, followed by a silence ≥ 3 s. Verified by a human.
    - **NOISE_ECHO:** from real speakerphone sessions where customer-VAD fires with high coherence to the agent channel, plus synthesized cases (§4.3).
    - **Digit spans:** tag IPUs from the ASR digits (Hindi and English number words) so breakdowns are possible.
-4. **Human verification** (`verify_app.py`, Gradio):
+4. **Human verification** (`verify_app.py`; built Oct 25 as a small local web page on Python's standard library instead of Gradio, which would have added ~20 packages to every machine's install. It's keyboard-driven, serves on 127.0.0.1 only, and plays each event in stereo with both speakers' loudness drawn. Logic in `labeling/verify.py`; `--summary` writes `events_verified.jsonl` and reports kappa):
    - About 2,000 events: all BC, INTERRUPT, HOLD_REQ and PSTN events, plus a random SHIFT/HOLD sample.
    - Double-annotate 10% and report **Cohen's κ**.
    - **The test set uses verified labels only.**
