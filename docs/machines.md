@@ -116,6 +116,20 @@ git pull
 
 Bring back `runs\clip_baselines_chain\report.md` and `results.json`, as for Job 1.
 
+**LiveKit turn-detector v1-mini** (clean + the 7 codecs on all clips; about 10 min with `--workers 12`). It
+runs from its own venv, so livekit-agents stays out of `.venv`. Its license allows use only with LiveKit
+Agents and forbids using its outputs to improve other models: the script drives it through livekit-agents'
+`TurnDetector` API only, and its predictions are comparison numbers, never training data or labels.
+Add the chain conditions above with `--conditions` once MUSAN is downloaded.
+
+```powershell
+py -3.12 -m venv .venv-livekit
+.venv-livekit\Scripts\python -m pip install -r requirements-livekit.txt
+.venv-livekit\Scripts\python -m pip install -e . --no-deps
+.venv-livekit\Scripts\python scripts\eval_livekit_v1mini.py --limit-shards 1 --conditions clean amrnb_4.75 --out livekit_smoke
+.venv-livekit\Scripts\python scripts\eval_livekit_v1mini.py --workers 12 *> runs\livekit_v1mini.log
+```
+
 ## Kaggle (from Oct 29, 2026)
 
 All training, batch ASR, augmentation precompute and full eval sweeps (plan §3a). Measured by the smoke job
