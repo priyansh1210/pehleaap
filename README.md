@@ -22,7 +22,7 @@ and the week-by-week schedule, is in [`docs/PLAN.md`](docs/PLAN.md).
 | Cross-fitted decision-threshold calibration: how much of a model's phone-line drop a re-picked threshold recovers, from saved predictions | `pehleaap/eval/calibration.py`, `scripts/calibrate_thresholds.py` |
 | Phone-line fine-tuning of Smart Turn: English + Hindi training clips through the augmentation chain on the fly, resumable checkpoints, ONNX export scored by the baseline eval (`--onnx`). Smoke-tested on the Dev box; the real run is GPU box Job 4 | `scripts/prepare_eot_train.py`, `scripts/train_eot.py`, `pehleaap/train/`, `configs/train_eot.yaml` |
 | Phone-line augmentation chain: room reverb, noise at an SNR bucket, speakerphone echo, AGC, clipping, band-pass, codecs (with G.711 tandem), packet loss + jitter with concealment. Keeps timing within 1 ms; synthetic noise until noise datasets are added | `pehleaap/telephony/pipeline.py`, `configs/augment.yaml`, `scripts/augment_examples.py` |
-| Pipecat demo skeleton: browser call → phone line → Silero VAD → any turn model → ding | `demo/bot.py`, `pehleaap/pipecat_ext/` |
+| Pipecat demo: browser call → phone line → Silero VAD → turn model → ding, with a live switch between Smart Turn v3.2 and eot_v0 (`/switch`); the other model's verdict is logged at every pause | `demo/bot.py`, `pehleaap/pipecat_ext/` |
 | Labeling engine v0: Silero VAD → IPUs → SHIFT / HOLD / BC / INTERRUPT / HOLD_REQ events (JSONL). With `--asr`, Whisper large-v3 transcribes each speech segment so the backchannel, hold-request and digit rules apply; no NOISE_ECHO yet | `pehleaap/labeling/`, `configs/labeling.yaml`, `scripts/label_session.py`, `scripts/make_tts_session.py` |
 
 ## Setup (both machines, Windows)
@@ -76,8 +76,11 @@ python -m venv .venv-demo
 ```
 
 Speak a sentence and stop: the bot dings when the turn model decides you've finished. A ding mid-sentence
-is a cut-in. Pick the model with `$env:PEHLEAAP_TURN_MODEL` (any name in `turn_models.REGISTRY`) and turn
-the simulated phone line off with `$env:PEHLEAAP_PHONE_LINE = "0"`.
+is a cut-in. Open http://localhost:7860/switch in a second tab to switch between Smart Turn v3.2 (the
+baseline) and eot_v0 (ours; needs `weights\eot_v0\model.onnx`) mid-call; the terminal shows both models'
+verdicts at every pause. Load other models with `$env:PEHLEAAP_TURN_MODELS` (registry names or folders
+under `weights\`), pick the first decider with `$env:PEHLEAAP_TURN_MODEL`, and turn the simulated phone
+line off with `$env:PEHLEAAP_PHONE_LINE = "0"`.
 
 ## Licences and credits
 
