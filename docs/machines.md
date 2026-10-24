@@ -102,20 +102,40 @@ Each shard's predictions are saved as it finishes (`runs\clip_baselines\shards\`
 
 ## Kaggle (from Oct 29, 2026)
 
-All training, batch ASR, augmentation precompute and full eval sweeps (plan §3a). Kaggle T4 16 GB (two per
-session) or P100 16 GB, about 29 GB RAM, about 30 GPU-hours a week, 12 h per session. Use the T4.
+All training, batch ASR, augmentation precompute and full eval sweeps (plan §3a). Measured by the smoke job
+on 2026-10-24 (`--gpu t4`):
+
+| Item | Value |
+|---|---|
+| gpu | 2× Tesla T4, 14.6 GB dedicated each, compute capability 7.5, no native bf16 (use fp16 AMP) |
+| torch | 2.14.1+cu126, CUDA available |
+| ram / cpu / disk | 31.3 GB / 2 cores, 4 threads / about 1 TB free |
+| python | 3.11.9 (uv-managed venv) |
+| setup time | clone + venv + full `requirements.txt` install in about 1 min (the install itself 40-55 s) |
+| ffmpeg | Ubuntu 6.1.1 (G.711, GSM, Opus; no AMR-NB) plus the pinned johnvansickle 7.0.2 static build for AMR-NB (no libgsm), found through `PEHLEAAP_FFMPEG_EXTRA` |
+| quota | 30 GPU-h/week, 12 h per session; CPU sessions are free |
 
 ### One-time setup (you, in the browser)
 
 1. Create a Kaggle account, or use an existing one, and **verify your phone number** in its settings.
    Without phone verification, notebooks get neither a GPU nor internet access.
-2. Settings → API → **Create New Token**. Save the downloaded `kaggle.json` as `%USERPROFILE%\.kaggle\kaggle.json`
-   on the Dev box. It is a secret: never put it in the repo.
-3. Note the weekly GPU quota shown in the settings and paste it here: ______ h/week.
+2. https://www.kaggle.com/settings/api → **Generate New Token**, and copy it. On the Dev box, save it as the only
+   content of `%USERPROFILE%\.kaggle\access_token` (no extension; `access_token.txt` also works). It is a secret:
+   never put it in the repo.
+3. Check it: `.venv\Scripts\python scripts\kaggle_job.py quota` prints the weekly GPU hours. On 2026-10-24: **30 GPU-h/week** (and 20 TPU-h).
 
 ### Jobs
 
-Pushed from the Dev box by `scripts/kaggle_job.py` (not written yet): it clones this repo at the current commit
-into a script kernel, installs the pinned environment, runs one job with the private data datasets attached and
-saves `runs/<id>/` as the kernel output, which it then downloads. Recordings go up as the **private** dataset
+`scripts/kaggle_job.py` pushes a job from the Dev box as a private script kernel (`pehleaap-<name>`). On Kaggle,
+`scripts/kaggle_job_template.py` clones this repo at the current (pushed) commit, installs Python 3.11.9 and
+`requirements.txt` into a venv with uv, and runs the command from the repo root. The runner waits, then downloads
+`job.log`, `env_check.md`, `job.json` and the job's `runs/` folder into `runs\kaggle\<name>\output\`.
+
+```powershell
+.venv\Scripts\python scripts\kaggle_job.py run smoke --gpu t4 -- python -m pytest     # first check: env + tests on a T4
+.venv\Scripts\python scripts\kaggle_job.py status smoke
+.venv\Scripts\python scripts\kaggle_job.py fetch smoke
+```
+
+GPU sessions (`--gpu t4`) use the weekly quota; CPU sessions (the default) don't. Recordings go up as the **private** dataset
 `pehleaap-raw` (a new version after each recording day) and are checked against `data/manifests/raw.jsonl`.

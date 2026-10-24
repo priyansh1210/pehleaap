@@ -1,6 +1,6 @@
 """Print this machine's specs and toolchain, and optionally verify data manifests.
 
-Run on both the Dev box and the GPU box, and commit the output to docs/machines.md:
+Run on every machine (Kaggle jobs save it as env_check.md), and commit the output to docs/machines.md:
 
     python scripts/env_check.py --markdown >> docs/machines.md
     python scripts/env_check.py --verify-data        # before every training run
@@ -26,6 +26,18 @@ def _run(cmd: list[str]) -> str:
         return ""
 
 
+def _cpu_name() -> str:
+    if platform.system() == "Windows":
+        return _run(["powershell", "-NoProfile", "-Command", "(Get-CimInstance Win32_Processor).Name"])
+    try:  # Linux (Kaggle): platform.processor() is often empty
+        for line in Path("/proc/cpuinfo").read_text().splitlines():
+            if line.startswith("model name"):
+                return line.split(":", 1)[1].strip()
+    except OSError:
+        pass
+    return platform.processor()
+
+
 def _version(module: str) -> str:
     try:
         return getattr(importlib.import_module(module), "__version__", "installed")
@@ -40,9 +52,7 @@ def collect() -> dict[str, str]:
         "host": platform.node(),
         "os": f"{platform.system()} {platform.release()} ({platform.version()})",
         "python": sys.version.split()[0],
-        "cpu": _run(["powershell", "-NoProfile", "-Command", "(Get-CimInstance Win32_Processor).Name"])
-        if platform.system() == "Windows"
-        else platform.processor(),
+        "cpu": _cpu_name(),
         "cpu_cores": f"{psutil.cpu_count(logical=False)} physical / {psutil.cpu_count()} logical",
         "ram_gb": f"{psutil.virtual_memory().total / 2**30:.1f}",
         "disk_free_gb": f"{shutil.disk_usage(REPO_ROOT).free / 2**30:.0f}",
@@ -51,7 +61,7 @@ def collect() -> dict[str, str]:
     # Dedicated VRAM as the driver reports it. Task Manager's "GPU memory" adds shared system
     # RAM on top of this, which is why a card can show "20 GB" while having 8 GB to train with.
     smi = _run(["nvidia-smi", "--query-gpu=name,memory.total,driver_version", "--format=csv,noheader"])
-    info["gpu (nvidia-smi)"] = smi or "none"
+    info["gpu (nvidia-smi)"] = "; ".join(smi.splitlines()) or "none"  # one line per GPU (Kaggle has two T4s)
     try:
         import torch
 
@@ -73,11 +83,15 @@ def collect() -> dict[str, str]:
 
     try:
         ff = ffmpeg_bin()
-        encoders = _run([ff, "-hide_banner", "-encoders"])
         info["ffmpeg"] = _run([ff, "-hide_banner", "-version"]).splitlines()[0]
-        info["ffmpeg codecs"] = ", ".join(
-            c for c in ["libopencore_amrnb", "libgsm", "libopus", "pcm_mulaw", "pcm_alaw"] if c in encoders
-        )
+        codecs = []
+        for c in ["libopencore_amrnb", "libgsm", "libopus", "pcm_mulaw", "pcm_alaw"]:
+            try:
+                other = ffmpeg_bin(c)
+            except FileNotFoundError:
+                continue
+            codecs.append(c if other == ff else f"{c} (from {other})")  # Kaggle: AMR-NB comes from a second build
+        info["ffmpeg codecs"] = ", ".join(codecs)
     except FileNotFoundError as e:
         info["ffmpeg"] = f"MISSING: {e}"
 

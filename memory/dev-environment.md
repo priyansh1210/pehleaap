@@ -17,8 +17,9 @@ metadata:
 (venv `.venv`, pins install fine, 64 tests pass). ffmpeg 9.0.1 gyan.dev full build from winget is on PATH (amrnb/gsm/opus present),
 so no `~\tools` install. Has winget. The auto-mode classifier blocked running `setup_claude_memory.ps1` for me: the user runs it.
 
-**Kaggle** (from 2026-10-29): API token goes in `%USERPROFILE%\.kaggle\kaggle.json` on the Dev box (secret, never in git).
-Kaggle CLI not installed yet; it comes with `scripts/kaggle_job.py`.
+**Kaggle** (from 2026-10-29): CLI `kaggle==2.2.4` in `.venv` (pinned in requirements.txt; 2.2.5 skipped as only 2 days old).
+Auth = API token from kaggle.com/settings/api saved as `%USERPROFILE%\.kaggle\access_token` (or `.txt`, or env KAGGLE_API_TOKEN),
+never in git. Importing `kaggle` auto-authenticates and prints login help on failure; kaggle_job.py silences that import.
 
 Gotchas:
 - Windows PowerShell 5.1 wraps any stderr line (e.g. the HF "unauthenticated requests" warning) as `NativeCommandError`. This is not a failure; check the exit code.
