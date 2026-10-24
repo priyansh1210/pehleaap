@@ -154,3 +154,12 @@ GPU box, 2026-10-25 00:01: Job 3 DONE; report `docs/results/week1_chain_baseline
 are mostly calibration (AUC 0.93-0.96, best thr ~0.95), but noise loses real information (AUC 0.86 at 5 dB; best-threshold acc
 still 12-14 pts below clean), so the fix is training on noisy phone audio (eot_v0), not recalibration alone. codewithmoin is
 the most robust (worst -7.6, AUC 0.944). chhotu collapses (-32 to -37). Next: full `train_eot.py --out eot_v0`, then eot_v0_eval.
+
+**eot_v0 RESULTS (GPU box, 2026-10-25 02:10):** report `docs/results/week1_eot_v0_report.md`. Best step 900 (22 min train).
+Test set, Hindi n=1284 @0.5: clean 90.3 -> 94.1 (McNemar p=2e-6; cut-in 17.7% -> 6.0%, missed end 2.4% -> 5.8%), noise5 69.5 -> 88.6,
+mixed 73.5 -> 91.9, tandem 76.4 -> 93.1; beats test-tuned Smart Turn thresholds by 8-11 pts under noise/chains and every baseline
+(codewithmoin closest, 0.5-2.6 behind). English clean (7820) 94.3 -> 95.4. Clean audio did NOT get worse on test (dev slip was a
+dev-set artifact). Shipped dev thresholds (0.44-0.57) ~= 0.5; no recalibration needed. dev_thresholds were recomputed after
+training (run predated PR #14; rescoring matched best_dev exactly); original kept as runs/eot_v0/summary.orig.json (GPU box).
+Caveats: synthetic Hindi TTS, chains = training augmentation family. Weakest: 5 dB noise (-5.5 vs clean). model.onnx stays on the
+GPU box (runs/eot_v0/, 32 MB, not in git). Next: real-call validation, int8 quantisation, Pipecat demo wiring.
