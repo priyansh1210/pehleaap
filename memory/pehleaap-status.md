@@ -1,11 +1,11 @@
 ---
 name: pehleaap-status
-description: "Locked decisions (compute = GPU box while it lasts, Kaggle fallback), 8-week schedule with dates, done/pending (PR #1-#10 merged; GPU-box baseline eval done; Kaggle runner + augmentation chain merged)"
+description: "Locked decisions (compute = GPU box while it lasts, Kaggle fallback), 8-week schedule with dates, done/pending (PR #1-#13 merged; GPU-box baseline eval done; Kaggle runner + augmentation chain merged)"
 metadata:
   node_type: memory
   type: project
   originSessionId: 0952188d-bc75-46ae-a49b-65b82c0ee291
-  modified: 2026-10-24T15:30:34.385Z
+  modified: 2026-10-24T16:07:53.778Z
 ---
 
 The full plan is in the repo at `docs/PLAN.md` (approved 2026-10-23). Don't duplicate it here; read it.
@@ -108,7 +108,7 @@ tests/test_smart_turn_torch.py. Note int8 (our baseline) vs fp32 differ by up to
 compare a fine-tune against both. Do NOT add an fp32 entry to turn_models.REGISTRY while GPU-box jobs use the default `--models`
 (saved shards would be recomputed). Next: training script (bf16 on the GPU box, fp16 on Kaggle), smoke-tested on the Dev box.
 
-**Training script (2026-10-24 evening, Dev box, uncommitted): GPU box Job 4 in docs/machines.md.** Train set
+**Training script (2026-10-24 evening, Dev box; PR #13, merge 148e778): GPU box Job 4 in docs/machines.md.** Train set
 pipecat-ai/smart-turn-data-v3.2-train = 83 shards / 41.4 GB / 23 languages; per shard ~961 of 3,265 clips are eng+hin (~80k
 total; Hindi all chirp3 TTS). `scripts/prepare_eot_train.py` → `data/external/eot-train/` (EotStore: audio.int16 memmap +
 index.csv, last 8 s per clip, 3% dev by md5(id); resumable; `--delete-shards`). `pehleaap/train/eot_data.py` (EpochKeys sampler:
@@ -119,6 +119,14 @@ model.onnx via the legacy TorchScript exporter: no onnxscript needed, parity 6e-
 (GTX 16xx quirk) → precision "auto" picks fp32 there, bf16 on Ada, fp16 on T4; NaN loss stops the run. Augmentation ~77 ms/clip
 per worker on the Dev box. `eval_clip_baselines.py --onnx NAME=PATH` scores a local ONNX at threshold 0.5 (defaults unchanged).
 Smoke: 6 steps on 1 shard fine end to end (fp32 GTX 1650; 4 min mostly Windows worker start-up). 99 tests pass.
+
+**Threshold calibration (2026-10-24 night, Dev box, uncommitted; user picked it over ASR / verify app).** `pehleaap/eval/calibration.py`
+(best_threshold = accuracy-optimal, middle of ties; 2-fold cross-fitting by md5(id) % 2; variants card / channel (clean vs phone) /
+channel+language / condition+language = upper bound) and `scripts/calibrate_thresholds.py --runs <eval runs>` (reads saved
+predictions.csv only, phone subset, seconds). Runbook in docs/machines.md after Job 4: run on Jobs 1-2 now, again after Jobs 3-4.
+Local check (132 Hindi clips, one shard): Smart Turn AMR 4.75 card 86.4 → 89.4 cross-fitted, cut-in 28.8% → 16.9%, phone/hin
+threshold 0.93. "Deployment thresholds" in the report are tuned on test clips = reference only; train_eot.py now writes dev-tuned
+thresholds per channel/language into summary.json (`dev_thresholds`) and `best_threshold` per dev row. 102 tests pass.
 
 **Pending, week 1:** user to review the consent forms (contact details, deletion date, college ethics
 approval?); Craig vs Zoom pilot with one pair (`scripts/check_alignment.py`); start recruiting and booking >=15 sessions; HingCoS access

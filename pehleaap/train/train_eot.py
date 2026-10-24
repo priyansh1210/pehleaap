@@ -31,6 +31,7 @@ import torch
 import yaml
 from torch.utils.data import DataLoader
 
+from pehleaap.eval.calibration import best_threshold
 from pehleaap.eval.clip_metrics import binary_metrics
 from pehleaap.models.smart_turn import SmartTurnV3, from_published
 from pehleaap.paths import REPO_ROOT, RUNS_DIR
@@ -120,7 +121,8 @@ def loader(keys, augmenter: Augmenter, batch: int, workers: int, pin: bool) -> D
 
 @torch.no_grad()
 def evaluate(model: SmartTurnV3, dev: DataLoader, device: torch.device, autocast) -> list[dict]:
-    """Accuracy, AUC and cut-in rate on the dev clips, per language, clean and through the phone line."""
+    """Accuracy, AUC and cut-in rate on the dev clips, per language, clean and through the phone line,
+    plus the accuracy-optimal threshold for each (what the model should ship with, see eval/calibration.py)."""
     model.eval()
     probs, labels, langs, phone = [], [], [], []
     for b in dev:
@@ -136,8 +138,10 @@ def evaluate(model: SmartTurnV3, dev: DataLoader, device: torch.device, autocast
         for lang in sorted(set(langs)):
             sel = (phone == is_phone) & (langs == lang)
             m = binary_metrics(labels[sel], probs[sel], 0.5)
+            t = best_threshold(labels[sel], probs[sel])
             rows.append({"condition": cond, "language": lang, "n": m["n"], "accuracy": round(m["accuracy"], 2),
-                         "auc": round(m["auc"], 4), "cut_in": round(m["fpr"], 4), "missed_end": round(m["fnr"], 4)})
+                         "auc": round(m["auc"], 4), "cut_in": round(m["fpr"], 4), "missed_end": round(m["fnr"], 4),
+                         "best_threshold": round(t, 4), "accuracy_at_best": round(binary_metrics(labels[sel], probs[sel], t)["accuracy"], 2)})
     return rows
 
 
@@ -287,7 +291,10 @@ def train(cfg: TrainConfig, out: Path, max_steps: int | None = None, device: str
     final = SmartTurnV3()
     final.load_state_dict(best_state["model"])
     export_onnx(final, out / "model.onnx")
-    summary = {"best_step": best_state["step"], "best_dev": best_state["dev"], "dev_score": dev_score(best_state["dev"]), "steps": step}
+    # .get: a run started before thresholds were recorded (best.pt from older code) still finishes
+    thresholds = {f"{r['condition']}/{r['language']}": r.get("best_threshold") for r in best_state["dev"]}
+    summary = {"best_step": best_state["step"], "best_dev": best_state["dev"], "dev_score": dev_score(best_state["dev"]), "steps": step,
+               "dev_thresholds": thresholds}
     (out / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     print(f"best dev phone accuracy {summary['dev_score']:.2f} at step {summary['best_step']}; exported {out / 'model.onnx'}", flush=True)
     return summary

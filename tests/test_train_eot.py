@@ -94,6 +94,7 @@ def test_tiny_run_trains_resumes_and_exports(tmp_path):
     out = tmp_path / "run"
     summary = train(cfg, out, max_steps=2, device="cpu")
     assert summary["steps"] == 2 and (out / "model.onnx").exists() and (out / "ckpt.pt").exists()
+    assert {k.split("/")[0] for k in summary["dev_thresholds"]} == {"clean", "phone"}
     assert train(cfg, out, max_steps=2, device="cpu")["steps"] == 2  # resumes at the end: nothing more to do
     feats = np.random.default_rng(0).uniform(-1, 1, (2, 80, 800)).astype(np.float32)
     from pehleaap.models.smart_turn import SmartTurnV3
