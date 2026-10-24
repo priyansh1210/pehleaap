@@ -36,6 +36,50 @@ def test_smart_turn_matches_pipecats_own_analyzer(seconds):
     assert ours["prediction"] == theirs["prediction"]
 
 
+def _second_model() -> str:
+    """A local Smart-Turn-format ONNX to switch to: eot_v0 if it's on this machine, else Pipecat's fp32 file."""
+    from pehleaap.baselines.turn_models import fetch
+    from pehleaap.paths import WEIGHTS_DIR
+
+    if (WEIGHTS_DIR / "eot_v0" / "model.onnx").exists():
+        return "eot_v0"
+    return str(fetch("pipecat-ai/smart-turn-v3", "smart-turn-v3.2-gpu.onnx"))
+
+
+def test_switch_decides_with_the_active_model_only():
+    from pehleaap.pipecat_ext.turn_analyzer import ModelSwitch, SwitchTurnAnalyzer, loaded
+
+    other = _second_model()
+    switch = ModelSwitch(["smart_turn_v3.2_int8", other], "smart_turn_v3.2_int8")
+    analyzer = SwitchTurnAnalyzer(switch=switch)
+    x = _speechlike(3.0, seed=7)
+    for name in switch.names:
+        switch.set(name)
+        model, threshold = loaded(name)
+        out = analyzer._predict_endpoint(x)
+        assert out["probability"] == pytest.approx(model.predict(x))
+        assert out["prediction"] == int(out["probability"] > threshold)
+    with pytest.raises(KeyError):
+        switch.set("nope")
+    with pytest.raises(ValueError):
+        ModelSwitch(["a"], "b")
+
+
+def test_switch_page_and_routes():
+    from fastapi.testclient import TestClient
+
+    spec = importlib.util.spec_from_file_location("demo_bot_routes", REPO / "demo" / "bot.py")
+    bot = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(bot)
+    client = TestClient(bot.app)
+    assert "Who decides" in client.get("/switch").text
+    state = client.get("/switch/state").json()
+    assert state["active"] in state["models"] and "smart_turn_v3.2_int8" in state["models"]
+    assert client.post("/switch/smart_turn_v3.2_int8").json()["active"] == "smart_turn_v3.2_int8"
+    assert bot.SWITCH.active == "smart_turn_v3.2_int8"
+    assert client.post("/switch/not-a-model").status_code == 404
+
+
 def test_phone_line_processor_matches_offline_phone_line():
     rng = np.random.default_rng(0)
     pcm = np.clip(rng.normal(0, 3000, 16000), -32768, 32767).astype(np.int16)

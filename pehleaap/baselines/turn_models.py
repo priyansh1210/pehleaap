@@ -154,3 +154,17 @@ def load(name: str, threads: int = 1) -> _OnnxClipModel:
     path = fetch(spec.repo, spec.filename)
     cls = WhisperMelOnnx if spec.kind == "mel" else WaveformOnnx
     return cls(path, threads=threads, **spec.kwargs)
+
+
+def load_any(name: str, threads: int = 1) -> tuple[_OnnxClipModel, float]:
+    """(model, decision threshold) for a REGISTRY name, or for one of our own Smart-Turn-format ONNX files:
+    weights/<name>/model.onnx (e.g. eot_v0, from train_eot.py) or a path ending in .onnx, at threshold 0.5.
+
+    Our models stay out of REGISTRY so the baseline evals' default model list never changes under them.
+    """
+    if name in REGISTRY:
+        return load(name, threads), REGISTRY[name].threshold
+    path = Path(name) if name.endswith(".onnx") else WEIGHTS_DIR / name / "model.onnx"
+    if not path.exists():
+        raise FileNotFoundError(f"{name!r} is not a registry model and {path} doesn't exist")
+    return WhisperMelOnnx(path, threads=threads), 0.5
