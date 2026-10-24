@@ -130,6 +130,33 @@ py -3.12 -m venv .venv-livekit
 .venv-livekit\Scripts\python scripts\eval_livekit_v1mini.py --workers 12 *> runs\livekit_v1mini.log
 ```
 
+**Job 4: fine-tune Smart Turn v3.2 for the phone line** (`scripts/train_eot.py`; after Job 3, whose CPU work it
+would compete with). It starts from the published v3.2 weights and trains on Smart Turn's own English and Hindi
+training clips (about 80k; every Hindi clip is TTS), 80% of them sent through the phone-line chain on the fly by
+20 worker processes (training noise only: the 80% of MUSAN that Job 3 never uses). bf16 on this card, 4 epochs,
+upstream's recipe otherwise. Expect about 1 h; it checkpoints every 30 min, and rerunning the same command resumes.
+
+1. **Training clips** (`prepare_eot_train.py`): downloads the 83 shards (41 GB, sha256-checked), keeps English and
+   Hindi (about 16 GB in `data\external\eot-train\`) and deletes each shard once stored. Mostly downloading, so it can
+   run while Job 3 is still going; a rerun resumes.
+2. **Smoke run**, a few minutes: checks the GPU, bf16 and the workers.
+3. **Training**: progress in the log, numbers in `runs\eot_v0\` (`dev.csv`: dev accuracy, AUC and cut-in rate,
+   clean and phone line, per language; step 0 is the published model).
+4. **Test-set evaluation**: the fine-tuned model next to the published one under every phone condition so far.
+
+```powershell
+git pull
+.venv\Scripts\python scripts\prepare_eot_train.py --delete-shards *> runs\prepare_eot_train.log
+.venv\Scripts\python scripts\train_eot.py --out eot_smoke --max-steps 5 --set num_workers=4 dev_limit=64
+.venv\Scripts\python scripts\train_eot.py --out eot_v0 *> runs\eot_v0.log
+.venv\Scripts\python scripts\eval_clip_baselines.py --models smart_turn_v3.2_int8 --onnx eot_v0=runs\eot_v0\model.onnx --conditions clean g711_mulaw amrnb_7.95 amrnb_4.75 tandem_amr4.75 loss3_g711 agc_clip_g711 noise20_amr7.95 noise10_amr7.95 noise5_amr7.95 mixed --threads 24 --out eot_v0_eval *> runs\eot_v0_eval.log
+```
+
+Bring back `runs\eot_v0\dev.csv`, `summary.json`, `meta.json` and `runs\eot_v0_eval\report.md` + `results.json`. Keep
+`runs\eot_v0\model.onnx` (32 MB, not in git) on the GPU box. Read the chain conditions with care: the model trained on
+the same family of augmentations (with other noise recordings), so gains there are expected; the real test is real
+phone calls (plan §6).
+
 ## Kaggle (from Oct 29, 2026)
 
 All training, batch ASR, augmentation precompute and full eval sweeps (plan §3a). Measured by the smoke job

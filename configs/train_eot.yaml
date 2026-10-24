@@ -1,0 +1,23 @@
+# Fine-tuning Smart Turn v3.2 for the phone line (plan §6, Tier A EOT v0); field docs in pehleaap/train/train_eot.py.
+# Sized for the GPU box (RTX 4000 Ada 20 GB, 24 cores). On Kaggle's T4 use --set num_workers=3.
+
+data_dir: data/external/eot-train
+langs: [eng, hin]
+hin_repeat: 2
+augment_config: configs/augment.yaml
+p_phone: 0.8
+
+epochs: 4
+batch_size: 384
+micro_batch: 192
+lr: 5.0e-5
+weight_decay: 0.01
+warmup_ratio: 0.1
+grad_clip: 1.0
+
+num_workers: 20
+eval_every_steps: 100
+dev_limit: null
+checkpoint_minutes: 30.0
+seed: 0
+precision: auto  # bf16 on the GPU box, fp16 on Kaggle's T4, fp32 on the Dev box's GTX 1650 and the CPU
