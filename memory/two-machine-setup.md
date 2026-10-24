@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 0952188d-bc75-46ae-a49b-65b82c0ee291
-  modified: 2026-10-23T22:42:10.287Z
+  modified: 2026-10-24T11:45:36.265Z
 ---
 
 Compute (revised 2026-10-24). The GitHub repo is the only thing shared between machines ([[shared-memory]]).
@@ -14,8 +14,9 @@ Compute (revised 2026-10-24). The GitHub repo is the only thing shared between m
   ~450 GB free on D:. Code, tests, labeling + verify UI, eval on slices, Pipecat demo, smoke runs, CPU benchmark #1.
 - **Kaggle, from 2026-10-29** (user's choice, 2026-10-24): all training, batch ASR, augmentation precompute (CPU sessions, no GPU
   quota), full eval sweeps. T4 16 GB (two per session; use T4, Turing like the Dev box) or P100 16 GB; no bf16 → fp16 AMP + GradScaler;
-  ~29 GB RAM, 4 vCPUs; ~30 GPU-h/week (varies; user to check in account settings), 12 h sessions. Recordings go up as a private
-  dataset; jobs clone a pinned commit. Runner `scripts/kaggle_job.py` not written yet. Details: docs/PLAN.md §3a, docs/machines.md.
+  measured 2026-10-24: 2× T4 14.6 GB usable, 31 GB RAM, 2 cores / 4 threads; 30 GPU-h/week (+20 TPU-h), 12 h sessions. Recordings go
+  up as a private dataset; jobs clone a pushed commit. Runner `scripts/kaggle_job.py` (Dev box only, where the API token is).
+  Details: docs/PLAN.md §3a, docs/machines.md.
 - **GPU box** (checked 2026-10-24 by env_check: **RTX 4000 SFF Ada, 20 GB dedicated**, bf16; Core Ultra 9 285 24 cores;
   63 GB RAM; ~100 GB free on C:; Python 3.12.10): **only available until 2026-10-28**. It runs the baseline eval
   (docs/machines.md Job 1) and nothing else. Repo at `C:\Users\FITT\Desktop\PRIYANSH!!\pehleaap`.

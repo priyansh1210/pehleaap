@@ -1,6 +1,6 @@
 ---
 name: pehleaap-status
-description: "Locked decisions (compute = Dev box + Kaggle from Oct 29), 8-week schedule with dates, done/pending (PR #1-#6 merged; GPU-box baseline eval done + merged 2026-10-24)"
+description: "Locked decisions (compute = Dev box + Kaggle from Oct 29), 8-week schedule with dates, done/pending (PR #1-#7 merged; GPU-box baseline eval done; Kaggle runner on branch kaggle-runner)"
 metadata:
   node_type: memory
   type: project
@@ -37,7 +37,7 @@ C:/Users/FITT/Desktop/PRIYANSH!!/pehleaap/memory). From Bash `!`, use forward sl
 **Decision (user, 2026-10-24):** the full baseline eval (~2.5 h, too heavy for the laptop's 8 GB RAM) runs on the GPU box; runbook in
 `docs/machines.md`. The laptop runs the demo and small smoke tests.
 
-**Decision (user, 2026-10-24): Kaggle replaces the GPU box from Oct 29.** docs/PLAN.md §3a rewritten (T4 16 GB, fp16 AMP + GradScaler
+**Decision (user, 2026-10-24; PR #5, merge 5f5c935): Kaggle replaces the GPU box from Oct 29.** docs/PLAN.md §3a rewritten (T4 16 GB, fp16 AMP + GradScaler
 since no bf16, batches 192×2 EOT / 128×3 multi-task, ~30 GPU-h/week budget per week with week 6 tightest, 12 h sessions → checkpoint
 every 30 min and resume, recordings as a private Kaggle dataset `pehleaap-raw` checked against manifests, CPU benchmark #2 = Kaggle vCPU
 or another machine). docs/machines.md has a Kaggle section; the untested GPU-box scripts (remote.ps1, fetch_ckpt.ps1, sync_data.ps1,
@@ -58,12 +58,21 @@ chhotu collapses (-23 to -27 pt, cut-in up to 66%); deveshu and codewithmoin hol
 (60 eng / 68 hin) and flat across conditions. Narrowband + codec only, no noise/echo/loss yet; in-distribution for the community models.
 Cite Smart Turn's phone-line drop with that scope (synthetic Hindi, its own test set).
 
-**In progress 2026-10-24 (GPU box, user OK'd using its last days for more baseline evals):** (a) Job 2, codec sweep: `scripts/eval_clip_baselines.py --conditions clean g711_alaw amrnb_4.75 amrnb_12.2 gsm_fr opus_8k --threads 24 --out clip_baselines_codecs`, log `runs/clip_baselines_codecs.log` (est. 2-2.5 h; all 5 codecs smoke-tested OK). Results go to docs/results/ as a new week1 codec report; Job 1 results stay unchanged. (b) LiveKit `v1-mini` attempt (1-day limit), using livekit-agents + livekit-plugins-turn-detector 1.8.9 in a scratch venv first, not `.venv`. (c) `scripts/kaggle_job.py` will be written on the **Dev box** (user's choice), then smoke-tested there once the token is in place.
+**In progress 2026-10-24 (GPU box, user OK'd using its last days for more baseline evals):** (a) Job 2, codec sweep: `scripts/eval_clip_baselines.py --conditions clean g711_alaw amrnb_4.75 amrnb_12.2 gsm_fr opus_8k --threads 24 --out clip_baselines_codecs`, log `runs/clip_baselines_codecs.log` (est. 2-2.5 h; all 5 codecs smoke-tested OK). Results go to docs/results/ as a new week1 codec report; Job 1 results stay unchanged. (b) LiveKit `v1-mini` attempt (1-day limit), using livekit-agents + livekit-plugins-turn-detector 1.8.9 in a scratch venv first, not `.venv`. (c) the Kaggle runner was written on the **Dev box** (user's choice); see below.
 
-**Kaggle account created + phone-verified (2026-10-24, on the Dev box).** No `kaggle.json` on the GPU box (not needed there).
+**Kaggle (Dev box, 2026-10-24):** account created + phone-verified; API token at `%USERPROFILE%\.kaggle\access_token` on the Dev box
+only (none on the GPU box); quota 30 GPU-h/week, 20 TPU-h; login works. Runner written on branch `kaggle-runner` (not yet pushed or merged)
+and smoke-tested on Kaggle: 2× T4 14.6 GB, 31 GB RAM, 2C/4T, full env install ~1 min, 63/64 tests pass on commit 5f5c935 (the
+failure is fixed locally, see ffmpeg below; re-run after the user pushes):
+`scripts/kaggle_job.py` (run/status/fetch/quota; private script kernel `pehleaap-<name>`, waits, downloads to runs/kaggle/<name>/output)
++ `scripts/kaggle_job_template.py` (clones the pushed commit, uv 0.12.24 venv with Python 3.11.9 + requirements.txt, runs the command,
+saves job.log/env_check.md/job.json/runs). ffmpeg on Kaggle: Ubuntu 6.1.1 has libgsm but no AMR-NB; johnvansickle 7.0.2 static
+and all BtbN Linux builds have AMR-NB but no libgsm; no conda. Fix: template fetches the static build (sha256-pinned) into
+PEHLEAAP_FFMPEG_EXTRA and `paths.ffmpeg_bin(encoder)` picks the first build with each encoder. /kaggle/input layout still unknown
+(no dataset attached yet).
 
-**Pending, week 1:** user to confirm the API token is at
-`%USERPROFILE%\.kaggle\kaggle.json` on the Dev box and note the weekly GPU quota; me (on the Dev box): `scripts/kaggle_job.py` + a smoke job on a T4; user to review the consent forms (contact details, deletion date, college ethics
+**Pending, week 1:** user to push `kaggle-runner`, then I re-run the smoke job (CPU) on that commit and the user raises the PR;
+user to review the consent forms (contact details, deletion date, college ethics
 approval?); Craig vs Zoom pilot with one pair (`scripts/check_alignment.py`); start recruiting and booking >=15 sessions; HingCoS access
 email; PSTN provider signup (Twilio dual-channel first); LiveKit v1-mini baseline (time-boxed to 1 day; started on the GPU box, see above); user to try the ding-bot demo by voice.
 Note: Pipecat's LocalSmartTurnAnalyzerV3 only fits Smart Turn's exact interface; abhishek's model would load there but give wrong
