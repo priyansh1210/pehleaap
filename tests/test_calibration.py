@@ -39,6 +39,15 @@ def test_recalibration_recovers_a_pure_score_shift_without_tuning_on_itself():
     assert th["phone/hin"] == pytest.approx(0.8, abs=0.05) and th["clean/hin"] == pytest.approx(0.5, abs=0.05)
 
 
+def test_shipped_thresholds_apply_per_channel_and_fall_back_to_the_card():
+    df = _shifted()
+    res = calibrate(df, "m", 0.5, shipped={"phone/hin": 0.8}).set_index(["condition", "variant"])
+    assert res.loc[("amrnb_4.75", "shipped"), "threshold_median"] == 0.8
+    assert res.loc[("clean", "shipped"), "threshold_median"] == 0.5  # no clean/hin entry: the card threshold
+    assert res.loc[("amrnb_4.75", "shipped"), "accuracy"] > res.loc[("amrnb_4.75", "card"), "accuracy"] + 15
+    assert "shipped" not in set(calibrate(df, "m", 0.5).variant)
+
+
 def test_cross_fitting_never_uses_a_clips_own_fold():
     df = with_channel_and_fold(_shifted(n=200))
     t = cross_fit_thresholds(df, "p_m", ["condition"])
