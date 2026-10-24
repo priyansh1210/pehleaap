@@ -91,6 +91,15 @@ def test_noise_bank_reads_files_and_loops_short_ones(tmp_path):
     assert NoiseBank(root=tmp_path / "missing", sr=SR).names[0].startswith("synthetic:")
 
 
+def test_noise_files_split_into_train_and_held_out_test(tmp_path):
+    for k in range(40):
+        sf.write(tmp_path / f"n{k:02d}.wav", np.zeros(160) + 0.1, SR)
+    full, train, test = (NoiseBank(root=tmp_path, sr=SR, part=p).files for p in (None, "train", "test"))
+    assert sorted(train + test) == full and not set(train) & set(test)
+    assert 2 <= len(test) <= 16  # about 20%
+    assert NoiseBank(root=None, sr=SR, part="test").names == NoiseBank(root=None, sr=SR).names  # synthetic: not split
+
+
 def test_reverb_adds_no_delay_and_drr_is_as_set():
     rir = synthetic_rir(SR, 0.5, 6.0, np.random.default_rng(0))
     assert rir[0] == 1.0 and 10 * np.log10(1.0 / np.sum(rir[1:] ** 2)) == pytest.approx(6.0, abs=0.01)
