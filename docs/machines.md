@@ -101,7 +101,7 @@ Each shard's predictions are saved as it finishes (`runs\clip_baselines\shards\`
 `runs\clip_baselines\report.md` and `results.json` (small) to the Dev box, e.g. into `docs\results\`.
 
 **Job 3: the same baselines over the full phone-line chain** (after Job 2 has finished; about 2.5-3 h with
-`--threads 24`). It adds gateway transcoding, packet loss, AGC/clipping and MUSAN noise at 20/10/5 dB
+`--threads 24`). It adds gateway transcoding, packet loss, AGC/clipping and MUSAN noise at 20/10/5 dB (from the 20% of MUSAN's noise files held out from training)
 (`CHAIN` in `scripts/eval_clip_baselines.py`), plus one random chain per clip from `configs/augment.yaml`.
 The codec-only conditions are unchanged, so Job 1 and Job 2 numbers stay comparable. `get_noise.py` streams
 openslr's MUSAN archive, keeps only its noise part (about 0.7 GB) and checks every file against the committed
