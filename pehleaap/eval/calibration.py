@@ -67,13 +67,23 @@ def with_channel_and_fold(df: pd.DataFrame) -> pd.DataFrame:
     return df.assign(channel=np.where(df["condition"] == "clean", "clean", "phone"), fold=df["id"].map(fold_of))
 
 
-def calibrate(df: pd.DataFrame, model: str, card_threshold: float) -> pd.DataFrame:
-    """Accuracy, cut-in and missed-end rate per (language, condition) under each variant of `VARIANTS`."""
+def calibrate(df: pd.DataFrame, model: str, card_threshold: float, shipped: dict[str, float] | None = None) -> pd.DataFrame:
+    """Accuracy, cut-in and missed-end rate per (language, condition) under each variant of `VARIANTS`.
+
+    `shipped` adds a "shipped" variant: fixed thresholds per "channel/language" (e.g. "phone/hin") that
+    came with the model, tuned on its own dev data (train_eot.py's `dev_thresholds`), so nothing here is
+    tuned on these clips. Missing keys fall back to the card threshold.
+    """
     df = with_channel_and_fold(df)
     prob, labels = df[f"p_{model}"].to_numpy(), df["label"].to_numpy().astype(int)
     rows = []
-    for name, by in VARIANTS.items():
-        t = np.full(len(df), card_threshold) if by is None else cross_fit_thresholds(df, f"p_{model}", by)
+    variants = dict(VARIANTS) | ({"shipped": "shipped"} if shipped else {})
+    for name, by in variants.items():
+        if by == "shipped":
+            keys = df["channel"] + "/" + df["language"]
+            t = keys.map(lambda k: shipped.get(k) if shipped.get(k) is not None else card_threshold).to_numpy(dtype=float)
+        else:
+            t = np.full(len(df), card_threshold) if by is None else cross_fit_thresholds(df, f"p_{model}", by)
         pred = (prob > t).astype(int)
         for (lang, cond), idx in df.groupby(["language", "condition"], sort=False).indices.items():
             y, p = labels[idx], pred[idx]
