@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 0952188d-bc75-46ae-a49b-65b82c0ee291
-  modified: 2026-10-24T21:58:51.160Z
+  modified: 2026-10-24T22:33:50.603Z
 ---
 
 The full plan is in the repo at `docs/PLAN.md` (approved 2026-10-23). Don't duplicate it here; read it.
@@ -215,7 +215,7 @@ phone/hin 92.2 -> 90.1 but cut-in 8.7% -> 16.9% (dev-tuned int8 threshold not do
 82.0 -> 71.8). Latency 1 thread: fp32 56.9 ms, int8 28.6 ms = Smart Turn int8. Gotcha: quantising all op types / phone-mix
 calibration shifted probs -0.1..-0.2 (up to -23 pts). Test-set eval of int8 not run yet (~75 min CPU).
 
-**Session evaluation (2026-10-25 ~04:00, Dev box, uncommitted): the main metric for real recordings.** CHAIN conditions moved
+**Session evaluation (2026-10-25 ~04:00, Dev box; PR #22, merge 9f577bd): the main metric for real recordings.** CHAIN conditions moved
 from eval_clip_baselines.py into `pehleaap/telephony/conditions.py` (identical code; the script imports them, tests pass).
 `pehleaap/eval/sessions.py`: condition_track (whole track through a condition; chain seed = "<session>_<channel>"),
 checkpoint_windows/probs (last 8 s up to pause start + 0.2/0.3/0.5/0.8/1.2/2.0 s; NaN once the speaker resumed).
@@ -224,3 +224,18 @@ and model: cut-in / median & p90 gap / missed at the model's threshold, cut-in a
 silence-timeout floor (VAD on the clean recording, so condition-independent); hard timeout 3 s (Pipecat's fallback).
 Smoke on a stitched 20-turn TTS session (TTS02): works, but numbers are meaningless: stitched Smart Turn clips are half
 deliberately unfinished, and the stitched holds are all short (flatters the timeout). Runbook in docs/machines.md.
+
+**NOISE_ECHO rule (2026-10-25 ~05:00, Dev box, uncommitted).** `pehleaap/labeling/echo.py` `split_echo`, run by label_session in
+both directions (customer vs agent first, then agent vs the customer's real speech); schema NOISE_ECHO now in TYPES, Event +
+IPU fields echo_lag_s / echo_corr; verify ALWAYS includes NOISE_ECHO; LabelConfig echo_* fields (yaml in sync). Frame-level
+(10 ms log-loudness, 300-3400 Hz): 1 s windows vote for delay+gain (r >= 0.8, >= 3 agreeing votes within 20 ms, else no echo);
+predicted echo = other track at the delay + gain with a 1 dB/10 ms reverb tail; echo only expected while the other speaker's
+IPUs (delayed) are active + 0.3 s tail (bug found by the unit test: without that, the other track's noise floor x gain marked
+quiet frames of real replies as echo); own frames > 6 dB above the prediction, or above it with 0.3 s local correlation < 0.6
+(double-talk), are speech; speech frames re-cut into IPUs (words re-attached), echo runs >= 0.3 s -> NOISE_ECHO events.
+Why frame-level: a per-IPU first version left echo merged with the customer's reply as 10-12 s fake INTERRUPTs.
+Measured (simulated, Smart Turn TTS clips): echo windows r 0.85-0.99, independent speech <= 0.68 (1 s), short windows unreliable
+(0.3 s free search: 23% of real speech >= 0.8); stitched TTS02 + echo 3 dB below the customer at 0.35 s: all 26 shift/hold
+events recovered within 0.15 s, 0 spurious bc/interrupt, 0 echo found on echo-free TTS02; speakerphone barge-ins (customer cuts
+into 7 s agent turns): 5/6 found with echo 15 dB down, 2/6 with 3 dB (AEC off: inherently ambiguous; 0/6 without the
+double-talk cue; cutoff safe up to 0.7, spurious from 0.8). Tests: tests/test_echo_labels.py (random-syllable stand-in).

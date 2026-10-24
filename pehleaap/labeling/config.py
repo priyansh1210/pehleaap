@@ -39,6 +39,22 @@ class LabelConfig:
     # Digit spans: at least this many consecutive number words (or digits) in one IPU.
     digit_min_run: int = 3
 
+    # NOISE_ECHO (labeling/echo.py): frames whose loudness the other speaker's delayed voice explains are their echo.
+    echo_max_delay_s: float = 0.8  # network round trip + room
+    echo_window_s: float = 1.0  # windows that vote for the call's echo delay (shorter ones match speech by chance)
+    echo_min_corr: float = 0.8  # simulated: echo 0.85-0.99, independent speech <= 0.68 in 1 s windows
+    echo_min_windows: int = 3  # agreeing votes needed to say the call has echo at all
+    echo_lag_spread_s: float = 0.02  # votes this close to the median delay agree
+    echo_min_other_active: float = 0.5  # the other speaker must be talking for this share of the delayed window
+    echo_margin_db: float = 6.0  # own frames this much louder than the predicted echo are own speech
+    echo_tail_db_per_10ms: float = 1.0  # reverb: a predicted echo frame fades this fast (an RT60 of 0.6 s)
+    echo_tail_s: float = 0.3  # echo is expected only while the other speaker talks (delayed) and this long after
+    echo_min_s: float = 0.3  # shortest echo run reported as a NOISE_ECHO event
+    # Double-talk: above the predicted echo while the 0.3 s loudness no longer follows the other speaker is own speech too
+    # (simulated: safe up to 0.7, spurious events from 0.8; None turns it off).
+    echo_doubletalk_corr: float | None = 0.6
+    echo_local_s: float = 0.3
+
     def to_dict(self) -> dict:
         return asdict(self)
 
