@@ -18,6 +18,7 @@ and the week-by-week schedule, is in [`docs/PLAN.md`](docs/PLAN.md).
 | Community Hinglish end-of-turn models (deveshu, abhishek, codewithmoin, Chhotu) behind one interface | `pehleaap/baselines/turn_models.py` |
 | Baselines on clean vs 8 kHz G.711 / AMR-NB audio (heavy: runs on the GPU box until Oct 28) | `scripts/eval_clip_baselines.py`, runbook in `docs/machines.md` |
 | Real-time phone line (G.711 bit-identical to ffmpeg, ~6 ms delay) | `pehleaap/telephony/realtime.py` |
+| Phone-line augmentation chain: room reverb, noise at an SNR bucket, speakerphone echo, AGC, clipping, band-pass, codecs (with G.711 tandem), packet loss + jitter with concealment. Keeps timing within 1 ms; synthetic noise until noise datasets are added | `pehleaap/telephony/pipeline.py`, `configs/augment.yaml`, `scripts/augment_examples.py` |
 | Pipecat demo skeleton: browser call → phone line → Silero VAD → any turn model → ding | `demo/bot.py`, `pehleaap/pipecat_ext/` |
 | Labeling engine v0: Silero VAD → IPUs → SHIFT / HOLD / BC / INTERRUPT / HOLD_REQ events (JSONL). Duration rules only until ASR runs; no NOISE_ECHO yet | `pehleaap/labeling/`, `configs/labeling.yaml`, `scripts/label_session.py` |
 
