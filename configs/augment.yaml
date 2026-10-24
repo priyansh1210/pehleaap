@@ -1,0 +1,41 @@
+# Phone-line augmentation chain for the customer channel (plan §4.3); field docs in pehleaap/telephony/pipeline.py.
+# Ranges are [low, high], drawn uniformly. Freeze with the splits at the end of week 3.
+
+# Room
+p_reverb: 0.3
+rt60_s: [0.15, 0.6]
+drr_db: [0.0, 12.0]
+
+# Noise (SNR in dB below the speech's active level)
+snr_buckets: [clean, "20", "10", "5", "0"]
+snr_weights: [0.3, 0.25, 0.2, 0.15, 0.1]
+snr_spread_db: 2.5
+
+# Speakerphone echo (residual after the phone's echo canceller)
+p_speakerphone: 0.2
+echo_delay_s: [0.1, 0.5]
+erle_db: [10.0, 30.0]
+echo_drive: [0.5, 3.0]
+echo_drr_db: [3.0, 12.0]
+
+# Phone mic path
+p_agc: 0.7
+agc_target_dbfs: [-24.0, -16.0]
+agc_max_gain_db: [6.0, 20.0]
+p_clip: 0.1
+clip_level: [0.2, 0.6]
+band_hz: [300.0, 3400.0]
+
+# Codec, optionally transcoded to G.711 at the gateway
+codecs: [g711_mulaw, g711_alaw, amrnb_12.2, amrnb_7.95, amrnb_4.75, gsm_fr, opus_8k]
+codec_weights: [0.25, 0.1, 0.2, 0.15, 0.1, 0.1, 0.1]
+p_tandem_g711: 0.5
+tandem_codec: g711_mulaw
+
+# Network
+packet_s: 0.02
+loss_rate: [0.0, 0.05]
+loss_burst: [1.0, 3.0]
+p_jitter: 0.3
+jitter_ms: [10.0, 40.0]
+jitter_buffer_x: [3.5, 6.0]
