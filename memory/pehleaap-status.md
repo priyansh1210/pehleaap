@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 0952188d-bc75-46ae-a49b-65b82c0ee291
-  modified: 2026-10-24T14:06:36.563Z
+  modified: 2026-10-24T15:30:34.385Z
 ---
 
 The full plan is in the repo at `docs/PLAN.md` (approved 2026-10-23). Don't duplicate it here; read it.
@@ -107,6 +107,18 @@ matched by the named bias after each; k_proj has no bias). Parity: max |p| diff 
 tests/test_smart_turn_torch.py. Note int8 (our baseline) vs fp32 differ by up to 0.66 on single clips at equal accuracy:
 compare a fine-tune against both. Do NOT add an fp32 entry to turn_models.REGISTRY while GPU-box jobs use the default `--models`
 (saved shards would be recomputed). Next: training script (bf16 on the GPU box, fp16 on Kaggle), smoke-tested on the Dev box.
+
+**Training script (2026-10-24 evening, Dev box, uncommitted): GPU box Job 4 in docs/machines.md.** Train set
+pipecat-ai/smart-turn-data-v3.2-train = 83 shards / 41.4 GB / 23 languages; per shard ~961 of 3,265 clips are eng+hin (~80k
+total; Hindi all chirp3 TTS). `scripts/prepare_eot_train.py` → `data/external/eot-train/` (EotStore: audio.int16 memmap +
+index.csv, last 8 s per clip, 3% dev by md5(id); resumable; `--delete-shards`). `pehleaap/train/eot_data.py` (EpochKeys sampler:
+seeded per epoch, exact resume; Augmenter collate in workers: p_phone 0.8, train noise part, features = WhisperMelOnnx.prepare
+exactly) and `train_eot.py` (TrainConfig = configs/train_eot.yaml: lr 5e-5, 4 epochs, batch 384 = 2 × 192, warmup 0.1 + cosine,
+hin_repeat 2, 20 workers; dev eval at step 0 = published model, best by mean phone-line dev accuracy; ckpt every 30 min; exports
+model.onnx via the legacy TorchScript exporter: no onnxscript needed, parity 6e-8). **GTX 1650 fp16 gives NaN from the first conv**
+(GTX 16xx quirk) → precision "auto" picks fp32 there, bf16 on Ada, fp16 on T4; NaN loss stops the run. Augmentation ~77 ms/clip
+per worker on the Dev box. `eval_clip_baselines.py --onnx NAME=PATH` scores a local ONNX at threshold 0.5 (defaults unchanged).
+Smoke: 6 steps on 1 shard fine end to end (fp32 GTX 1650; 4 min mostly Windows worker start-up). 99 tests pass.
 
 **Pending, week 1:** user to review the consent forms (contact details, deletion date, college ethics
 approval?); Craig vs Zoom pilot with one pair (`scripts/check_alignment.py`); start recruiting and booking >=15 sessions; HingCoS access

@@ -15,6 +15,7 @@ skips shards already done, so an interrupted run resumes where it stopped.
 
     python scripts/eval_clip_baselines.py --threads 8                      # everything
     python scripts/eval_clip_baselines.py --models chhotu_int8 --limit-shards 1 --out smoke
+    python scripts/eval_clip_baselines.py --models smart_turn_v3.2_int8 --onnx eot_v0=runs/eot_v0/model.onnx --out eot_v0_eval
     python scripts/eval_clip_baselines.py --report-only                    # rebuild report from saved shards
     python scripts/eval_clip_baselines.py --conditions clean tandem_amr4.75 noise10_amr7.95 --out clip_baselines_chain
 """
@@ -31,7 +32,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from pehleaap.baselines.turn_models import REGISTRY, load  # noqa: E402
+from pehleaap.baselines.turn_models import REGISTRY, WhisperMelOnnx, load  # noqa: E402
 from pehleaap.data import smart_turn_testset  # noqa: E402
 from pehleaap.eval.clip_metrics import binary_metrics  # noqa: E402
 from pehleaap.paths import REPO_ROOT, RUNS_DIR  # noqa: E402
@@ -135,12 +136,16 @@ def load_saved_shard(path: Path, names: list[str], conditions: list[str], langs:
     return df[df.condition.isin(conditions) & df.language.isin(langs)]
 
 
+# Decision thresholds: each registry model's card value; local ONNX files (--onnx) use 0.5, like Smart Turn.
+THRESHOLDS = {name: spec.threshold for name, spec in REGISTRY.items()}
+
+
 def metrics_table(df: pd.DataFrame, models: list[str], keys: list[str]) -> list[dict]:
     rows = []
     for group, g in df.groupby(keys):
         group = group if isinstance(group, tuple) else (group,)
         for name in models:
-            m = binary_metrics(g["label"].to_numpy(), g[f"p_{name}"].to_numpy(), REGISTRY[name].threshold)
+            m = binary_metrics(g["label"].to_numpy(), g[f"p_{name}"].to_numpy(), THRESHOLDS.get(name, 0.5))
             rows.append({**dict(zip(keys, group)), "model": name, **m})
     return rows
 
@@ -148,6 +153,8 @@ def metrics_table(df: pd.DataFrame, models: list[str], keys: list[str]) -> list[
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--models", nargs="+", default=list(REGISTRY))
+    ap.add_argument("--onnx", nargs="*", default=[], metavar="NAME=PATH",
+                    help="also score Smart-Turn-format ONNX files, e.g. a fine-tuned model from train_eot.py (threshold 0.5)")
     ap.add_argument("--conditions", nargs="+", default=["clean", "g711_mulaw", "amrnb_7.95"])
     ap.add_argument("--langs", nargs="+", default=["eng", "hin"])
     ap.add_argument("--threads", type=int, default=4)
@@ -171,7 +178,8 @@ def main() -> None:
     out_dir = RUNS_DIR / args.out
     shard_dir = out_dir / "shards"
     shard_dir.mkdir(parents=True, exist_ok=True)
-    names = list(args.models)
+    local = dict(item.split("=", 1) for item in args.onnx)
+    names = list(args.models) + list(local)
     data_root = Path(args.data_root) if args.data_root else smart_turn_testset.LOCAL_DIR
     if not args.report_only and not args.data_root:
         smart_turn_testset.download()
@@ -187,7 +195,8 @@ def main() -> None:
             raise SystemExit(f"{saved} is missing or lacks the requested models/conditions; run without --report-only")
         if df is None:
             if models is None:
-                models = {name: load(name, threads=args.threads) for name in names}
+                models = {name: load(name, threads=args.threads) for name in args.models}
+                models |= {name: WhisperMelOnnx(path, threads=args.threads) for name, path in local.items()}
             df = predict_shard(models, *smart_turn_testset.read_shard(shard, args.langs), args.conditions, bank, cfg)
             saved.with_suffix(".json").write_text(json.dumps({"langs": args.langs}))
             tmp = saved.with_suffix(".tmp")
