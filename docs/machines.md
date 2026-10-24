@@ -152,10 +152,22 @@ git pull
 .venv\Scripts\python scripts\eval_clip_baselines.py --models smart_turn_v3.2_int8 --onnx eot_v0=runs\eot_v0\model.onnx --conditions clean g711_mulaw amrnb_7.95 amrnb_4.75 tandem_amr4.75 loss3_g711 agc_clip_g711 noise20_amr7.95 noise10_amr7.95 noise5_amr7.95 mixed --threads 24 --out eot_v0_eval *> runs\eot_v0_eval.log
 ```
 
+`summary.json` also holds the model's decision thresholds per channel (clean/phone) and language, tuned on dev clips.
 Bring back `runs\eot_v0\dev.csv`, `summary.json`, `meta.json` and `runs\eot_v0_eval\report.md` + `results.json`. Keep
 `runs\eot_v0\model.onnx` (32 MB, not in git) on the GPU box. Read the chain conditions with care: the model trained on
 the same family of augmentations (with other noise recordings), so gains there are expected; the real test is real
 phone calls (plan §6).
+
+**Threshold calibration** (`calibrate_thresholds.py`, seconds, one core: fine to run while another job is going). How much of
+each model's phone-line drop a re-picked decision threshold recovers, cross-fitted so no clip's threshold is tuned on that clip.
+It only reads saved `predictions.csv` files, so run it on Jobs 1-2 now, and again once Jobs 3 and 4 have finished:
+
+```powershell
+.venv\Scripts\python scripts\calibrate_thresholds.py --runs clip_baselines clip_baselines_codecs --out calibration_codecs
+.venv\Scripts\python scripts\calibrate_thresholds.py --runs clip_baselines clip_baselines_codecs clip_baselines_chain eot_v0_eval --out calibration_all
+```
+
+Bring back `runs\calibration_*\report.md` and `results.json` into `docs\results\`.
 
 ## Kaggle (from Oct 29, 2026)
 
