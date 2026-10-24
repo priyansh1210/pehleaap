@@ -100,13 +100,24 @@ Add one row per session to `data/raw/sessions.csv`:
 …and per speaker to `data/raw/speakers.csv` (private, never published with names):
 `speaker_id, age_range, gender, home_state, languages, codemix_self_rating(1-5), consent_public_audio(yes/no), consent_date`
 
-After each recording day:
+After each recording day, one command per day's sessions:
 ```
-python scripts/check_alignment.py data/raw/sessions/S017/S017_SPK031_agent.flac data/raw/sessions/S017/S017_SPK032_customer.flac
-python scripts/label_session.py data/raw/sessions/S017     # automatic turn-taking labels -> data/labels/S017/
-python -c "from pehleaap.manifest import build_manifest; build_manifest('raw')"
+python scripts/process_session.py data/raw/sessions/S017      # or "data/raw/sessions/S01*"
 ```
-Then commit `data/manifests/raw.jsonl` (checksums only, no audio) and sync `data/raw` to the GPU box.
+It works through each session in order:
+1. Checks the paperwork, and **refuses to touch a session whose speakers have no consent date** in `speakers.csv`.
+2. Checks audio health: level, clipping, background noise.
+3. Checks the clock drift between the two sync beeps; at most 10 ms, or it stops.
+4. Labels the session into `data/labels/S017/`.
+5. Writes the checksums to `data/manifests/sessions/S017.jsonl`.
+
+It prints what to do next. Then:
+- Commit `data/manifests/sessions/` (checksums only, no audio).
+- Check the labels by ear with `scripts/verify_app.py`.
+- Copy the session folders to the GPU box and run `process_session.py --asr` there for transcripts.
+
+For the **pilot**, check every event: `python scripts/verify_app.py --annotator <you> --all data/labels/<pilot>`. Those
+verdicts show where the labeling thresholds (`configs/labeling.yaml`) need tuning on real speech.
 
 ## 6. Real-phone (PSTN) sessions: test set only
 

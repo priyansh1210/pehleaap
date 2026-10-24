@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 0952188d-bc75-46ae-a49b-65b82c0ee291
-  modified: 2026-10-24T22:33:50.603Z
+  modified: 2026-10-24T22:40:43.063Z
 ---
 
 The full plan is in the repo at `docs/PLAN.md` (approved 2026-10-23). Don't duplicate it here; read it.
@@ -225,7 +225,7 @@ silence-timeout floor (VAD on the clean recording, so condition-independent); ha
 Smoke on a stitched 20-turn TTS session (TTS02): works, but numbers are meaningless: stitched Smart Turn clips are half
 deliberately unfinished, and the stitched holds are all short (flatters the timeout). Runbook in docs/machines.md.
 
-**NOISE_ECHO rule (2026-10-25 ~05:00, Dev box, uncommitted).** `pehleaap/labeling/echo.py` `split_echo`, run by label_session in
+**NOISE_ECHO rule (2026-10-25 ~05:00, Dev box; PR #23, merge 600413b).** `pehleaap/labeling/echo.py` `split_echo`, run by label_session in
 both directions (customer vs agent first, then agent vs the customer's real speech); schema NOISE_ECHO now in TYPES, Event +
 IPU fields echo_lag_s / echo_corr; verify ALWAYS includes NOISE_ECHO; LabelConfig echo_* fields (yaml in sync). Frame-level
 (10 ms log-loudness, 300-3400 Hz): 1 s windows vote for delay+gain (r >= 0.8, >= 3 agreeing votes within 20 ms, else no echo);
@@ -239,3 +239,13 @@ Measured (simulated, Smart Turn TTS clips): echo windows r 0.85-0.99, independen
 events recovered within 0.15 s, 0 spurious bc/interrupt, 0 echo found on echo-free TTS02; speakerphone barge-ins (customer cuts
 into 7 s agent turns): 5/6 found with echo 15 dB down, 2/6 with 3 dB (AEC off: inherently ambiguous; 0/6 without the
 double-talk cue; cutoff safe up to 0.7, spurious from 0.8). Tests: tests/test_echo_labels.py (random-syllable stand-in).
+
+**Session pipeline (2026-10-25 ~05:30, Dev box, uncommitted).** `scripts/process_session.py` replaces the protocol's three
+after-recording commands: per session (1) sessions.csv row + both speakers' consent_date in speakers.csv; **no consent =
+nothing processed, not even with --force** (it reads speakers.csv only for consent, prints nothing personal); valid devices;
+spk ids match track names; (2) audio health per track (sample rate >= 16 kHz, clipping > 0.1%, speech 95th-pct frame level
+< -40 dBFS, speech-to-background < 20 dB, track lengths within 2 s); (3) clock drift between the sync beeps <= 10 ms via
+align.measure_drift (PSTN sessions skip: one dual-channel recording); (4) label_session (with --asr on the GPU box);
+(5) per-session checksums data/manifests/sessions/<session>.jsonl (replaces build_manifest('raw')); writes
+data/labels/<session>/process.json; prints next steps. `--data-root` for tests. recording_protocol.md §5 and machines.md
+updated. Tests: 4 (good / no consent / drift stopped unless --force / PSTN skip).
