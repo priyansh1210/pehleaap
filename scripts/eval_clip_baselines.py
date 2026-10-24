@@ -164,7 +164,7 @@ def main() -> None:
     cfg = load_config(REPO_ROOT / "configs" / "augment.yaml")
     bank = None
     if any(c in CHAIN for c in args.conditions):
-        bank = NoiseBank(sr=smart_turn_testset.SAMPLE_RATE)
+        bank = NoiseBank(sr=smart_turn_testset.SAMPLE_RATE, part="test")  # the 20% of MUSAN that training never sees
         if not bank.files:
             raise SystemExit("the chain conditions use MUSAN noise: run scripts/get_noise.py first")
 
@@ -228,7 +228,7 @@ def main() -> None:
             "## 2. Phone-line stress test (all Hindi + 25% hash sample of English)",
             "",
             *[f"- `{c}`: {describe(c)}" for c in args.conditions if c != "clean"],
-            *([f"- Noise: {len(bank.files)} MUSAN noise files (CC BY 4.0), checked against `data/manifests/noise_musan.jsonl`"] if bank else []),
+            *([f"- Noise: the {len(bank.files)} held-out MUSAN noise files (CC BY 4.0; training uses the other 80%), checked against `data/manifests/noise_musan.jsonl`"] if bank else []),
             "",
             "| Model | Lang | Condition | n | Acc | Δ acc vs clean | Cut-in rate | Missed-end rate | AUC |",
             "|---|---|---|---|---|---|---|---|---|",

@@ -8,6 +8,7 @@ street noise; licenses checked before use) or, when none are there, from synthet
 noise, so tests and smoke runs need no download.
 """
 
+import hashlib
 from functools import lru_cache
 from pathlib import Path
 
@@ -52,14 +53,27 @@ def synthetic_noise(kind: str, n: int, sr: int, rng: np.random.Generator) -> np.
     return (y / (np.sqrt(np.mean(y**2)) + 1e-12)).astype(np.float32)
 
 
-class NoiseBank:
-    """Noise sources by name: the files under `root` (relative paths) plus "synthetic:<kind>"."""
+def held_out(name: str, test_fraction: float = 0.2) -> bool:
+    """Whether a noise file belongs to the evaluation part (fixed by a hash of its path)."""
+    return int(hashlib.md5(name.encode()).hexdigest()[:8], 16) < test_fraction * 16**8
 
-    def __init__(self, root: str | Path | None = NOISE_DIR, sr: int = 16000):
+
+class NoiseBank:
+    """Noise sources by name: the files under `root` (relative paths), or "synthetic:<kind>" if there are none.
+
+    `part="train"` or `"test"` keeps 80% or the other 20% of the files, so training and evaluation
+    never share a noise recording (synthetic noise is generated fresh, so it isn't split).
+    """
+
+    def __init__(self, root: str | Path | None = NOISE_DIR, sr: int = 16000, part: str | None = None):
         self.sr = sr
         self.root = Path(root) if root else None
         files = sorted(p for p in self.root.rglob("*") if p.suffix.lower() in NOISE_EXTS) if self.root and self.root.is_dir() else []
         self.files = [p.relative_to(self.root).as_posix() for p in files]
+        if part is not None:
+            if part not in ("train", "test"):
+                raise ValueError(f"part must be 'train' or 'test', not {part!r}")
+            self.files = [f for f in self.files if held_out(f) == (part == "test")]
         self.names = self.files or [f"synthetic:{k}" for k in SYNTHETIC]
 
     def segment(self, name: str, n: int, rng: np.random.Generator) -> np.ndarray:
