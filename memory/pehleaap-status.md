@@ -405,3 +405,11 @@ beats Smart Turn int8 everywhere). Release models-v1 is live. Open items, in ord
 4. Oct 26: pilot P01 (free chat, Craig) -> process_session -> verify_app --all -> eval_sessions; GPU box --asr if still up, then
    delete the pilot audio from the GPU box.
 5. Oct 27: pilot results in the README. Oct 28: fresh-clone check, Priyansh tags v1.0.
+
+**Job 6 DONE (GPU box, 2026-10-25 10:57-11:35; branch fleurs-significance, `docs/results/week1_fleurs_significance.md`).**
+Exact McNemar at each card threshold (deveshu 0.63): eot_v1 beats codewithmoin, deveshu and abhishek in all 5 FLEURS conditions,
+all 15 p <= 4e-5 (Bonferroni x15 max 7e-4); closest = abhishek under noise/mixed (+6.6 / +6.0). Lead over the next best per
+condition +6.0 to +7.3 (clean 7.27 unrounded; README says 7.2 from rounded values; README update is the Laptop's). Reproduction:
+deveshu/abhishek match the Laptop exactly on the 4 fixed conditions; the MIXED chain differs slightly between machines for every
+model (1-2 clips; cwm 75.43 Laptop vs 75.05 GPU box already in Job 5), repeatable within one machine: cause not checked
+(likely a codec/ffmpeg stage). Compare models on one machine's mixed audio only.
