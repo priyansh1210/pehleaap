@@ -5,7 +5,7 @@ metadata:
   type: feedback
 ---
 
-The user requires both machines to share the same project memory, and the GitHub repo is the only link between them (2026-10-24).
+Priyansh requires both machines to share the same project memory, and the GitHub repo is the only link between them (2026-10-24).
 
 Mechanism:
 - Project memory lives in `memory/` in the repo (this folder), imported by `CLAUDE.md` via `@memory/MEMORY.md`.
@@ -18,8 +18,9 @@ Mechanism:
 **Why:** Claude Code's default memory (`~/.claude/projects/<path>/memory/`) is machine-local and keyed by path, so the two machines
 would otherwise drift apart.
 **How to apply:** write every project memory here, never only in a machine-local folder. Memory reaches the other machine only after
-commit + push: include `memory/` changes in the next commit, and when the user is about to switch machines, remind them to commit and push.
+commit + push: include `memory/` changes in the next commit, and when Priyansh is about to switch machines, remind them to commit and push.
 If the SessionStart hook reports a failed pull, say memory may be stale. The repo is **public**: no personal data (real names beyond the
-GitHub handle, emails, phone numbers), secrets, or recording-participant details in memory. Label machine-specific facts (Dev box / GPU box).
+GitHub handle and Priyansh's first name, emails, phone numbers), secrets, or recording-participant details in memory. Label
+machine-specific facts (Laptop / GPU box); names as in [[naming]].
 
 Related: [[two-machine-setup]], [[git-workflow]].
