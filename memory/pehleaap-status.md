@@ -383,3 +383,11 @@ FLEURS clips (finished p=0.987 -> reply, mid-sentence pause p=0.004 -> keep list
 clone the demo tests pass (1 skip: needs Smart Turn's test set) and the full research suite passes. Shipped release stays fp32 only;
 int8 eot_v1 (GPU box: needs Hindi threshold 0.75 on phone audio) stays on the roadmap until it ships with its own threshold.
 Left for v1: pilot recording Oct 26 -> pilot results in the README Oct 27 -> final check + Priyansh tags v1.0 Oct 28.
+**Pilot plan changed (Priyansh, 2026-10-25):** the pilot is a free-topic chat with one friend (role-play optional), two people on
+Discord + Craig in separate rooms. Priyansh may supply more conversations later; told them: 2 people per recording on
+Craig/Zoom per-person tracks only (no phone-recorder apps, no 3+ people in one room), and rotate pairs, since a speaker in every
+session forces all sessions into one split. Laptop updated the send-ready consent copies (data/raw, gitignored): "a conversation
+on any topic, ~25 min / 30 min total", no private details about third parties, and storage = "my laptop and a GPU workstation
+where they are processed; the workstation copy is deleted once processing is done". So: after the pilot's --asr run on the GPU
+box, DELETE the pilot audio there (before the box goes, ~Oct 28). recording_protocol.md Option A expanded (Voice Activity +
+manual sensitivity, bitrate, rename Craig's username-named files before processing, 1-min test recording first).
