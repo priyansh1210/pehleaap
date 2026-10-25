@@ -42,6 +42,28 @@ python scripts/check_alignment.py <speakerA_track> <speakerB_track>
 Pick the tool that passes with the least audio processing. If **neither** passes, fall back to the
 `recorder/` aiortc relay (see the plan, §4.1).
 
+### Pilot day, step by step
+
+1. **Paperwork first.** Both people read and agree to `consent_en.md` / `consent_hi.md`. Add both to
+   `data/raw/speakers.csv` with speaker IDs (`SPK001`, `SPK002`; no names) and today's `consent_date`.
+2. **Craig recording** (Option A above). Use scenario card 1 for the 13 minutes, so the pilot is also real data.
+   Stop recording **within 10 s of the last clap**: the clock check looks for the claps in the first and last 20 s.
+3. **Zoom recording** (Option B above), same clap sequence, with scenario card 2.
+4. **Save each recording as its own session**, renaming the files to the IDs:
+   ```
+   data/raw/sessions/P01/P01_SPK001_agent.flac       # Craig
+   data/raw/sessions/P01/P01_SPK002_customer.flac
+   data/raw/sessions/P02/P02_SPK001_agent.m4a        # Zoom (keep the tool's own format)
+   data/raw/sessions/P02/P02_SPK002_customer.m4a
+   ```
+   Add one row per session to `data/raw/sessions.csv`, with `tool` set to `craig` or `zoom`.
+5. **Run** `python scripts/process_session.py "data/raw/sessions/P0*"`. For each tool it reports the **clock
+   drift** (the pass/fail above, at most 10 ms) and **audio warnings** (clipping, noise suppression, a quiet mic),
+   then labels the session.
+6. **Pick the tool:** the one that passes with no warnings. Use it for every session from now on.
+7. **Check every pilot event by ear:** `python scripts/verify_app.py --annotator <you> --all data/labels/P01`
+   (or P02, for the tool you picked). Those verdicts show which labeling thresholds to tune on real speech.
+
 ---
 
 ## 2. Before every session
