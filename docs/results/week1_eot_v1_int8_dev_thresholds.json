@@ -1,0 +1,85 @@
+{
+  "dev_thresholds": {
+    "clean/eng": 0.4619,
+    "clean/hin": 0.8944,
+    "clean/hin_real": 0.908,
+    "phone/eng": 0.4403,
+    "phone/hin": 0.7525,
+    "phone/hin_real": 0.8479
+  },
+  "dev": [
+    {
+      "condition": "clean",
+      "group": "eng",
+      "n": 1967,
+      "int8_threshold": 0.4619,
+      "acc_fp32": 96.64,
+      "cut_in_fp32": 0.0424,
+      "acc_int8": 95.68,
+      "cut_in_int8": 0.0579,
+      "acc_int8_tuned": 95.88,
+      "cut_in_int8_tuned": 0.061
+    },
+    {
+      "condition": "clean",
+      "group": "hin",
+      "n": 344,
+      "int8_threshold": 0.8944,
+      "acc_fp32": 93.9,
+      "cut_in_fp32": 0.0652,
+      "acc_int8": 89.83,
+      "cut_in_int8": 0.1576,
+      "acc_int8_tuned": 93.6,
+      "cut_in_int8_tuned": 0.0543
+    },
+    {
+      "condition": "clean",
+      "group": "hin_real",
+      "n": 105,
+      "int8_threshold": 0.908,
+      "acc_fp32": 93.33,
+      "cut_in_fp32": 0.093,
+      "acc_int8": 84.76,
+      "cut_in_int8": 0.3721,
+      "acc_int8_tuned": 92.38,
+      "cut_in_int8_tuned": 0.0465
+    },
+    {
+      "condition": "phone",
+      "group": "eng",
+      "n": 1967,
+      "int8_threshold": 0.4403,
+      "acc_fp32": 93.04,
+      "cut_in_fp32": 0.0868,
+      "acc_int8": 91.1,
+      "cut_in_int8": 0.1281,
+      "acc_int8_tuned": 91.41,
+      "cut_in_int8_tuned": 0.1405
+    },
+    {
+      "condition": "phone",
+      "group": "hin",
+      "n": 344,
+      "int8_threshold": 0.7525,
+      "acc_fp32": 91.57,
+      "cut_in_fp32": 0.087,
+      "acc_int8": 85.76,
+      "cut_in_int8": 0.25,
+      "acc_int8_tuned": 90.12,
+      "cut_in_int8_tuned": 0.125
+    },
+    {
+      "condition": "phone",
+      "group": "hin_real",
+      "n": 105,
+      "int8_threshold": 0.8479,
+      "acc_fp32": 85.71,
+      "cut_in_fp32": 0.2326,
+      "acc_int8": 78.1,
+      "cut_in_int8": 0.4419,
+      "acc_int8_tuned": 82.86,
+      "cut_in_int8_tuned": 0.093
+    }
+  ],
+  "note": "accuracy-optimal thresholds of model_int8.onnx on the dev split (same keys and seed as train_eot.py)"
+}
