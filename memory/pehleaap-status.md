@@ -355,3 +355,20 @@ pauses x 2 models x 2 conditions on the Laptop; a 25-min call is ~6-8 min). ASR 
 Found and fixed a metric bug: cut_in_at_gap interpolated from the *worst* threshold among ties (median gaps sit on the
 checkpoint times, so ties are the norm); it now keeps the fewest cut-ins per gap, non-increasing with the gap. Only
 eval_sessions uses it and no reported result depended on it.
+
+**v1 release work (Laptop, 2026-10-25, after Job 5).** Shipped model = **eot_v1** (recommended in the Job 5 report; Laptop proceeded
+on it, Priyansh can overrule). Added: LICENSE (BSD-2-Clause, holder = GitHub handle only), THIRD_PARTY_NOTICES.md (Smart Turn's
+BSD-2 notice "Copyright (c) 2024-2025, Daily" + CC BY 4.0 data credits), `scripts/get_weights.py` (downloads from a GitHub release
+tagged **models-v1**, model-files-only and never changed, assets eot_v1.onnx / eot_v0.onnx / eot_v0_int8.onnx; every file's full
+sha256 pinned in the script; a test fails while any sha is missing), demo default = Smart Turn + the newest of eot_v1/eot_v0 on the
+machine, README rewritten for strangers (results first, use in Pipecat/Python, demo, benchmark, retrain). Verified: our exported
+model.onnx is a drop-in `LocalSmartTurnAnalyzerV3(smart_turn_model_path=...)` file (probabilities within 1e-6; test added).
+Fairness gap found: FLEURS lacked deveshu / chhotu / abhishek / Smart Turn fp32 (deveshu is 93.2 on TTS Hindi, near eot_v1):
+Laptop ran them (`runs/fleurs_more_baselines`). Still needed from Priyansh: copy eot_v1 model.onnx (+ best.pt) off the GPU box
+before it goes, publish the models-v1 release (GitHub web UI, Priyansh's click).
+FLEURS other baselines DONE (Laptop, 10:31; `docs/results/week1_fleurs_more_baselines_report.md`): clean acc (cut-in) deveshu 80.9 (36%),
+abhishek 79.5 (49%; AUC 0.86, most noise-robust community model, 76.8 under noise/mixed), Smart Turn fp32 75.0 (36%) vs int8 72.8
+(60%: int8 shifts toward "finished"), chhotu 67.2 (fails on phone audio). eot_v1 leads every model in every condition by 6.0-7.2.
+On clean TTS Hindi codewithmoin edges eot_v1 (93.9 vs 93.7; in-distribution for it); README says so. models-v1 release PUBLISHED by
+Priyansh (2026-10-25); get_weights.py verified against the real release (all 3 sha256 OK). eot_v1 model.onnx + best.pt copied
+to the Laptop's weights/eot_v1/ (hashes match the Job 5 report). The GPU box also has an unscored eot_v1 model_int8.onnx (fe3c6e0a…).
