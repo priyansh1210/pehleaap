@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 0952188d-bc75-46ae-a49b-65b82c0ee291
-  modified: 2026-10-25T03:04:41.705Z
+  modified: 2026-10-25T04:16:38.902Z
 ---
 
 The full plan is in the repo at `docs/PLAN.md` (approved 2026-10-23). Don't duplicate it here; read it.
@@ -296,6 +296,12 @@ n.s.); English slips (clean 95.40 -> 94.69, p 3e-4; 5 dB -1.7) but stays >= Smar
 Caveats: read speech; FLEURS has no speaker IDs (train/test speaker overlap possible). model.onnx (sha256 0ccac636…89a52b) on the
 GPU box at runs/eot_v1/: Priyansh to copy to the Laptop's weights/eot_v1/ (Chrome Remote Desktop) and add to the demo's
 PEHLEAAP_TURN_MODELS. For the Oct 28 v1 checklist: eot_v1 is the recommended shipped model (Priyansh's call).
+**eot_v1 int8 (GPU box, 2026-10-25 09:20-09:45; `docs/results/week1_eot_v1_int8.md`).** runs/eot_v1/model_int8.onnx (8.7 MB,
+sha256 fe3c6e0a…0356f7) + model_pipecat_graph.onnx (d30e81b4…1e4f), not in git. int8 shifts Hindi probs UP (more than eot_v0's:
+dev Hindi −4 to −6 at 0.5, cut-ins ~2-4x; AUC ~same). FLEURS real voices @0.5: int8 78-86 vs fp32 83-89, cut-ins 34-56%; with
+Hindi dev thresholds (clean 0.89 / phone 0.75): phone conditions 81.5-85.7 at fp32's cut-in level; still >= Smart Turn int8 +11-17.
+Latency 2.3x faster than fp32 (= Smart Turn int8). Guide: fp32 for the demo; int8 + Hindi phone threshold 0.75 when CPU-bound.
+Not run: int8 on the TTS test set (~50 min).
 `docs/overview.html` (2026-10-25, Priyansh asked): plain-language project overview page with framework diagram, progress, results.
 
 **eot_v0 int8 test set (GPU box, 2026-10-25 05:30):** `docs/results/week1_eot_v0_int8.md` (test-set section). Hindi @0.5: int8 1.3-3.7
