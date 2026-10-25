@@ -1,0 +1,767 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>pehleaap project overview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column; the framework graph and charts break out wider. Phone-line palette: cool paper, signal blue, marigold for pauses. */
+:root {
+  --paper: #f3f6f8;
+  --surface: #ffffff;
+  --ink: #15202b;
+  --muted: #566472;
+  --line: #d6dde4;
+  --accent: #1f5bd8;
+  --accent-soft: #e3ebfb;
+  --pause: #c27c00;
+  --pause-soft: #fbf0d9;
+  --good: #1d8656;
+  --good-soft: #def2e7;
+  --bad: #c0392f;
+  --bad-soft: #f9e1df;
+  --future: #7d8a97;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", Consolas, "Courier New", monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0e141a; --surface: #161f28; --ink: #e5ebf0; --muted: #97a5b2; --line: #293541;
+    --accent: #77a2ff; --accent-soft: #1b2a45; --pause: #f2b441; --pause-soft: #3a2e14;
+    --good: #4cc48b; --good-soft: #143326; --bad: #f2756c; --bad-soft: #3d1c1a; --future: #6c7986;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0e141a; --surface: #161f28; --ink: #e5ebf0; --muted: #97a5b2; --line: #293541;
+  --accent: #77a2ff; --accent-soft: #1b2a45; --pause: #f2b441; --pause-soft: #3a2e14;
+  --good: #4cc48b; --good-soft: #143326; --bad: #f2756c; --bad-soft: #3d1c1a; --future: #6c7986;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 16px/1.6 var(--body);
+}
+.wrap {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding-block: 32px 72px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid;
+  gap: 56px;
+}
+section { display: grid; gap: 18px; min-width: 0; }
+.prose { max-width: 68ch; }
+h1, h2, h3 { font-family: var(--display); line-height: 1.15; margin: 0; text-wrap: balance; }
+h1 { font-size: clamp(2.4rem, 6vw, 4rem); font-weight: 800; letter-spacing: -0.02em; }
+h2 { font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 800; letter-spacing: -0.01em; }
+h3 { font-size: 1.15rem; font-weight: 600; }
+p { margin: 0; }
+.eyebrow {
+  font: 500 0.78rem/1 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.lede { font-size: 1.2rem; color: var(--ink); max-width: 60ch; }
+.muted { color: var(--muted); }
+.small { font-size: 0.9rem; }
+code, .mono { font-family: var(--mono); font-size: 0.9em; }
+a { color: var(--accent); }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Hero */
+.hero { display: grid; gap: 20px; }
+.hero-meta { display: flex; flex-wrap: wrap; gap: 8px 20px; font: 0.88rem/1.4 var(--mono); color: var(--muted); }
+.callstrip {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 18px;
+  overflow-x: auto;
+}
+.callstrip svg { display: block; width: 100%; min-width: 640px; height: auto; }
+
+/* Problem cards */
+.grid4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 16px 18px;
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  min-width: 0;
+}
+.say {
+  font-family: var(--mono);
+  font-size: 0.92rem;
+  background: var(--pause-soft);
+  border-radius: 6px;
+  padding: 6px 10px;
+}
+.say b { color: var(--pause); font-weight: 500; }
+
+/* Goals */
+.goals { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.goal { border-top: 3px solid var(--accent); padding-top: 12px; display: grid; gap: 6px; }
+.goal .num { font: 600 0.8rem/1 var(--mono); color: var(--accent); }
+.questions { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+.q { display: grid; gap: 6px; padding: 14px 16px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); }
+.q .ask { font-family: var(--display); font-weight: 600; font-size: 1.05rem; }
+
+/* Status chips */
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  font: 500 0.75rem/1 var(--mono);
+  letter-spacing: 0.03em;
+  padding: 5px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+  justify-self: start;
+}
+.chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.chip.done { color: var(--good); background: var(--good-soft); }
+.chip.now { color: var(--pause); background: var(--pause-soft); }
+.chip.next { color: var(--future); background: transparent; border: 1px dashed var(--future); }
+
+/* Timeline */
+.timeline { overflow-x: auto; }
+.weeks {
+  display: grid;
+  grid-template-columns: 1.1fr repeat(8, 1fr);
+  min-width: 760px;
+  gap: 6px;
+}
+.wk {
+  border-radius: 8px;
+  padding: 10px 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  display: grid;
+  gap: 4px;
+  align-content: start;
+}
+.wk .d { font: 0.72rem/1.2 var(--mono); color: var(--muted); }
+.wk .t { font-weight: 600; font-size: 0.92rem; line-height: 1.25; }
+.wk.today { border: 2px solid var(--pause); background: var(--pause-soft); }
+.wk .bar { height: 6px; border-radius: 3px; background: var(--line); margin-top: 6px; overflow: hidden; }
+.wk .bar span { display: block; height: 100%; background: var(--good); }
+.wk .bar span.part { background: var(--pause); }
+
+/* Progress table */
+.tablewrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 0.95rem; }
+th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font: 500 0.75rem/1.2 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+tr:last-child td { border-bottom: 0; }
+td.area { font-weight: 600; white-space: nowrap; }
+td .chip { margin-top: 2px; }
+
+/* Graph */
+.graphbox {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px;
+  overflow-x: auto;
+}
+.graphbox svg { display: block; width: 100%; min-width: 900px; height: auto; }
+.legend { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; font-size: 0.88rem; color: var(--muted); }
+svg text { font-family: var(--body); }
+.g-lane { fill: var(--paper); }
+.g-lanelabel { fill: var(--accent); font: 600 12px var(--mono); letter-spacing: 0.08em; text-transform: uppercase; }
+.g-box { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; }
+.g-box.done { stroke: var(--good); }
+.g-box.now { stroke: var(--pause); stroke-width: 2.2; fill: var(--pause-soft); }
+.g-box.next { stroke: var(--future); stroke-dasharray: 5 4; }
+.g-title { fill: var(--ink); font-weight: 600; font-size: 14px; }
+.g-sub { fill: var(--muted); font-size: 12px; }
+.g-step { fill: var(--ink); font-size: 12.5px; }
+.g-arrow { stroke: var(--muted); stroke-width: 1.6; fill: none; }
+.g-arrow.dash { stroke-dasharray: 5 4; stroke: var(--future); }
+.g-head { fill: var(--muted); }
+.g-dot.done { fill: var(--good); }
+.g-dot.now { fill: var(--pause); }
+.g-dot.next { fill: var(--future); }
+.g-note { fill: var(--muted); font-size: 11.5px; font-style: italic; }
+
+/* Decision steps */
+.steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; counter-reset: s; }
+.step {
+  counter-increment: s;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px;
+  display: grid;
+  gap: 6px;
+  align-content: start;
+}
+.step::before { content: counter(s); font: 600 0.8rem/1 var(--mono); color: var(--accent); }
+.step.yes { border-color: var(--good); }
+
+/* Charts */
+.charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+.chart {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 18px;
+  display: grid;
+  gap: 14px;
+  align-content: start;
+  min-width: 0;
+}
+.chart h3 { font-size: 1.05rem; }
+.cgroup { display: grid; gap: 6px; }
+.cgroup .lab { font-size: 0.85rem; font-weight: 600; }
+.row { display: grid; grid-template-columns: 104px 1fr 48px; gap: 8px; align-items: center; font-size: 0.85rem; }
+.row .who { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.track { height: 14px; background: var(--paper); border-radius: 3px; position: relative; overflow: hidden; }
+.track span { position: absolute; inset: 0 auto 0 0; border-radius: 3px; background: var(--future); }
+.track span.ours { background: var(--accent); }
+.track span.alt { background: var(--muted); opacity: 0.55; }
+.row .v { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
+.axis { display: grid; grid-template-columns: 104px 1fr 48px; gap: 8px; font: 0.7rem/1 var(--mono); color: var(--muted); }
+.axis div:nth-child(2) { display: flex; justify-content: space-between; }
+.callout {
+  border-left: 3px solid var(--pause);
+  background: var(--pause-soft);
+  padding: 12px 16px;
+  border-radius: 0 8px 8px 0;
+  max-width: 76ch;
+}
+
+/* Machines */
+.machines { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+
+/* Glossary */
+dl.gloss { display: grid; grid-template-columns: minmax(120px, 190px) 1fr; gap: 10px 20px; margin: 0; max-width: 820px; }
+dl.gloss dt { font-weight: 600; }
+dl.gloss dd { margin: 0; color: var(--muted); }
+@media (max-width: 560px) {
+  dl.gloss { grid-template-columns: 1fr; gap: 2px; }
+  dl.gloss dd { margin-bottom: 10px; }
+  .row, .axis { grid-template-columns: 84px 1fr 44px; }
+}
+footer { font-size: 0.85rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 18px; }
+@media (prefers-reduced-motion: no-preference) {
+  .track span { transition: width 0.6s ease; }
+}
+</style>
+</head>
+<body>
+<main class="wrap">
+
+<!-- ============ HERO ============ -->
+<header class="hero">
+  <p class="eyebrow">Project overview · status on 25 Oct 2026</p>
+  <h1>pehleaap</h1>
+  <p class="lede">Teaching phone voice bots <strong>when to talk</strong> on Indian Hinglish calls, so they stop cutting people off mid-sentence and stop going quiet when they should answer.</p>
+  <div class="hero-meta">
+    <span>"pehle aap" = "after you"</span>
+    <span>8 kHz phone audio</span>
+    <span>8-week project · ends ~20 Dec 2026</span>
+  </div>
+
+  <div class="callstrip" role="img" aria-label="A caller says 'main kal payment', pauses, then says 'kar dunga'. A typical bot cuts in during the pause. pehleaap waits and replies after the sentence ends.">
+    <svg viewBox="0 0 900 200">
+      <!-- caller waveform -->
+      <text x="0" y="28" class="g-sub" style="font-family:var(--mono)">CALLER</text>
+      <g fill="var(--accent)">
+        <!-- "main kal payment" -->
+        <rect x="90"  y="38" width="4" height="24" rx="2"/><rect x="98"  y="30" width="4" height="40" rx="2"/>
+        <rect x="106" y="34" width="4" height="32" rx="2"/><rect x="114" y="24" width="4" height="52" rx="2"/>
+        <rect x="122" y="32" width="4" height="36" rx="2"/><rect x="130" y="40" width="4" height="20" rx="2"/>
+        <rect x="138" y="28" width="4" height="44" rx="2"/><rect x="146" y="22" width="4" height="56" rx="2"/>
+        <rect x="154" y="30" width="4" height="40" rx="2"/><rect x="162" y="36" width="4" height="28" rx="2"/>
+        <rect x="170" y="26" width="4" height="48" rx="2"/><rect x="178" y="32" width="4" height="36" rx="2"/>
+        <rect x="186" y="24" width="4" height="52" rx="2"/><rect x="194" y="34" width="4" height="32" rx="2"/>
+        <rect x="202" y="30" width="4" height="40" rx="2"/><rect x="210" y="38" width="4" height="24" rx="2"/>
+        <rect x="218" y="28" width="4" height="44" rx="2"/><rect x="226" y="34" width="4" height="32" rx="2"/>
+        <rect x="234" y="40" width="4" height="20" rx="2"/><rect x="242" y="44" width="4" height="12" rx="2"/>
+        <!-- "kar dunga" -->
+        <rect x="470" y="34" width="4" height="32" rx="2"/><rect x="478" y="26" width="4" height="48" rx="2"/>
+        <rect x="486" y="30" width="4" height="40" rx="2"/><rect x="494" y="22" width="4" height="56" rx="2"/>
+        <rect x="502" y="32" width="4" height="36" rx="2"/><rect x="510" y="28" width="4" height="44" rx="2"/>
+        <rect x="518" y="36" width="4" height="28" rx="2"/><rect x="526" y="30" width="4" height="40" rx="2"/>
+        <rect x="534" y="38" width="4" height="24" rx="2"/><rect x="542" y="44" width="4" height="12" rx="2"/>
+      </g>
+      <line x1="90" y1="50" x2="880" y2="50" stroke="var(--line)" stroke-width="1"/>
+      <text x="150" y="98" class="g-step" text-anchor="middle">"main kal payment…"</text>
+      <text x="506" y="98" class="g-step" text-anchor="middle">"…kar dunga"</text>
+      <!-- pause -->
+      <rect x="256" y="18" width="200" height="64" rx="6" fill="var(--pause-soft)" stroke="var(--pause)" stroke-dasharray="4 3"/>
+      <text x="356" y="47" text-anchor="middle" class="g-step" style="fill:var(--pause);font-weight:600">pause before the verb</text>
+      <text x="356" y="64" text-anchor="middle" class="g-sub">sentence is NOT finished</text>
+
+      <!-- typical bot -->
+      <text x="0" y="138" class="g-sub" style="font-family:var(--mono)">TYPICAL BOT</text>
+      <rect x="300" y="124" width="160" height="22" rx="4" fill="var(--bad-soft)" stroke="var(--bad)"/>
+      <text x="380" y="140" text-anchor="middle" class="g-step" style="fill:var(--bad);font-weight:600">✕ talks over the caller</text>
+
+      <!-- pehleaap -->
+      <text x="0" y="182" class="g-sub" style="font-family:var(--mono)">PEHLEAAP</text>
+      <text x="356" y="184" text-anchor="middle" class="g-sub">waits…</text>
+      <rect x="580" y="168" width="200" height="22" rx="4" fill="var(--good-soft)" stroke="var(--good)"/>
+      <text x="680" y="184" text-anchor="middle" class="g-step" style="fill:var(--good);font-weight:600">✓ replies after the sentence</text>
+    </svg>
+  </div>
+</header>
+
+<!-- ============ PROBLEM ============ -->
+<section>
+  <p class="eyebrow">The problem</p>
+  <h2>Why bots get Hinglish phone calls wrong</h2>
+  <p class="prose">A voice bot has to guess, many times per call, whether the caller has finished speaking. Most bots guess from silence: "they stopped, so it's my turn." On Indian phone calls that guess is often wrong, for four reasons that come from how people speak Hinglish:</p>
+  <div class="grid4">
+    <div class="card">
+      <h3>Pauses before the verb</h3>
+      <p class="say">main kal payment<b>…</b> kar dunga</p>
+      <p class="small muted">Hindi puts the verb last, so people pause in the middle of a sentence. The bot thinks they're done.</p>
+    </div>
+    <div class="card">
+      <h3>"Haan" can mean two things</h3>
+      <p class="say">haan<b>…</b> haan</p>
+      <p class="small muted">Sometimes it's "I'm listening, go on". Sometimes it's a real answer. The bot must tell them apart.</p>
+    </div>
+    <div class="card">
+      <h3>"Ek minute"</h3>
+      <p class="say">ek minute, card dhoondh raha hoon<b>…</b></p>
+      <p class="small muted">The caller asked the bot to wait. A long silence is expected; the bot shouldn't fill it.</p>
+    </div>
+    <div class="card">
+      <h3>Reading out numbers</h3>
+      <p class="say">98765<b>…</b> 43210</p>
+      <p class="small muted">People pause between groups of digits. A pause there doesn't mean the number is finished.</p>
+    </div>
+  </div>
+  <p class="prose">On top of that, <strong>phone lines are bad audio</strong>: 8 kHz sound with half the detail of a normal recording, compression codecs, lost packets, background noise and speakerphone echo. Most turn-taking models are trained on clean audio and fall apart here.</p>
+</section>
+
+<!-- ============ GOALS ============ -->
+<section>
+  <p class="eyebrow">What we want to achieve</p>
+  <h2>Four things by 20 December</h2>
+  <div class="goals">
+    <div class="goal"><span class="num">Deliverable A</span><h3>An open training recipe and models</h3><p class="small muted">Code anyone can rerun to train a turn-taking model on 8 kHz Hinglish phone audio.</p></div>
+    <div class="goal"><span class="num">Deliverable B</span><h3>A public benchmark</h3><p class="small muted">Real recorded conversations from 40+ speakers, with checked labels and a scoring script. Test speakers are never in training.</p></div>
+    <div class="goal"><span class="num">Deliverable C</span><h3>Measured cost</h3><p class="small muted">How many milliseconds each decision takes on a normal CPU, and how many calls one core can handle.</p></div>
+    <div class="goal"><span class="num">Deliverable D</span><h3>A live demo</h3><p class="small muted">A web voice call through a simulated phone line, with a switch between a standard model and ours.</p></div>
+  </div>
+  <p class="prose muted small">How we describe it: "a training recipe plus a benchmark that a company can rerun on its own call data." Not a finished product. Every result says what test set it was measured on.</p>
+
+  <h3 style="margin-top:10px">The four questions the bot must answer</h3>
+  <div class="questions">
+    <div class="q"><span class="chip now">working now</span><span class="ask">Has the caller finished?</span><span class="small muted">End-of-turn (EOT). This is what eot_v0 and eot_v1 do.</span></div>
+    <div class="q"><span class="chip next">week 4</span><span class="ask">Is this an interruption or just "haan"?</span><span class="small muted">Barge-in: should the bot stop talking, or carry on?</span></div>
+    <div class="q"><span class="chip next">week 4</span><span class="ask">Did they ask me to wait?</span><span class="small muted">Hold intent: "ek minute", "ruko", "hold karo".</span></div>
+    <div class="q"><span class="chip next">week 4</span><span class="ask">What kind of "haan" was it?</span><span class="small muted">Backchannel type: "go on" versus "I agree / that's right".</span></div>
+  </div>
+</section>
+
+<!-- ============ PROGRESS ============ -->
+<section>
+  <p class="eyebrow">How far we are</p>
+  <h2>Where the project stands today</h2>
+  <p class="prose">The official schedule starts tomorrow (week 1 = 26 Oct). The software side is <strong>ahead of plan</strong>: the first fine-tuned model was planned for week 3 and already works. The part that hasn't started is the most important one: <strong>recording real conversations</strong>, which needs people.</p>
+
+  <div class="timeline">
+    <div class="weeks">
+      <div class="wk today"><span class="d">now · 23-25 Oct</span><span class="t">Prep sprint</span><span class="small muted">GPU-box runs</span><div class="bar"><span style="width:100%"></span></div></div>
+      <div class="wk"><span class="d">wk 1 · 26 Oct</span><span class="t">Foundation</span><div class="bar"><span class="part" style="width:70%"></span></div></div>
+      <div class="wk"><span class="d">wk 2 · 2 Nov</span><span class="t">Data engine</span><div class="bar"><span class="part" style="width:60%"></span></div></div>
+      <div class="wk"><span class="d">wk 3 · 9 Nov</span><span class="t">First model</span><div class="bar"><span class="part" style="width:50%"></span></div></div>
+      <div class="wk"><span class="d">wk 4 · 16 Nov</span><span class="t">Four-question model</span><div class="bar"><span style="width:0"></span></div></div>
+      <div class="wk"><span class="d">wk 5 · 23 Nov</span><span class="t">Integrate</span><div class="bar"><span class="part" style="width:30%"></span></div></div>
+      <div class="wk"><span class="d">wk 6 · 30 Nov</span><span class="t">Full evaluation</span><div class="bar"><span style="width:0"></span></div></div>
+      <div class="wk"><span class="d">wk 7 · 7 Dec</span><span class="t">Demo</span><div class="bar"><span style="width:0"></span></div></div>
+      <div class="wk"><span class="d">wk 8 · 14 Dec</span><span class="t">Release</span><div class="bar"><span style="width:0"></span></div></div>
+    </div>
+    <p class="small muted" style="margin-top:8px">Bars are a rough sense of how much of each week's list is already built, not a measured percentage. Details in the table below.</p>
+  </div>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Area</th><th>Done</th><th>Now / next</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="area">Baselines</td>
+          <td><span class="chip done">done</span><br>Smart Turn v3.2 reproduced exactly. 4 community Hinglish models and LiveKit v1-mini tested on clean and phone-line audio (31.5k clips, dozens of line conditions).</td>
+          <td class="muted">Re-test on our own real recordings.</td>
+        </tr>
+        <tr>
+          <td class="area">Phone-line simulator</td>
+          <td><span class="chip done">done</span><br>Noise, echo, auto-gain, band limit, 8 kHz, 6 codecs, packet loss, jitter. Keeps timing within 1 ms.</td>
+          <td class="muted">Uses real MUSAN noise. Optional: Indian street noise later.</td>
+        </tr>
+        <tr>
+          <td class="area">Model v0</td>
+          <td><span class="chip done">done</span><br>eot_v0 fine-tuned. Beats every baseline on phone audio. Small int8 version (29 ms per decision) also done.</td>
+          <td class="muted">Trained on synthetic (TTS) Hindi only.</td>
+        </tr>
+        <tr>
+          <td class="area">Model v1</td>
+          <td><span class="chip done">trained</span><br>eot_v1 = v0's recipe + 3,761 clips of real human Hindi voices (FLEURS). Real-voice test: 74.6 → 88.8, best of all models. Phone-line TTS Hindi unchanged; English −0.7.</td>
+          <td class="muted">Our new best model. Add to the demo; report in docs/results/week1_eot_v1_report.md.</td>
+        </tr>
+        <tr>
+          <td class="area">Labeling engine</td>
+          <td><span class="chip done">done</span><br>Session checks, speech detection, Whisper transcripts, turn-event rules, echo detection, and a keyboard app to check labels by ear.</td>
+          <td class="muted">Tuned only on simulated sessions so far. Needs the pilot recording.</td>
+        </tr>
+        <tr>
+          <td class="area">Demo</td>
+          <td><span class="chip done">skeleton done</span><br>Pipecat voice bot with phone-line simulation and a live switch between Smart Turn and eot_v0. It beeps when it would reply.</td>
+          <td class="muted">Real speech reply (STT → LLM → TTS) in week 7.</td>
+        </tr>
+        <tr>
+          <td class="area">Recordings</td>
+          <td><span class="chip next">not started</span><br>Consent forms, recording protocol, 8 scenario cards, 60 fake-PII cards and invite messages are ready.</td>
+          <td><strong>Week 1:</strong> review consent forms, pilot with one pair (Craig vs Zoom), book 15+ sessions.</td>
+        </tr>
+        <tr>
+          <td class="area">Barge-in, hold, backchannel</td>
+          <td><span class="chip next">not started</span></td>
+          <td class="muted">Week 4, once real recordings exist.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============ FRAMEWORK GRAPH ============ -->
+<section>
+  <p class="eyebrow">How everything works</p>
+  <h2>The complete framework</h2>
+  <p class="prose">Three connected loops. <strong>1 · Learn:</strong> audio goes through a fake phone line and teaches the model. <strong>2 · Check and use:</strong> the model is tested and runs in the demo. <strong>3 · Our recordings:</strong> real conversations get labelled and feed both of the others.</p>
+  <div class="legend">
+    <span class="chip done">done</span>
+    <span class="chip now">happening now</span>
+    <span class="chip next">coming</span>
+    <span>Scroll sideways on a phone.</span>
+  </div>
+  <div class="graphbox">
+    <svg viewBox="0 0 1040 790" role="img" aria-label="Framework diagram. Learn: four audio sources feed a phone-line simulator, which feeds fine-tuning of Smart Turn v3.2 on the GPU box, producing eot_v0 and eot_v1, exported as ONNX files. Check and use: the model file goes to the TTS test set, the FLEURS real-voice test, the real-call test, and the demo bot, all compared with baseline models. Our recordings: record a fake call, session checks, automatic labels, human check, verified labels, which feed training and the real-call test.">
+      <defs>
+        <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" class="g-head"/>
+        </marker>
+      </defs>
+
+      <!-- Lane backgrounds -->
+      <rect x="0" y="0" width="1040" height="330" rx="10" class="g-lane"/>
+      <rect x="0" y="345" width="1040" height="205" rx="10" class="g-lane"/>
+      <rect x="0" y="565" width="1040" height="225" rx="10" class="g-lane"/>
+      <text x="18" y="28" class="g-lanelabel">1 · Learn</text>
+      <text x="18" y="373" class="g-lanelabel">2 · Check and use</text>
+      <text x="18" y="593" class="g-lanelabel">3 · Our own recordings (from week 1)</text>
+
+      <!-- ===== Lane 1: sources ===== -->
+      <text x="30" y="58" class="g-sub" style="font-family:var(--mono)">AUDIO WE LEARN FROM</text>
+      <rect x="30" y="70" width="210" height="54" rx="8" class="g-box done"/>
+      <circle cx="226" cy="84" r="5" class="g-dot done"/>
+      <text x="44" y="93" class="g-title">Smart Turn train set</text>
+      <text x="44" y="112" class="g-sub">77,808 clips · TTS voices</text>
+
+      <rect x="30" y="134" width="210" height="54" rx="8" class="g-box done"/>
+      <circle cx="226" cy="148" r="5" class="g-dot done"/>
+      <text x="44" y="157" class="g-title">FLEURS Hindi</text>
+      <text x="44" y="176" class="g-sub">3,761 clips · real human readers</text>
+
+      <rect x="30" y="198" width="210" height="54" rx="8" class="g-box done"/>
+      <circle cx="226" cy="212" r="5" class="g-dot done"/>
+      <text x="44" y="221" class="g-title">MUSAN noise</text>
+      <text x="44" y="240" class="g-sub">real background noise</text>
+
+      <rect x="30" y="262" width="210" height="54" rx="8" class="g-box next"/>
+      <circle cx="226" cy="276" r="5" class="g-dot next"/>
+      <text x="44" y="285" class="g-title">Our recordings</text>
+      <text x="44" y="304" class="g-sub">train split · from lane 3</text>
+
+      <!-- arrows sources -> simulator -->
+      <path d="M240,97 H300" class="g-arrow" marker-end="url(#ah)"/>
+      <path d="M240,161 H300" class="g-arrow" marker-end="url(#ah)"/>
+      <path d="M240,225 H300" class="g-arrow" marker-end="url(#ah)"/>
+      <path d="M240,289 H300" class="g-arrow dash" marker-end="url(#ah)"/>
+
+      <!-- simulator -->
+      <text x="302" y="58" class="g-sub" style="font-family:var(--mono)">MAKE IT SOUND LIKE A PHONE</text>
+      <rect x="302" y="70" width="230" height="246" rx="8" class="g-box done"/>
+      <circle cx="518" cy="84" r="5" class="g-dot done"/>
+      <text x="318" y="94" class="g-title">Phone-line simulator</text>
+      <text x="318" y="112" class="g-sub">random mix for every clip</text>
+      <text x="318" y="140" class="g-step">↓ background noise (0-20 dB)</text>
+      <text x="318" y="164" class="g-step">↓ speakerphone echo</text>
+      <text x="318" y="188" class="g-step">↓ auto-gain and clipping</text>
+      <text x="318" y="212" class="g-step">↓ phone band 300-3400 Hz</text>
+      <text x="318" y="236" class="g-step">↓ down to 8 kHz</text>
+      <text x="318" y="260" class="g-step">↓ codec: G.711 · AMR · GSM · Opus</text>
+      <text x="318" y="284" class="g-step">↓ lost and late packets</text>
+
+      <path d="M532,140 H592" class="g-arrow" marker-end="url(#ah)"/>
+
+      <!-- training -->
+      <text x="594" y="58" class="g-sub" style="font-family:var(--mono)">TEACH THE MODEL</text>
+      <rect x="594" y="70" width="200" height="140" rx="8" class="g-box done"/>
+      <circle cx="780" cy="84" r="5" class="g-dot done"/>
+      <text x="608" y="94" class="g-title">Fine-tuning</text>
+      <text x="608" y="114" class="g-sub">starts from Smart Turn v3.2</text>
+      <text x="608" y="132" class="g-sub">(Whisper-tiny ear, 8M params)</text>
+      <text x="608" y="158" class="g-step">GPU box · ~25 min</text>
+      <text x="608" y="178" class="g-step">listens to last 8 s of audio</text>
+      <text x="608" y="198" class="g-step">learns: finished / not yet</text>
+
+      <path d="M794,140 H846" class="g-arrow" marker-end="url(#ah)"/>
+
+      <!-- models -->
+      <text x="848" y="58" class="g-sub" style="font-family:var(--mono)">RESULT</text>
+      <rect x="848" y="70" width="176" height="140" rx="8" class="g-box done"/>
+      <text x="862" y="94" class="g-title">Our models</text>
+      <circle cx="866" cy="120" r="5" class="g-dot done"/>
+      <text x="878" y="124" class="g-step">eot_v0 · done</text>
+      <text x="878" y="142" class="g-sub">TTS Hindi + English</text>
+      <circle cx="866" cy="168" r="5" class="g-dot done"/>
+      <text x="878" y="172" class="g-step">eot_v1 · done</text>
+      <text x="878" y="190" class="g-sub">+ real voices</text>
+
+      <path d="M936,210 V236" class="g-arrow" marker-end="url(#ah)"/>
+
+      <rect x="848" y="238" width="176" height="78" rx="8" class="g-box done"/>
+      <circle cx="1010" cy="252" r="5" class="g-dot done"/>
+      <text x="862" y="261" class="g-title">Model file (ONNX)</text>
+      <text x="862" y="281" class="g-step">full · 57 ms / decision</text>
+      <text x="862" y="300" class="g-step">int8 · 29 ms / decision</text>
+
+      <!-- bus from ONNX down to lane 2 -->
+      <path d="M936,316 V400" class="g-arrow"/>
+      <path d="M150,400 H936" class="g-arrow"/>
+      <path d="M150,400 V418" class="g-arrow" marker-end="url(#ah)"/>
+      <path d="M405,400 V418" class="g-arrow" marker-end="url(#ah)"/>
+      <path d="M660,400 V418" class="g-arrow dash" marker-end="url(#ah)"/>
+      <path d="M936,400 V418" class="g-arrow" marker-end="url(#ah)"/>
+
+      <!-- ===== Lane 2 ===== -->
+      <rect x="30" y="420" width="240" height="78" rx="8" class="g-box done"/>
+      <circle cx="256" cy="434" r="5" class="g-dot done"/>
+      <text x="44" y="443" class="g-title">Phone-line test (TTS)</text>
+      <text x="44" y="463" class="g-step">31.5k clips, Hindi + English</text>
+      <text x="44" y="482" class="g-sub">clean + many line conditions</text>
+
+      <rect x="285" y="420" width="240" height="78" rx="8" class="g-box done"/>
+      <circle cx="511" cy="434" r="5" class="g-dot done"/>
+      <text x="299" y="443" class="g-title">Real-voice test (FLEURS)</text>
+      <text x="299" y="463" class="g-step">1,046 clips · never trained on</text>
+      <text x="299" y="482" class="g-sub">human Hindi readers</text>
+
+      <rect x="540" y="420" width="240" height="78" rx="8" class="g-box next"/>
+      <circle cx="766" cy="434" r="5" class="g-dot next"/>
+      <text x="554" y="443" class="g-title">Real-call test</text>
+      <text x="554" y="463" class="g-step">whole conversations</text>
+      <text x="554" y="482" class="g-sub">+ 1-2 h real phone calls (PSTN)</text>
+
+      <rect x="848" y="420" width="176" height="110" rx="8" class="g-box done"/>
+      <circle cx="1010" cy="434" r="5" class="g-dot done"/>
+      <text x="862" y="443" class="g-title">Demo voice bot</text>
+      <text x="862" y="463" class="g-step">Pipecat + phone sim</text>
+      <text x="862" y="483" class="g-step">switch: Smart Turn</text>
+      <text x="862" y="501" class="g-step">↔ ours, mid-call</text>
+      <text x="862" y="520" class="g-sub">replies by beep (for now)</text>
+
+      <rect x="30" y="510" width="680" height="30" rx="6" fill="none" stroke="var(--line)"/>
+      <text x="44" y="530" class="g-sub">Compared against: Smart Turn v3.2 · 4 community Hinglish models · LiveKit v1-mini · silence timer</text>
+
+      <!-- ===== Lane 3 ===== -->
+      <rect x="30" y="610" width="180" height="104" rx="8" class="g-box next"/>
+      <circle cx="196" cy="624" r="5" class="g-dot next"/>
+      <text x="44" y="633" class="g-title">Record a fake call</text>
+      <text x="44" y="654" class="g-step">2 people, 2 tracks</text>
+      <text x="44" y="672" class="g-step">Craig or Zoom</text>
+      <text x="44" y="690" class="g-sub">scenario + fake-PII cards</text>
+      <text x="44" y="706" class="g-sub">40+ speakers, ~17-20 h</text>
+
+      <path d="M210,662 H236" class="g-arrow" marker-end="url(#ah)"/>
+
+      <rect x="238" y="610" width="180" height="104" rx="8" class="g-box done"/>
+      <circle cx="404" cy="624" r="5" class="g-dot done"/>
+      <text x="252" y="633" class="g-title">Session checks</text>
+      <text x="252" y="654" class="g-step">consent on file?</text>
+      <text x="252" y="672" class="g-step">audio healthy?</text>
+      <text x="252" y="690" class="g-step">clocks drift ≤ 10 ms?</text>
+      <text x="252" y="706" class="g-sub">no consent = not processed</text>
+
+      <path d="M418,662 H444" class="g-arrow" marker-end="url(#ah)"/>
+
+      <rect x="446" y="610" width="196" height="104" rx="8" class="g-box done"/>
+      <circle cx="628" cy="624" r="5" class="g-dot done"/>
+      <text x="460" y="633" class="g-title">Automatic labels</text>
+      <text x="460" y="654" class="g-step">speech detection</text>
+      <text x="460" y="672" class="g-step">Whisper transcripts</text>
+      <text x="460" y="690" class="g-step">turn events + echo</text>
+      <text x="460" y="706" class="g-sub">end · hold · haan · interrupt</text>
+
+      <path d="M642,662 H668" class="g-arrow" marker-end="url(#ah)"/>
+
+      <rect x="670" y="610" width="170" height="104" rx="8" class="g-box done"/>
+      <circle cx="826" cy="624" r="5" class="g-dot done"/>
+      <text x="684" y="633" class="g-title">Human check</text>
+      <text x="684" y="654" class="g-step">listen + press a key</text>
+      <text x="684" y="672" class="g-step">~2,000 events</text>
+      <text x="684" y="690" class="g-step">10% checked twice</text>
+      <text x="684" y="706" class="g-sub">tool built · no data yet</text>
+
+      <path d="M840,662 H866" class="g-arrow" marker-end="url(#ah)"/>
+
+      <rect x="868" y="610" width="156" height="104" rx="8" class="g-box next"/>
+      <circle cx="1010" cy="624" r="5" class="g-dot next"/>
+      <text x="882" y="633" class="g-title">Verified labels</text>
+      <text x="882" y="654" class="g-step">split by speaker</text>
+      <text x="882" y="672" class="g-step">70% train</text>
+      <text x="882" y="690" class="g-step">10% dev · 20% test</text>
+      <text x="882" y="706" class="g-sub">frozen 15 Nov</text>
+
+      <!-- verified labels -> real-call test (test speakers) and -> lane 1 (train speakers) -->
+      <path d="M900,610 V580 H760 V500" class="g-arrow dash" marker-end="url(#ah)"/>
+      <text x="772" y="600" class="g-note">test speakers → real-call test</text>
+      <path d="M946,714 V746 H10 V289 H28" class="g-arrow dash" marker-end="url(#ah)"/>
+      <text x="30" y="768" class="g-note">train speakers → "Our recordings" in lane 1</text>
+    </svg>
+  </div>
+  <p class="small muted prose">The plan's final system adds a tiny always-on listener that runs every 10 ms and wakes the bigger model only when something happens (a pause, or the caller speaking over the bot), plus a decision layer with "patient / balanced / snappy" settings. Both come in weeks 4-5.</p>
+</section>
+
+<!-- ============ ONE DECISION ============ -->
+<section>
+  <p class="eyebrow">Inside a live call</p>
+  <h2>How one "is it my turn?" decision happens</h2>
+  <div class="steps">
+    <div class="step"><h3>Caller goes quiet</h3><p class="small muted">The phone audio arrives at 8 kHz, just as on a real call.</p></div>
+    <div class="step"><h3>Wait 0.2 s</h3><p class="small muted">A voice detector confirms it's a real pause, not a breath.</p></div>
+    <div class="step"><h3>Model listens</h3><p class="small muted">It hears the last 8 seconds: words, pitch, rhythm, how the voice trailed off.</p></div>
+    <div class="step"><h3>Score 0 to 1</h3><p class="small muted">"How sure am I the caller is finished?" Takes 29-57 ms on one CPU core.</p></div>
+    <div class="step yes"><h3>Decide</h3><p class="small muted">Above 0.5: the bot replies. Below: it keeps listening. After 3 s of silence it replies anyway.</p></div>
+  </div>
+</section>
+
+<!-- ============ RESULTS ============ -->
+<section>
+  <p class="eyebrow">Results so far</p>
+  <h2>What the numbers say</h2>
+  <p class="prose">Accuracy = how often the model makes the right call (finished or not yet). Higher is better. Bars run from 0 to 100%.</p>
+
+  <div class="charts">
+    <div class="chart">
+      <h3>Synthetic Hindi over bad phone lines</h3>
+      <p class="small muted">Smart Turn test set, 1,284 Hindi clips (TTS voices). eot_v0 against the model it started from.</p>
+      <div class="cgroup"><span class="lab">Clean audio</span>
+        <div class="row"><span class="who">Smart Turn</span><div class="track"><span style="width:90.3%"></span></div><span class="v">90.3</span></div>
+        <div class="row"><span class="who">eot_v0</span><div class="track"><span class="ours" style="width:94.1%"></span></div><span class="v">94.1</span></div>
+      </div>
+      <div class="cgroup"><span class="lab">Two codecs in a row</span>
+        <div class="row"><span class="who">Smart Turn</span><div class="track"><span style="width:76.4%"></span></div><span class="v">76.4</span></div>
+        <div class="row"><span class="who">eot_v0</span><div class="track"><span class="ours" style="width:93.1%"></span></div><span class="v">93.1</span></div>
+      </div>
+      <div class="cgroup"><span class="lab">Mixed phone problems</span>
+        <div class="row"><span class="who">Smart Turn</span><div class="track"><span style="width:73.5%"></span></div><span class="v">73.5</span></div>
+        <div class="row"><span class="who">eot_v0</span><div class="track"><span class="ours" style="width:91.9%"></span></div><span class="v">91.9</span></div>
+      </div>
+      <div class="cgroup"><span class="lab">Loud noise (5 dB)</span>
+        <div class="row"><span class="who">Smart Turn</span><div class="track"><span style="width:69.5%"></span></div><span class="v">69.5</span></div>
+        <div class="row"><span class="who">eot_v0</span><div class="track"><span class="ours" style="width:88.6%"></span></div><span class="v">88.6</span></div>
+      </div>
+      <div class="axis"><div></div><div><span>0</span><span>50</span><span>100</span></div><div></div></div>
+      <p class="small">Cut-ins on clean Hindi dropped from <strong>17.7% to 6.0%</strong>. English also improved (94.3 → 95.4). eot_v1 scores the same as eot_v0 on these Hindi clips (93.7 clean, 89.3 at 5 dB) and slightly lower on English (94.7).</p>
+    </div>
+
+    <div class="chart">
+      <h3>Real human Hindi voices</h3>
+      <p class="small muted">FLEURS test, 1,046 clips of people reading aloud. No model has trained on these.</p>
+      <div class="cgroup"><span class="lab">Clean audio</span>
+        <div class="row"><span class="who">Smart Turn</span><div class="track"><span style="width:72.8%"></span></div><span class="v">72.8</span></div>
+        <div class="row"><span class="who">eot_v0</span><div class="track"><span class="alt" style="width:74.6%"></span></div><span class="v">74.6</span></div>
+        <div class="row"><span class="who">codewithmoin</span><div class="track"><span class="alt" style="width:81.6%"></span></div><span class="v">81.6</span></div>
+        <div class="row"><span class="who"><strong>eot_v1</strong></span><div class="track"><span class="ours" style="width:88.8%"></span></div><span class="v">88.8</span></div>
+      </div>
+      <div class="cgroup"><span class="lab">Noise + AMR phone codec</span>
+        <div class="row"><span class="who">Smart Turn</span><div class="track"><span style="width:65.2%"></span></div><span class="v">65.2</span></div>
+        <div class="row"><span class="who">eot_v0</span><div class="track"><span class="alt" style="width:74.2%"></span></div><span class="v">74.2</span></div>
+        <div class="row"><span class="who">codewithmoin</span><div class="track"><span class="alt" style="width:76.3%"></span></div><span class="v">76.3</span></div>
+        <div class="row"><span class="who"><strong>eot_v1</strong></span><div class="track"><span class="ours" style="width:83.4%"></span></div><span class="v">83.4</span></div>
+      </div>
+      <div class="axis"><div></div><div><span>0</span><span>50</span><span>100</span></div><div></div></div>
+      <p class="small">Real voices are much harder than TTS for every model. eot_v0 learned from synthetic Hindi only and barely beat Smart Turn here. <strong>eot_v1 added 3,761 real-voice training clips and jumped 14 points</strong>, ahead of every model we've tested.</p>
+    </div>
+
+    <div class="chart">
+      <h3>Cut-ins on real voices</h3>
+      <p class="small muted">Same FLEURS test, clean audio: how often the bot would talk over someone who wasn't finished. <strong>Lower is better.</strong></p>
+      <div class="cgroup">
+        <div class="row"><span class="who">Smart Turn</span><div class="track"><span class="alt" style="width:60.4%"></span></div><span class="v">60%</span></div>
+        <div class="row"><span class="who">codewithmoin</span><div class="track"><span class="alt" style="width:37.0%"></span></div><span class="v">37%</span></div>
+        <div class="row"><span class="who">eot_v0</span><div class="track"><span class="alt" style="width:33.2%"></span></div><span class="v">33%</span></div>
+        <div class="row"><span class="who"><strong>eot_v1</strong></span><div class="track"><span class="ours" style="width:18.3%"></span></div><span class="v">18%</span></div>
+      </div>
+      <div class="axis"><div></div><div><span>0</span><span>50</span><span>100</span></div><div></div></div>
+      <p class="small">eot_v1 cuts in on about 1 in 5 unfinished sentences, against 3 in 5 for Smart Turn. It also misses fewer real endings than eot_v0 (7% vs 21%). Still too many cut-ins for a product: real conversation data is the next step.</p>
+    </div>
+  </div>
+
+  <div class="callout">
+    <p><strong>What these numbers don't show yet:</strong> real two-person conversations. Every test so far is single clips: TTS voices or people reading aloud. Read speech pauses at commas, not before verbs. The real test is our own recorded calls, which is why recording is the top priority for week 1.</p>
+  </div>
+</section>
+
+<!-- ============ MACHINES ============ -->
+<section>
+  <p class="eyebrow">Where the work runs</p>
+  <h2>Three computers, one shared repo</h2>
+  <div class="machines">
+    <div class="card"><h3>Dev laptop</h3><p class="mono small muted">GTX 1650 4 GB · 8 GB RAM</p><p class="small">Writing code, tests, the label-check app, the demo, small trial runs.</p></div>
+    <div class="card"><h3>GPU box</h3><p class="mono small muted">RTX 4000 Ada 20 GB · 24 cores</p><p class="small">Training and big evaluations, for as long as it's available (maybe until ~28 Oct).</p></div>
+    <div class="card"><h3>Kaggle</h3><p class="mono small muted">T4 16 GB · ~30 GPU-hours/week</p><p class="small">Backup for training once the GPU box is gone. Already set up and tested.</p></div>
+  </div>
+  <p class="small muted prose">Code and project notes travel through GitHub. Recordings never go in git: they stay private, and audio is only released for speakers who opt in.</p>
+</section>
+
+<!-- ============ GLOSSARY ============ -->
+<section>
+  <p class="eyebrow">Words used here</p>
+  <h2>Glossary</h2>
+  <dl class="gloss">
+    <dt>End-of-turn (EOT)</dt><dd>The moment a caller has finished and it's the bot's turn to talk.</dd>
+    <dt>Cut-in</dt><dd>The bot talks while the caller still had more to say. The worst mistake.</dd>
+    <dt>Missed end</dt><dd>The caller had finished, but the model said "not yet", so the bot replies late.</dd>
+    <dt>Barge-in</dt><dd>The caller talks over the bot to interrupt it.</dd>
+    <dt>Backchannel</dt><dd>Short "haan", "hmm", "achha" that mean "I'm listening", not "my turn".</dd>
+    <dt>TTS</dt><dd>Text-to-speech: computer-generated voices. Smart Turn's Hindi data is all TTS.</dd>
+    <dt>8 kHz</dt><dd>Phone-call audio quality: about half the detail of a normal recording.</dd>
+    <dt>Codec</dt><dd>How a phone network compresses voice (G.711, AMR, GSM, Opus). Each one damages the sound differently.</dd>
+    <dt>Smart Turn v3.2</dt><dd>An open turn-taking model from Pipecat. Our starting point, and the main baseline.</dd>
+    <dt>Fine-tuning</dt><dd>Taking an existing model and training it further on our kind of audio.</dd>
+    <dt>ONNX / int8</dt><dd>A portable model file. int8 is a compressed version that runs about twice as fast.</dd>
+    <dt>FLEURS</dt><dd>Google's free dataset of real people reading sentences aloud, including Hindi.</dd>
+    <dt>AUC</dt><dd>How well a model ranks finished above unfinished, ignoring the exact threshold. 1.0 is perfect, 0.5 is guessing.</dd>
+    <dt>Dev / test set</dt><dd>Dev: held-out data used to pick the best checkpoint. Test: kept untouched for the final score.</dd>
+  </dl>
+</section>
+
+<footer>
+  pehleaap · github.com/priyansh1210/pehleaap · Sources: docs/PLAN.md and docs/results/ (week1 reports; real-voice numbers from runs/eot_v1_fleurs). FLEURS doesn't publish speaker IDs, so some readers may appear in both its train and test splits.
+</footer>
+
+</main>
+</body>
+</html>
