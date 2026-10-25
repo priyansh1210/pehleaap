@@ -392,6 +392,11 @@ All evaluation is **causal**: a decision at time t uses audio ≤ t only, follow
 
 ## 7. Week-by-week plan (week 1 = Oct 26)
 
+> **Revised Oct 25: a working v1 by Oct 28.** The repo and README must show a complete, working project by then; the
+> weeks below continue afterwards as upgrades. The v1 rests on public data (Smart Turn's test set and FLEURS real voices)
+> and the phone-line simulation, plus **one real conversation** recorded with one friend as the first real two-person test.
+> Recruiting 40+ speakers moves past Oct 28, and with it the claims that need our own dataset.
+
 | Week | Dates | Deliverables | Exit gate |
 |---|---|---|---|
 | **1** Foundation | Oct 26 - Nov 1 | See below | All three exit criteria below |
