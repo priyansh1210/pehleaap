@@ -18,3 +18,9 @@ PR #2 (week1-baselines, merge dcdd96e).
 **How to apply:** don't commit or push on my own unless asked. `gh` is not installed on the Dev box, so PRs go through the browser link.
 Repo: https://github.com/priyansh1210/pehleaap (**public**, default branch `main`). Feature branches are named like `week1-foundation`.
 Memory changes in `memory/` travel through the same commits ([[shared-memory]]).
+
+**GPU-box lessons (2026-10-25):** the Dev box merges PRs while GPU-box work is in progress, so pull `main` right before branching
+for a commit. When a pushed branch conflicts with main (always `memory/pehleaap-status.md`, both machines append), merge main into
+the branch and keep both entries in time order: no rebase, so no force push. A push alone doesn't open a PR; if the compare page
+shows nothing, the branch is usually already merged (`git merge-base --is-ancestor <commit> origin/main`). When the user pastes the
+push / `start <compare link>` commands back into the chat, they want me to run them (done once, PR #25, no objection).

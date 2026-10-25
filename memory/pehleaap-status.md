@@ -276,3 +276,11 @@ pts below fp32 (mean -2.3), cut-ins ~double. Dev-tuned int8 thresholds (clean/hi
 keep 0.5) recover half: mean -1.2. int8 still beats Smart Turn int8 everywhere (+18.0 at 5 dB, +3.3 clean, Hindi). DECIDED (user confirmed 2026-10-25):
 fp32 eot_v0 where ~57 ms/1 thread is OK (demo); int8 + Hindi thresholds only when CPU-bound. weights/eot_v0/model.onnx copied on
 the GPU box for eval_sessions.py.
+
+**GPU box state, 2026-10-25 ~06:00 (main dae7135, PR #27; idle, nothing running).** Done there: Jobs 1-4, LiveKit, eot_v0
+training + eval + calibration, int8 + its test-set eval (PRs #10-#27). On disk, NOT in git and not yet on the Dev box:
+`runs/eot_v0/model_int8.onnx` (8.7 MB) and `model_pipecat_graph.onnx` (32.4 MB): user to copy them over by Chrome Remote Desktop
+before the box goes (model.onnx + best.pt already backed up). Also there: data/external/eot-train (15 GB, 77,808 clips),
+`weights/eot_v0/model.onnx` (for eval_sessions.py), runs/eot_v0/summary.orig.json (pre-dev_thresholds copy). Leftover hung python
+PID 1808 (harmless; user can `Stop-Process -Id 1808 -Force`). Next GPU-box work, if it is still up: `eval_sessions.py` once real
+sessions are recorded and labelled (copy labels + audio there first); optional noise round 2 only after real calls show noise matters.
