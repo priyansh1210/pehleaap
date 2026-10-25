@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 0952188d-bc75-46ae-a49b-65b82c0ee291
-  modified: 2026-10-24T23:45:47.408Z
+  modified: 2026-10-25T00:13:50.851Z
 ---
 
 The full plan is in the repo at `docs/PLAN.md` (approved 2026-10-23). Don't duplicate it here; read it.
@@ -252,7 +252,7 @@ updated. Tests: 4 (good / no consent / drift stopped unless --force / PSTN skip)
 CSV templates created on the Dev box only (gitignored): data/raw/sessions.csv + speakers.csv (headers from protocol §5) and
 data/raw/sessions/. The user was walked through filling them (IDs only, consent_date YYYY-MM-DD, device values).
 
-**Outreach + real-speech test (2026-10-25 ~05:15, Dev box, uncommitted).** docs/recruiting.md: WhatsApp invite (English +
+**Outreach + real-speech test (2026-10-25 ~05:15, Dev box; branch outreach-fleurs).** docs/recruiting.md: WhatsApp invite (English +
 Hinglish, placeholders for name/thank-you/slots, ~1 h as in the consent form), private booking-sheet columns (device mix
 50/30/20; 15 sessions booked = week-1 exit), HingCoS access email (contact unknown: corresponding author / IITG EMST lab).
 recording_protocol.md §1 "Pilot day, step by step" (P01 Craig / P02 Zoom as separate sessions, stop within 10 s of the last
@@ -261,5 +261,18 @@ clap because measure_drift looks at the first/last 20 s, process_session then ve
 Turn schema: 657 finished (speech end + 0.2 s) + 389 not-finished (0.2 s into one mid-sentence VAD pause >= 0.25 s, not in the
 first second; chosen by md5 of the file name) = 1,046 real-voice clips, built in 1 min. eval_clip_baselines.py: with a
 non-Smart-Turn --data-root the report names the data (README.md first line) and skips the card check (default output
-byte-identical). Eval running on the Dev box (smart_turn int8, codewithmoin, eot_v0; clean/g711/amr7.95/noise10/mixed;
---out fleurs_eot).
+byte-identical).
+**FLEURS RESULT (Dev box, 27 min, docs/results/week1_fleurs_eot_report.md): real voices are a different world from TTS.**
+Hindi n=1046, acc / cut-in / AUC: clean: Smart Turn 72.4 / 61% / 0.78, eot_v0 74.6 / 33% / 0.79 (missed-end 21%),
+codewithmoin 81.6 / 37% / 0.82. noise10+AMR: ST 64.6 / 85% / 0.59, eot_v0 74.2 / 42% / 0.75, cwm 76.3 / 52% / 0.75. mixed:
+ST 65.3, eot_v0 73.6, cwm 75.4. => eot_v0's phone-line robustness transfers to human voices (flat across conditions, half
+of ST's cut-ins), but on clean real voices it barely out-ranks ST: it learned the line from TTS Hindi, not real prosody.
+codewithmoin generalises best. Caveat: read speech, comma pauses can sound final. NEXT (agreed direction): eot_v1 with
+real-voice clips in the training mix: FLEURS train split (~2.1k recordings, never used for testing) cut the same way,
+then our recordings. GPU box job.
+
+**eot_v0 int8 test set (GPU box, 2026-10-25 05:30):** `docs/results/week1_eot_v0_int8.md` (test-set section). Hindi @0.5: int8 1.3-3.7
+pts below fp32 (mean -2.3), cut-ins ~double. Dev-tuned int8 thresholds (clean/hin 0.81, phone/hin 0.71; English 0.37-0.39 don't help,
+keep 0.5) recover half: mean -1.2. int8 still beats Smart Turn int8 everywhere (+18.0 at 5 dB, +3.3 clean, Hindi). Recommendation:
+fp32 eot_v0 where ~57 ms/1 thread is OK (demo); int8 + Hindi thresholds only when CPU-bound. weights/eot_v0/model.onnx copied on
+the GPU box for eval_sessions.py.
