@@ -10,20 +10,20 @@ metadata:
 
 Compute (revised twice on 2026-10-24). The GitHub repo is the only thing shared between machines ([[shared-memory]]).
 
-- **Dev box** = laptop, repo at `D:\pehleaap`: i5-11300H 4C/8T, GTX 1650 4 GB (Turing, no native bf16 → fp16), 7.8 GB RAM,
+- **Laptop** = laptop, repo at `D:\pehleaap`: i5-11300H 4C/8T, GTX 1650 4 GB (Turing, no native bf16 → fp16), 7.8 GB RAM,
   ~450 GB free on D:. Code, tests, labeling + verify UI, eval on slices, Pipecat demo, smoke runs, CPU benchmark #1.
 - **GPU box** (checked 2026-10-24 by env_check: **RTX 4000 SFF Ada, 20 GB dedicated**, bf16; Core Ultra 9 285 24 cores;
   63 GB RAM; ~100 GB free on C:; Python 3.12.10; repo at `C:\Users\FITT\Desktop\PRIYANSH!!\pehleaap`): **all main runs and
-  fine-tuning, for as long as it is available.** The user said (2026-10-24) they're not sure when they'll lose it (it was first
+  fine-tuning, for as long as it is available.** Priyansh said (2026-10-24) they're not sure when they'll lose it (it was first
   said to be until Oct 28) and will use it as much as they can. Runbooks: docs/machines.md (Job 1 done, Job 2 codec sweep running,
   Job 3 full-chain eval next). Earlier notes called it an RTX 4060 with 8 GB; env_check proved that wrong. Job 1 was CPU-only
   (onnxruntime CPUExecutionProvider), so its 24 cores set the speed (`--threads 24`); see [[compute-routing]].
 - **Kaggle** = the fallback, ready now: T4 16 GB (two per session) or P100; no bf16 → fp16 AMP + GradScaler; measured 2026-10-24:
   2× T4 14.6 GB usable, 31 GB RAM, 2 cores / 4 threads; 30 GPU-h/week (+20 TPU-h), 12 h sessions. Jobs clone a pushed commit via
-  `scripts/kaggle_job.py` (Dev box only, where the API token is); smoke test passes. Details: docs/PLAN.md §3a, docs/machines.md.
+  `scripts/kaggle_job.py` (Laptop only, where the API token is); smoke test passes. Details: docs/PLAN.md §3a, docs/machines.md.
 
-**Access (2026-10-24):** the user set up Chrome Remote Desktop, so they can reach the GPU box's screen from the Dev box at any
-time (to run runbook commands or talk to its own Claude Code session). Claude on the Dev box still can't run commands there.
+**Access (2026-10-24):** Priyansh set up Chrome Remote Desktop, so they can reach the GPU box's screen from the Laptop at any
+time (to run runbook commands or talk to its own Claude Code session). Claude on the Laptop still can't run commands there.
 
 **Why:** the laptop can't train in reasonable time; the GPU box is much faster than Kaggle's T4 but may go any day.
 **How to apply:** front-load GPU-heavy work (evals, fine-tuning) onto the GPU box while it exists. Write training code that runs

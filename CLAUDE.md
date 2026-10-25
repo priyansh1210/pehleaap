@@ -18,7 +18,9 @@ in `memory/`. Its index is imported here:
 - Memory reaches the other machine only after a commit and push. Include `memory/` changes in the next commit, and remind the
   user to commit and push before switching machines.
 - The repo is **public**: no personal data (real names beyond the GitHub handle, emails, phone numbers), secrets, or
-  recording-participant details in memory or anywhere else in git. Label machine-specific facts (Dev box / GPU box).
+  recording-participant details in memory or anywhere else in git. Label machine-specific facts (Laptop / GPU box).
+- In memory, write **Laptop** for the laptop and its Claude session (the docs' "Dev box"), **GPU box** for the other machine and
+  its session, and **Priyansh** for the person (they/them): Priyansh's first name is the one allowed exception to the rule above.
 
 ## Working rules
 

@@ -5,13 +5,13 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 0952188d-bc75-46ae-a49b-65b82c0ee291
-  modified: 2026-10-25T00:31:22.848Z
+  modified: 2026-10-25T01:43:45.977Z
 ---
 
 The full plan is in the repo at `docs/PLAN.md` (approved 2026-10-23). Don't duplicate it here; read it.
 
-**Locked decisions (user-chosen):** compute = develop on the Dev box; **main runs and fine-tuning on the GPU box (RTX 4000 Ada 20 GB)
-for as long as it is available** (user, 2026-10-24, later the same day: end date unknown, "i will try to work as much as i can on it");
+**Locked decisions (Priyansh's choices):** compute = develop on the Laptop; **main runs and fine-tuning on the GPU box (RTX 4000 Ada 20 GB)
+for as long as it is available** (Priyansh, 2026-10-24, later the same day: end date unknown, "i will try to work as much as i can on it");
 Kaggle (set up and smoke-tested) is the fallback the day it goes ([[two-machine-setup]], [[gpu-box-runs-untouched]]);
 recording = bulk browser/app two-track recording (Craig on Discord or Zoom per-participant files) with telephony simulated afterwards,
 plus a 1–2 h real-PSTN set used only for testing; 40+ speakers (~17–20 h); demo = web call with 8 kHz telephony simulation + baseline/ours toggle,
@@ -31,14 +31,14 @@ Pipecat 1.13 (`requirements-demo.txt`); `pehleaap/pipecat_ext/` (ClipModelTurnAn
 (serves :7860; offline end-to-end test passes; Smart Turn parity with Pipecat's own analyzer < 1e-3). 26 tests in .venv, 4 more in .venv-demo.
 
 **Done 2026-10-24 (PR #3, merge c8f4606):** project memory moved into the repo so both machines share it ([[shared-memory]]).
-Dev box is set up (autoMemoryDirectory -> D:/pehleaap/memory); GPU box (2026-10-24): repo cloned, `.venv` built, 64 tests pass,
+Laptop is set up (autoMemoryDirectory -> D:/pehleaap/memory); GPU box (2026-10-24): repo cloned, `.venv` built, 64 tests pass,
 smoke eval passed (chhotu, 1 shard, 39 s), full Job 1 started with `--threads 24`; `setup_claude_memory.ps1` done there too (autoMemoryDirectory ->
 C:/Users/FITT/Desktop/PRIYANSH!!/pehleaap/memory). From Bash `!`, use forward slashes: `scripts/setup_claude_memory.ps1`.
 
-**Decision (user, 2026-10-24):** the full baseline eval (~2.5 h, too heavy for the laptop's 8 GB RAM) runs on the GPU box; runbook in
+**Decision (Priyansh, 2026-10-24):** the full baseline eval (~2.5 h, too heavy for the laptop's 8 GB RAM) runs on the GPU box; runbook in
 `docs/machines.md`. The laptop runs the demo and small smoke tests.
 
-**Decision (user, 2026-10-24; PR #5, merge 5f5c935): Kaggle replaces the GPU box from Oct 29.** docs/PLAN.md §3a rewritten (T4 16 GB, fp16 AMP + GradScaler
+**Decision (Priyansh, 2026-10-24; PR #5, merge 5f5c935): Kaggle replaces the GPU box from Oct 29.** docs/PLAN.md §3a rewritten (T4 16 GB, fp16 AMP + GradScaler
 since no bf16, batches 192×2 EOT / 128×3 multi-task, ~30 GPU-h/week budget per week with week 6 tightest, 12 h sessions → checkpoint
 every 30 min and resume, recordings as a private Kaggle dataset `pehleaap-raw` checked against manifests, CPU benchmark #2 = Kaggle vCPU
 or another machine). docs/machines.md has a Kaggle section; the untested GPU-box scripts (remote.ps1, fetch_ckpt.ps1, sync_data.ps1,
@@ -59,9 +59,9 @@ chhotu collapses (-23 to -27 pt, cut-in up to 66%); deveshu and codewithmoin hol
 (60 eng / 68 hin) and flat across conditions. Narrowband + codec only, no noise/echo/loss yet; in-distribution for the community models.
 Cite Smart Turn's phone-line drop with that scope (synthetic Hindi, its own test set).
 
-**GPU box, 2026-10-24 (user OK'd using its last days for more baseline evals):** (a) **Job 2, codec sweep: DONE** (96 min, `--threads 24`), in `docs/results/week1_codec_sweep_report.md` + `_results.json`; the clean rows match Job 1 exactly. Smart Turn on Hindi: A-law -4.1, Opus -6.2, GSM-FR -6.4, AMR 12.2 -7.2, AMR 4.75 **-9.7** (cut-in 40%). AUC only 0.982 -> 0.951: mostly a calibration shift (best Hindi threshold 0.91-0.95 vs the card's 0.5, tuned on the test set, so optimistic: AMR 4.75 80.5 -> 87.5). So the recipe needs per-language and per-channel calibration, and reports should give AUC. English moves <= 2.2 points. deveshu/codewithmoin <= 2.7 points; chhotu -23 to -27 points. (b) LiveKit `v1-mini` (livekit-agents 1.8.9, livekit-local-inference 0.2.7, scratch venv on the GPU box, not `.venv`): **runs**. LICENSE: the LiveKit Model License 3(i) forbids standalone use or use with frameworks other than LiveKit Agents, and 3(ii) forbids using its outputs to improve or develop other models. So never call `livekit.local_inference.EOT` directly and never train/distill/label with its outputs; drive it only through `livekit.agents.inference.TurnDetector(version="v1-mini").stream()` (push_audio, then predict()). Whether even that counts as "with LiveKit Agents" outside an AgentSession is the user's call (asked 2026-10-24). How LiveKit uses it: the last 1.2 s of 16 kHz audio, scored after 200 ms of VAD silence; thresholds hi 0.305, en 0.36 (p < thr extends the endpointing delay). Smoke test on shard 0 (132 hin + 300 eng clips, clean): AUC hin 0.76 / eng 0.71 vs Smart Turn 0.99; at LiveKit thresholds acc 0.59 / 0.54 with cut-in 92% / 82%. Not caused by gain (0.25-3x) or trailing silence (0/200/400 ms); deterministic; ~35-40 ms/clip on 1 thread. Caveat: the Smart Turn test set is in-distribution for Smart Turn, not for LiveKit. User OK'd the full run (2026-10-24) under that reading. Built `scripts/eval_livekit_v1mini.py` + `requirements-livekit.txt` (own `.venv-livekit` on the GPU box; reuses eval_clip_baselines' conditions/phone subset/metrics so rows line up; 8-12 parallel streams, bit-identical to 1 stream; runbook in docs/machines.md). **Full run DONE** (8 min): `docs/results/week1_livekit_v1mini_report.md` + `_results.json`. AUC ~0.70 in every condition (Smart Turn 0.95-0.98); clean Hindi acc 55.1, cut-in 93.7%; phone lines 'raise' acc +1.4..+4.9 only by pushing scores below a too-low threshold. With +200 ms silence it flips to mostly unfinished (missed ends 60-77%), AUC 0.65-0.70. Keep it as the LiveKit reference point; recheck on our own two-track recordings. (c) the Kaggle runner was written on the **Dev box** (user's choice); see below.
+**GPU box, 2026-10-24 (Priyansh OK'd using its last days for more baseline evals):** (a) **Job 2, codec sweep: DONE** (96 min, `--threads 24`), in `docs/results/week1_codec_sweep_report.md` + `_results.json`; the clean rows match Job 1 exactly. Smart Turn on Hindi: A-law -4.1, Opus -6.2, GSM-FR -6.4, AMR 12.2 -7.2, AMR 4.75 **-9.7** (cut-in 40%). AUC only 0.982 -> 0.951: mostly a calibration shift (best Hindi threshold 0.91-0.95 vs the card's 0.5, tuned on the test set, so optimistic: AMR 4.75 80.5 -> 87.5). So the recipe needs per-language and per-channel calibration, and reports should give AUC. English moves <= 2.2 points. deveshu/codewithmoin <= 2.7 points; chhotu -23 to -27 points. (b) LiveKit `v1-mini` (livekit-agents 1.8.9, livekit-local-inference 0.2.7, scratch venv on the GPU box, not `.venv`): **runs**. LICENSE: the LiveKit Model License 3(i) forbids standalone use or use with frameworks other than LiveKit Agents, and 3(ii) forbids using its outputs to improve or develop other models. So never call `livekit.local_inference.EOT` directly and never train/distill/label with its outputs; drive it only through `livekit.agents.inference.TurnDetector(version="v1-mini").stream()` (push_audio, then predict()). Whether even that counts as "with LiveKit Agents" outside an AgentSession is Priyansh's call (asked 2026-10-24). How LiveKit uses it: the last 1.2 s of 16 kHz audio, scored after 200 ms of VAD silence; thresholds hi 0.305, en 0.36 (p < thr extends the endpointing delay). Smoke test on shard 0 (132 hin + 300 eng clips, clean): AUC hin 0.76 / eng 0.71 vs Smart Turn 0.99; at LiveKit thresholds acc 0.59 / 0.54 with cut-in 92% / 82%. Not caused by gain (0.25-3x) or trailing silence (0/200/400 ms); deterministic; ~35-40 ms/clip on 1 thread. Caveat: the Smart Turn test set is in-distribution for Smart Turn, not for LiveKit. Priyansh OK'd the full run (2026-10-24) under that reading. Built `scripts/eval_livekit_v1mini.py` + `requirements-livekit.txt` (own `.venv-livekit` on the GPU box; reuses eval_clip_baselines' conditions/phone subset/metrics so rows line up; 8-12 parallel streams, bit-identical to 1 stream; runbook in docs/machines.md). **Full run DONE** (8 min): `docs/results/week1_livekit_v1mini_report.md` + `_results.json`. AUC ~0.70 in every condition (Smart Turn 0.95-0.98); clean Hindi acc 55.1, cut-in 93.7%; phone lines 'raise' acc +1.4..+4.9 only by pushing scores below a too-low threshold. With +200 ms silence it flips to mostly unfinished (missed ends 60-77%), AUC 0.65-0.70. Keep it as the LiveKit reference point; recheck on our own two-track recordings. (c) the Kaggle runner was written on the **Laptop** (Priyansh's choice); see below.
 
-**Kaggle (Dev box, 2026-10-24):** account created + phone-verified; API token at `%USERPROFILE%\.kaggle\access_token` on the Dev box
+**Kaggle (Laptop, 2026-10-24):** account created + phone-verified; API token at `%USERPROFILE%\.kaggle\access_token` on the Laptop
 only (none on the GPU box); quota 30 GPU-h/week, 20 TPU-h; login works. Runner merged (PR #8, merge e4cbe86)
 and smoke-tested on Kaggle: 2× T4 14.6 GB, 31 GB RAM, 2C/4T, full env install ~1 min; on e4cbe86 (CPU session) 68 passed,
 1 skipped, whole job 1.4 min:
@@ -72,23 +72,23 @@ and all BtbN Linux builds have AMR-NB but no libgsm; no conda. Fix: template fet
 PEHLEAAP_FFMPEG_EXTRA and `paths.ffmpeg_bin(encoder)` picks the first build with each encoder. /kaggle/input layout still unknown
 (no dataset attached yet).
 
-**Done 2026-10-24 (Dev box; PR #9, merge 5bcb7ac): phone-line augmentation chain** (plan §4.3, a week-2 deliverable done early).
+**Done 2026-10-24 (Laptop; PR #9, merge 5bcb7ac): phone-line augmentation chain** (plan §4.3, a week-2 deliverable done early).
 `pehleaap/telephony/{noise,echo,channel,pipeline}.py`, `configs/augment.yaml` (test: equals the defaults), `scripts/augment_examples.py`
 (writes listening examples of Hindi Smart Turn clips to runs/augment_examples/), `apply_codec_many` in codecs.py; 19 new tests (87 pass).
 Checked: whole chain within 0.12 ms of the input timing; echo lands at its set delay (0.300 s measured); 24 ms/clip batched (2 s clips),
 13.5 s for a 25-min track. Jitter model: FIFO queueing behind exponential delay spikes, fixed buffer = jitter x 3.5-6 → 0.3-7% late.
 The first AR(1)-smoothed version almost never produced late packets, so it was replaced. Noise is synthetic (white/pink/brown/hum) until noise datasets
-go in data/external/noise/ (licenses from memory, verify before downloading: MUSAN CC BY 4.0, DEMAND CC BY-SA 3.0, ESC-50 CC BY-NC 3.0; which to use is the user's call).
+go in data/external/noise/ (licenses from memory, verify before downloading: MUSAN CC BY 4.0, DEMAND CC BY-SA 3.0, ESC-50 CC BY-NC 3.0; which to use is Priyansh's call).
 Pipecat live demo still G.711 only.
 
-**Job 3 prep (2026-10-24, Dev box, merged in PR #10).** User chose MUSAN only (license checked on openslr.org/17: CC BY 4.0).
+**Job 3 prep (2026-10-24, Laptop, merged in PR #10).** Priyansh chose MUSAN only (license checked on openslr.org/17: CC BY 4.0).
 `scripts/get_noise.py` streams the 11 GB archive (order is music, speech, noise: noise is LAST, so the whole archive streams through),
 keeps musan/noise/ → data/external/noise/musan/, fetches 16 MB byte ranges over 4 connections (each retried on its own; 2.5 MB/s
 vs 1.2 for one stream; bytes checked identical to a plain download) and writes/verifies `data/manifests/noise_musan.jsonl`.
 Mirror: openslr.elda.org; trmal.net (3 MB/s) and www.openslr.org had expired TLS certs on 2026-10-24 (never disable
 verification). `eval_clip_baselines.py` gained CHAIN conditions (tandem_amr4.75, loss3_g711, agc_clip_g711, noise20/10/5_amr7.95,
 mixed); a clip's seed is hashed from its id, so the noise is paired across SNRs; ~50 ms/clip of augmentation. Job 3 runbook in
-docs/machines.md (after Job 2; ~2.5-3 h with --threads 24). Merged as PR #10 (merge bd2204c, which also brought in the GPU box's Job 2 branch) WITHOUT the manifest (the user
+docs/machines.md (after Job 2; ~2.5-3 h with --threads 24). Merged as PR #10 (merge bd2204c, which also brought in the GPU box's Job 2 branch) WITHOUT the manifest (Priyansh
 asked to commit before the download finished); `data/manifests/noise_musan.jsonl` follows in a small PR. **GPU box: don't run
 get_noise.py or Job 3 until that manifest PR is merged** (it would write its own untracked manifest, and the next pull would fail on it).
 Download finished 2026-10-24 (11.09 GB streamed in 39 min, 934 files = 930 noise wavs + LICENSE/ANNOTATIONS/README, 687 MB);
@@ -97,7 +97,7 @@ files by md5 of the path (749 train / 181 test); Job 3 uses only `part="test"`, 
 is shared. Licenses inside MUSAN noise: free-sound files public domain; sound-bible files per-file (e.g. CC BY 3.0, see its LICENSE)
 — fine for augmentation since the audio is never redistributed.
 
-**Fine-tuning prep (2026-10-24, Dev box, merged in PR #10; user asked "how can we do the fine tuning code here you dont know the results
+**Fine-tuning prep (2026-10-24, Laptop, merged in PR #10; Priyansh asked "how can we do the fine tuning code here you dont know the results
 from the gpu box": answer, training code doesn't depend on eval results, which only tune config later and arrive via git).**
 Pipecat publishes Smart Turn v3.2 as ONNX only (HF pipecat-ai/smart-turn-v3: cpu=int8, gpu=fp32); training code is on GitHub
 (pipecat-ai/smart-turn train.py, commit 4786657: whisper-tiny encoder with max_source_positions 400, attention pool, classifier;
@@ -106,9 +106,9 @@ lr 5e-5, 4 epochs, batch 384, warmup 0.2, wd 0.01, BCE pos_weight from batch sta
 matched by the named bias after each; k_proj has no bias). Parity: max |p| diff 3.3e-6 on 256 real clips, 0 decision flips;
 tests/test_smart_turn_torch.py. Note int8 (our baseline) vs fp32 differ by up to 0.66 on single clips at equal accuracy:
 compare a fine-tune against both. Do NOT add an fp32 entry to turn_models.REGISTRY while GPU-box jobs use the default `--models`
-(saved shards would be recomputed). Next: training script (bf16 on the GPU box, fp16 on Kaggle), smoke-tested on the Dev box.
+(saved shards would be recomputed). Next: training script (bf16 on the GPU box, fp16 on Kaggle), smoke-tested on the Laptop.
 
-**Training script (2026-10-24 evening, Dev box; PR #13, merge 148e778): GPU box Job 4 in docs/machines.md.** Train set
+**Training script (2026-10-24 evening, Laptop; PR #13, merge 148e778): GPU box Job 4 in docs/machines.md.** Train set
 pipecat-ai/smart-turn-data-v3.2-train = 83 shards / 41.4 GB / 23 languages; per shard ~961 of 3,265 clips are eng+hin (~80k
 total; Hindi all chirp3 TTS). `scripts/prepare_eot_train.py` → `data/external/eot-train/` (EotStore: audio.int16 memmap +
 index.csv, last 8 s per clip, 3% dev by md5(id); resumable; `--delete-shards`). `pehleaap/train/eot_data.py` (EpochKeys sampler:
@@ -117,10 +117,10 @@ exactly) and `train_eot.py` (TrainConfig = configs/train_eot.yaml: lr 5e-5, 4 ep
 hin_repeat 2, 20 workers; dev eval at step 0 = published model, best by mean phone-line dev accuracy; ckpt every 30 min; exports
 model.onnx via the legacy TorchScript exporter: no onnxscript needed, parity 6e-8). **GTX 1650 fp16 gives NaN from the first conv**
 (GTX 16xx quirk) → precision "auto" picks fp32 there, bf16 on Ada, fp16 on T4; NaN loss stops the run. Augmentation ~77 ms/clip
-per worker on the Dev box. `eval_clip_baselines.py --onnx NAME=PATH` scores a local ONNX at threshold 0.5 (defaults unchanged).
+per worker on the Laptop. `eval_clip_baselines.py --onnx NAME=PATH` scores a local ONNX at threshold 0.5 (defaults unchanged).
 Smoke: 6 steps on 1 shard fine end to end (fp32 GTX 1650; 4 min mostly Windows worker start-up). 99 tests pass.
 
-**Threshold calibration (2026-10-24 night, Dev box, uncommitted; user picked it over ASR / verify app).** `pehleaap/eval/calibration.py`
+**Threshold calibration (2026-10-24 night, Laptop, uncommitted; Priyansh picked it over ASR / verify app).** `pehleaap/eval/calibration.py`
 (best_threshold = accuracy-optimal, middle of ties; 2-fold cross-fitting by md5(id) % 2; variants card / channel (clean vs phone) /
 channel+language / condition+language = upper bound) and `scripts/calibrate_thresholds.py --runs <eval runs>` (reads saved
 predictions.csv only, phone subset, seconds). Runbook in docs/machines.md after Job 4: run on Jobs 1-2 now, again after Jobs 3-4.
@@ -138,7 +138,7 @@ and commit on branch `eot-v0-results`.
 Training ended 00:57, best = step 900 (phone/hin dev 92.7, cut-in 8.7%); summary.json lacked dev_thresholds (run predated PR #14),
 so the GPU box was told to rescore best.pt on dev with train_eot's evaluate() and add them before calibrating with --shipped.
 
-**ASR hookup (2026-10-25 night, Dev box, uncommitted).** `pehleaap/labeling/asr.py` + `label_session.py --asr` (words cached as
+**ASR hookup (2026-10-25 night, Laptop, uncommitted).** `pehleaap/labeling/asr.py` + `label_session.py --asr` (words cached as
 data/labels/<session>/words.jsonl; `--asr-refresh`, `--asr-model`, `--asr-language`, `--asr-batch-size`), `pehleaap/device.py`
 (precision_for moved out of train_eot), `scripts/make_tts_session.py` (stand-in session from Hindi TTS test clips, in runs/).
 Whisper via transformers pipeline (no new deps), per-IPU with 0.3 s pad (Whisper hallucinates Devanagari on pure silence: seen),
@@ -148,9 +148,9 @@ _extract_token_timestamps) → own retry: zlib compression ratio > 2.4 → decod
 repetitive text. Smoke with whisper-tiny on a stitched TTS session: words all inside their padded IPUs; loops fixed (183 → 86
 words). Large-v3 quality/speed still unmeasured: GPU box runbook step in docs/machines.md. 109 tests pass.
 
-**Pending, week 1:** user to review the consent forms (contact details, deletion date, college ethics
+**Pending, week 1:** Priyansh to review the consent forms (contact details, deletion date, college ethics
 approval?); Craig vs Zoom pilot with one pair (`scripts/check_alignment.py`); start recruiting and booking >=15 sessions; HingCoS access
-email; PSTN provider signup (Twilio dual-channel first); LiveKit v1-mini baseline (time-boxed to 1 day; started on the GPU box, see above); user to try the ding-bot demo by voice.
+email; PSTN provider signup (Twilio dual-channel first); LiveKit v1-mini baseline (time-boxed to 1 day; started on the GPU box, see above); Priyansh to try the ding-bot demo by voice.
 Note: Pipecat's LocalSmartTurnAnalyzerV3 only fits Smart Turn's exact interface; abhishek's model would load there but give wrong
 probabilities (logits, no normalisation), so the demo uses ClipModelTurnAnalyzer.
 
@@ -175,30 +175,34 @@ dev-set artifact). Shipped dev thresholds (0.44-0.57) ~= 0.5; no recalibration n
 training (run predated PR #14; rescoring matched best_dev exactly); original kept as runs/eot_v0/summary.orig.json (GPU box).
 Caveats: synthetic Hindi TTS, chains = training augmentation family. Weakest: 5 dB noise (-5.5 vs clean). model.onnx stays on the
 GPU box (runs/eot_v0/, 32 MB, not in git). Next: real-call validation, int8 quantisation, Pipecat demo wiring.
-**Backed up to the Dev box (2026-10-25 02:36, via Chrome Remote Desktop file transfer):** `weights/eot_v0/model.onnx`
-(sha256 38fbe51a…a40202) and `best.pt` (step 900, sha256 158b561e…5cf40c), gitignored. Checked on the Dev box: ONNX matches
+**Backed up to the Laptop (2026-10-25 02:36, via Chrome Remote Desktop file transfer):** `weights/eot_v0/model.onnx`
+(sha256 38fbe51a…a40202) and `best.pt` (step 900, sha256 158b561e…5cf40c), gitignored. Checked on the Laptop: ONNX matches
 best.pt within 5e-6; clean Hindi shard 0 (n=132): eot_v0 93.9% / cut-in 3.4% / AUC 0.993 vs Smart Turn int8 93.2% / 11.9% / 0.986.
 int8 quantisation of eot_v0 is being written on the GPU box (pehleaap/models/quantize.py, scripts/quantize_eot.py): don't
-touch those files from the Dev box until that PR is merged. The GPU box also adds `onnx_with_state_dict()` to
+touch those files from the Laptop until that PR is merged. The GPU box also adds `onnx_with_state_dict()` to
 pehleaap/models/smart_turn.py (eot_v0 weights grafted into Pipecat's fp32 graph, for upstream-identical quantisation).
+**Also backed up (2026-10-25 07:10, uploaded by Priyansh from the GPU box over Chrome Remote Desktop, "Upload file" since Priyansh
+sat at the GPU box; uploads land on the laptop's Desktop):** weights/eot_v0/model_int8.onnx (8.7 MB, sha256 d694d401…567a1a)
+and model_pipecat_graph.onnx (32.4 MB, sha256 8dbd011d…36fad7). Checked on the Laptop, clean Hindi shard 0 (n=132): Pipecat
+graph = fp32 within 1.5e-6; int8 acc 94.7 / cut-in 8.5% vs fp32 93.9 / 3.4% (cut-ins up at 0.5, as on the GPU box).
 
-**Demo wired to eot_v0 (2026-10-25 ~03:00, Dev box; PR #19, merge c5aae30).** `turn_models.load_any(name)`: registry name, or
+**Demo wired to eot_v0 (2026-10-25 ~03:00, Laptop; PR #19, merge c5aae30).** `turn_models.load_any(name)`: registry name, or
 weights/<name>/model.onnx / a .onnx path at threshold 0.5 (our models stay OUT of REGISTRY: eval defaults). pipecat_ext:
 `ModelSwitch` + `SwitchTurnAnalyzer` (active model decides; the others are scored on a background thread after the decision and
 logged as "would say"), models cached per process. demo/bot.py: loads PEHLEAAP_TURN_MODELS (default smart_turn_v3.2_int8,eot_v0;
 missing weights skipped with a warning), starts on eot_v0, `/switch` page + `/switch/state` + `POST /switch/{name}` on Pipecat's
 runner `app`. Tests: 6 pass in .venv-demo (incl. the end-to-end ding test), load_any test in .venv. Live check: server up, routes
 flip the active model.
-**User's live test (2026-10-25 03:04-03:07, one speaker, mic → simulated G.711):** the beep (bot takes the turn) confused the
-user at first: explain it as "the bot would start answering now" (no TTS yet). Clear sentence ends: both models END ~0.3 s after
-speech (VAD stop 0.2 s + ~0.1 s inference; eot_v0 fp32 ~95 ms vs Smart Turn int8 ~130 ms on the laptop CPU, 1 thread). The user
+**Priyansh's live test (2026-10-25 03:04-03:07, one speaker, mic → simulated G.711):** the beep (bot takes the turn) confused the
+Priyansh at first: explain it as "the bot would start answering now" (no TTS yet). Clear sentence ends: both models END ~0.3 s after
+speech (VAD stop 0.2 s + ~0.1 s inference; eot_v0 fp32 ~95 ms vs Smart Turn int8 ~130 ms on the laptop CPU, 1 thread). Priyansh
 confirmed 3 mid-sentence pauses: eot_v0 said wait at all 3 (p 0.06/0.08/0.26) where Smart Turn said END (0.71/0.91/0.93), and
 Smart Turn, while deciding, actually cut in once. Anecdotal (one speaker, a few turns), not a result to cite, but it's the
 behaviour the benchmark predicts. The 3.2 s beep after a "wait" is Pipecat's silence fallback when the caller stays quiet.
-The user asked "were the demo results good": answered honestly (right direction, matches the benchmark, but ~20 decisions from
-one speaker on a clean line; the real test is labelled real recordings). The user works through the night, no breaks (2026-10-25).
+Priyansh asked "were the demo results good": answered honestly (right direction, matches the benchmark, but ~20 decisions from
+one speaker on a clean line; the real test is labelled real recordings). Priyansh works through the night, no breaks (2026-10-25).
 
-**Label-check app (2026-10-25 ~03:30, Dev box; PR #20, merge f284dc5).** `pehleaap/labeling/verify.py` (needs_review: all BC/INTERRUPT/
+**Label-check app (2026-10-25 ~03:30, Laptop; PR #20, merge f284dc5).** `pehleaap/labeling/verify.py` (needs_review: all BC/INTERRUPT/
 HOLD_REQ + PSTN sessions (device "pstn" in sessions.csv) + md5(event_id) 10% of SHIFT/HOLD; double_annotated: independent 10%
 hash; verdicts appended to data/labels/<session>/verify/<annotator>.jsonl, last wins; apply_verdicts: correct → verified,
 wrong → retyped, "none"/unsure/unchecked → dropped; cohens_kappa) and `scripts/verify_app.py` (stdlib ThreadingHTTPServer on
@@ -215,7 +219,7 @@ phone/hin 92.2 -> 90.1 but cut-in 8.7% -> 16.9% (dev-tuned int8 threshold not do
 82.0 -> 71.8). Latency 1 thread: fp32 56.9 ms, int8 28.6 ms = Smart Turn int8. Gotcha: quantising all op types / phone-mix
 calibration shifted probs -0.1..-0.2 (up to -23 pts). Test-set eval of int8 not run yet (~75 min CPU).
 
-**Session evaluation (2026-10-25 ~04:00, Dev box; PR #22, merge 9f577bd): the main metric for real recordings.** CHAIN conditions moved
+**Session evaluation (2026-10-25 ~04:00, Laptop; PR #22, merge 9f577bd): the main metric for real recordings.** CHAIN conditions moved
 from eval_clip_baselines.py into `pehleaap/telephony/conditions.py` (identical code; the script imports them, tests pass).
 `pehleaap/eval/sessions.py`: condition_track (whole track through a condition; chain seed = "<session>_<channel>"),
 checkpoint_windows/probs (last 8 s up to pause start + 0.2/0.3/0.5/0.8/1.2/2.0 s; NaN once the speaker resumed).
@@ -225,7 +229,7 @@ silence-timeout floor (VAD on the clean recording, so condition-independent); ha
 Smoke on a stitched 20-turn TTS session (TTS02): works, but numbers are meaningless: stitched Smart Turn clips are half
 deliberately unfinished, and the stitched holds are all short (flatters the timeout). Runbook in docs/machines.md.
 
-**NOISE_ECHO rule (2026-10-25 ~05:00, Dev box; PR #23, merge 600413b).** `pehleaap/labeling/echo.py` `split_echo`, run by label_session in
+**NOISE_ECHO rule (2026-10-25 ~05:00, Laptop; PR #23, merge 600413b).** `pehleaap/labeling/echo.py` `split_echo`, run by label_session in
 both directions (customer vs agent first, then agent vs the customer's real speech); schema NOISE_ECHO now in TYPES, Event +
 IPU fields echo_lag_s / echo_corr; verify ALWAYS includes NOISE_ECHO; LabelConfig echo_* fields (yaml in sync). Frame-level
 (10 ms log-loudness, 300-3400 Hz): 1 s windows vote for delay+gain (r >= 0.8, >= 3 agreeing votes within 20 ms, else no echo);
@@ -240,7 +244,7 @@ events recovered within 0.15 s, 0 spurious bc/interrupt, 0 echo found on echo-fr
 into 7 s agent turns): 5/6 found with echo 15 dB down, 2/6 with 3 dB (AEC off: inherently ambiguous; 0/6 without the
 double-talk cue; cutoff safe up to 0.7, spurious from 0.8). Tests: tests/test_echo_labels.py (random-syllable stand-in).
 
-**Session pipeline (2026-10-25 ~05:30, Dev box; PR #24, merge 726557a).** `scripts/process_session.py` replaces the protocol's three
+**Session pipeline (2026-10-25 ~05:30, Laptop; PR #24, merge 726557a).** `scripts/process_session.py` replaces the protocol's three
 after-recording commands: per session (1) sessions.csv row + both speakers' consent_date in speakers.csv; **no consent =
 nothing processed, not even with --force** (it reads speakers.csv only for consent, prints nothing personal); valid devices;
 spk ids match track names; (2) audio health per track (sample rate >= 16 kHz, clipping > 0.1%, speech 95th-pct frame level
@@ -249,10 +253,10 @@ align.measure_drift (PSTN sessions skip: one dual-channel recording); (4) label_
 (5) per-session checksums data/manifests/sessions/<session>.jsonl (replaces build_manifest('raw')); writes
 data/labels/<session>/process.json; prints next steps. `--data-root` for tests. recording_protocol.md §5 and machines.md
 updated. Tests: 4 (good / no consent / drift stopped unless --force / PSTN skip).
-CSV templates created on the Dev box only (gitignored): data/raw/sessions.csv + speakers.csv (headers from protocol §5) and
-data/raw/sessions/. The user was walked through filling them (IDs only, consent_date YYYY-MM-DD, device values).
+CSV templates created on the Laptop only (gitignored): data/raw/sessions.csv + speakers.csv (headers from protocol §5) and
+data/raw/sessions/. Priyansh was walked through filling them (IDs only, consent_date YYYY-MM-DD, device values).
 
-**Outreach + real-speech test (2026-10-25 ~05:15, Dev box; branch outreach-fleurs).** docs/recruiting.md: WhatsApp invite (English +
+**Outreach + real-speech test (2026-10-25 ~05:15, Laptop; branch outreach-fleurs).** docs/recruiting.md: WhatsApp invite (English +
 Hinglish, placeholders for name/thank-you/slots, ~1 h as in the consent form), private booking-sheet columns (device mix
 50/30/20; 15 sessions booked = week-1 exit), HingCoS access email (contact unknown: corresponding author / IITG EMST lab).
 recording_protocol.md §1 "Pilot day, step by step" (P01 Craig / P02 Zoom as separate sessions, stop within 10 s of the last
@@ -262,7 +266,7 @@ Turn schema: 657 finished (speech end + 0.2 s) + 389 not-finished (0.2 s into on
 first second; chosen by md5 of the file name) = 1,046 real-voice clips, built in 1 min. eval_clip_baselines.py: with a
 non-Smart-Turn --data-root the report names the data (README.md first line) and skips the card check (default output
 byte-identical).
-**FLEURS RESULT (Dev box, 27 min, docs/results/week1_fleurs_eot_report.md): real voices are a different world from TTS.**
+**FLEURS RESULT (Laptop, 27 min, docs/results/week1_fleurs_eot_report.md): real voices are a different world from TTS.**
 Hindi n=1046, acc / cut-in / AUC: clean: Smart Turn 72.4 / 61% / 0.78, eot_v0 74.6 / 33% / 0.79 (missed-end 21%),
 codewithmoin 81.6 / 37% / 0.82. noise10+AMR: ST 64.6 / 85% / 0.59, eot_v0 74.2 / 42% / 0.75, cwm 76.3 / 52% / 0.75. mixed:
 ST 65.3, eot_v0 73.6, cwm 75.4. => eot_v0's phone-line robustness transfers to human voices (flat across conditions, half
@@ -272,7 +276,7 @@ real-voice clips in the training mix: FLEURS train split (~2.1k recordings, neve
 then our recordings. GPU box job.
 (Merged as part of PR #26, merge c9d92a7.)
 
-**eot_v1 prep (2026-10-25 ~06:15, Dev box, uncommitted; user: "start eot_v1 with FLEURS train").** make_fleurs_eot.py
+**eot_v1 prep (2026-10-25 ~06:15, Laptop, uncommitted; Priyansh: "start eot_v1 with FLEURS train").** make_fleurs_eot.py
 `--to-store DIR --max-pauses N` appends FLEURS train to the EotStore (refuses test/dev: they are the real-voice test set);
 FLEURS train = 2,120 recordings -> 2,120 finished + 1,641 pause clips = 3,761 real Hindi (105 land in dev by md5). TrainConfig
 `real_hin_repeat` (0 in configs/train_eot.yaml: eot_v0 recipe unchanged, real-voice rows excluded; 3 in the new
@@ -285,14 +289,14 @@ FLEURS splits have different sentences but no speaker IDs, so speaker overlap tr
 
 **eot_v0 int8 test set (GPU box, 2026-10-25 05:30):** `docs/results/week1_eot_v0_int8.md` (test-set section). Hindi @0.5: int8 1.3-3.7
 pts below fp32 (mean -2.3), cut-ins ~double. Dev-tuned int8 thresholds (clean/hin 0.81, phone/hin 0.71; English 0.37-0.39 don't help,
-keep 0.5) recover half: mean -1.2. int8 still beats Smart Turn int8 everywhere (+18.0 at 5 dB, +3.3 clean, Hindi). DECIDED (user confirmed 2026-10-25):
+keep 0.5) recover half: mean -1.2. int8 still beats Smart Turn int8 everywhere (+18.0 at 5 dB, +3.3 clean, Hindi). DECIDED (Priyansh confirmed 2026-10-25):
 fp32 eot_v0 where ~57 ms/1 thread is OK (demo); int8 + Hindi thresholds only when CPU-bound. weights/eot_v0/model.onnx copied on
 the GPU box for eval_sessions.py.
 
 **GPU box state, 2026-10-25 ~06:00 (main dae7135, PR #27; idle, nothing running).** Done there: Jobs 1-4, LiveKit, eot_v0
-training + eval + calibration, int8 + its test-set eval (PRs #10-#27). On disk, NOT in git and not yet on the Dev box:
-`runs/eot_v0/model_int8.onnx` (8.7 MB) and `model_pipecat_graph.onnx` (32.4 MB): user to copy them over by Chrome Remote Desktop
+training + eval + calibration, int8 + its test-set eval (PRs #10-#27). On disk, NOT in git and not yet on the Laptop:
+`runs/eot_v0/model_int8.onnx` (8.7 MB) and `model_pipecat_graph.onnx` (32.4 MB): Priyansh to copy them over by Chrome Remote Desktop
 before the box goes (model.onnx + best.pt already backed up). Also there: data/external/eot-train (15 GB, 77,808 clips),
 `weights/eot_v0/model.onnx` (for eval_sessions.py), runs/eot_v0/summary.orig.json (pre-dev_thresholds copy). Leftover hung python
-PID 1808 (harmless; user can `Stop-Process -Id 1808 -Force`). Next GPU-box work, if it is still up: `eval_sessions.py` once real
+PID 1808 (harmless; Priyansh can `Stop-Process -Id 1808 -Force`). Next GPU-box work, if it is still up: `eval_sessions.py` once real
 sessions are recorded and labelled (copy labels + audio there first); optional noise round 2 only after real calls show noise matters.
