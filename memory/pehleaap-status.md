@@ -392,3 +392,16 @@ on any topic, ~25 min / 30 min total", no private details about third parties, a
 where they are processed; the workstation copy is deleted once processing is done". So: after the pilot's --asr run on the GPU
 box, DELETE the pilot audio there (before the box goes, ~Oct 28). recording_protocol.md Option A expanded (Voice Activity +
 manual sensitivity, bitrate, rename Craig's username-named files before processing, 1-min test recording first).
+
+**CHECKPOINT (Priyansh: "save till here", 2026-10-25 ~11:30, main c20f403 after PR #38).** Merged today: #31-#38 (splits, v1
+milestone, cut-in fix, eot_v1 results, v1 release, craig guide, eot_v1 int8 TTS: with Hindi thresholds int8 is 1-2 pts below fp32,
+beats Smart Turn int8 everywhere). Release models-v1 is live. Open items, in order:
+1. GPU box Job 6 (FLEURS paired McNemar, eot_v1 vs codewithmoin / deveshu / abhishek; reproduces the Laptop's numbers) -> branch
+   fleurs-significance; Priyansh runs its commit commands (push rule kept); Laptop reviews; then README's "6.0-7.2 points" line can
+   cite p-values for every rival.
+2. Craig setup + 1-minute test recording P00 today (files P00_SPK001_agent.flac / P00_SPK002_customer.flac in
+   data/raw/sessions/P00, a P00 row in sessions.csv) -> Laptop runs process_session to check settings and the sync sound.
+3. Priyansh fills Contact + deletion date in data/raw/consent_*_SEND.md, sends it; friend signs before any recording.
+4. Oct 26: pilot P01 (free chat, Craig) -> process_session -> verify_app --all -> eval_sessions; GPU box --asr if still up, then
+   delete the pilot audio from the GPU box.
+5. Oct 27: pilot results in the README. Oct 28: fresh-clone check, Priyansh tags v1.0.
