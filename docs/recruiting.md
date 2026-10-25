@@ -55,7 +55,13 @@ slot and their partner, and add them to the booking sheet. Assign a speaker ID o
 
 ## 3. HingCoS access request (email)
 
-To: [contact for the IITG-HingCoS corpus: the corresponding author of the HingCoS paper, or IIT Guwahati's EMST lab]
+**Checked Oct 25: HingCoS is paid.** Access costs INR 50,000 + 18% GST, paid by demand draft to "Registrar, IIT Guwahati". It
+also needs a signed form, emailed and posted with the draft to the contact on the request form (linked from
+iitg.ac.in/eee/emstlab/HingCoS_Database/HingCoS.html). It's for research use only, with no
+redistribution. It's read speech, which FLEURS already provides for free, so this email is only worth sending to ask
+whether a student or academic copy can be had free. In that case, add a line asking for that to the draft below.
+
+To: the corpus contact named on the HingCoS request form (EMST Lab, Dept. of EEE, IIT Guwahati)
 Subject: Request for research access to the IITG-HingCoS corpus
 
 > Dear [name],

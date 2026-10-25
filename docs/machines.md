@@ -228,6 +228,15 @@ the backchannel, hold-request and digit rules apply) and rewrites the label fold
 .venv\Scripts\python scripts\process_session.py "data\raw\sessions\S0*" --asr
 ```
 
+**Our recordings into training** (week 3, after the Laptop has frozen the splits with `make_splits.py --freeze` and
+committed `benchmark/splits/`). Every turn end and hold of the train and dev sessions becomes a clip in the training
+store: train sessions for training, dev sessions for picking the best checkpoint. Test sessions are refused. Run it on
+the machine that holds the store and the session audio:
+
+```powershell
+.venv\Scripts\python scripts\sessions_to_store.py "data\labels\S0*"
+```
+
 **Turn models on recorded sessions** (`eval_sessions.py`: the main metric, plan §6; once sessions are recorded,
 labelled and, ideally, checked with `verify_app.py`). Every labelled customer pause is replayed to each model at
 0.2-2 s after it starts, through each phone condition; the report gives cut-in rate, response gap and missed turn
