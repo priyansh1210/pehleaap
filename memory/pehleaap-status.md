@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 0952188d-bc75-46ae-a49b-65b82c0ee291
-  modified: 2026-10-25T05:10:41.996Z
+  modified: 2026-10-25T05:38:21.070Z
 ---
 
 The full plan is in the repo at `docs/PLAN.md` (approved 2026-10-23). Don't duplicate it here; read it.
@@ -301,7 +301,8 @@ sha256 fe3c6e0a…0356f7) + model_pipecat_graph.onnx (d30e81b4…1e4f), not in g
 dev Hindi −4 to −6 at 0.5, cut-ins ~2-4x; AUC ~same). FLEURS real voices @0.5: int8 78-86 vs fp32 83-89, cut-ins 34-56%; with
 Hindi dev thresholds (clean 0.89 / phone 0.75): phone conditions 81.5-85.7 at fp32's cut-in level; still >= Smart Turn int8 +11-17.
 Latency 2.3x faster than fp32 (= Smart Turn int8). Guide: fp32 for the demo; int8 + Hindi phone threshold 0.75 when CPU-bound.
-Not run: int8 on the TTS test set (~50 min).
+TTS test set (GPU box, 10:04-10:58): Hindi int8 @0.5 −2.6 to −4.9 vs fp32, cut-ins 2x; with the Hindi thresholds −1.0 to −2.0
+(p 0.002-0.10), cut-ins 5-19%; English int8 @0.5 within 1.5. Beats Smart Turn int8 everywhere (+16-18 under noise).
 `docs/overview.html` (2026-10-25, Priyansh asked): plain-language project overview page with framework diagram, progress, results.
 
 **eot_v0 int8 test set (GPU box, 2026-10-25 05:30):** `docs/results/week1_eot_v0_int8.md` (test-set section). Hindi @0.5: int8 1.3-3.7
