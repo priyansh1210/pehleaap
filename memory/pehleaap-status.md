@@ -320,3 +320,18 @@ research-only, no redistribution, read speech -> not pursued (FLEURS covers it);
 (no email addresses in git). Send-ready consent copies made on the Laptop only (gitignored): data/raw/consent_{en,hi}_SEND.md
 without the reviewer note and the Sarvam line; Priyansh still fills contact + deletion date and decides on ethics approval.
 Priyansh asked whether datasets could replace recruiting: answered no; recruiting + pilot are theirs to do.
+
+**MILESTONE CHANGE (Priyansh, 2026-10-25 ~08:00): a good, working v1 by Oct 28** = the GitHub repo + README (Priyansh: "till 28
+oct i want a good working of this project we can upgrade it continously"). The 8-week plan continues after Oct 28 as upgrades.
+Deferred past Oct 28: recruiting 40+ speakers, booking 15 sessions, HingCoS (paid anyway). Before Oct 28: ONE real
+conversation with one friend (Priyansh agreed), processed end to end (process_session -> verify_app --all -> eval_sessions)
+as the first real two-person Hinglish test. v1 checklist: eot_v1 (Job 5) results and the choice of the shipped model, the pilot
+session's numbers, a README a stranger can follow (results, demo, benchmark, model download), model weights published
+(GitHub release or Hugging Face: Priyansh's account and click), demo on the shipped model. The GPU box also ends ~Oct 28.
+
+**After Oct 28 (Priyansh, 2026-10-25): Priyansh can supply more recorded conversations** for the upgrades. Told them what
+qualifies: recorded fresh under docs/recording_protocol.md (consent form signed by every speaker *before* recording, adults,
+scenario + fake-PII cards, sync beeps), two tracks with one speaker each (Craig/Zoom per-participant, or Twilio dual-channel
+for PSTN). Not usable: real customer calls (never), and old personal calls (no prior consent, real personal details, and a
+phone recorder gives one mixed track that the labeler can't split). Each new session goes through process_session; new
+speakers join train via `make_splits.py --add-new` (the frozen test split never changes).
