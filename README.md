@@ -35,11 +35,13 @@ brackets: the share of mid-sentence pauses the model called finished, where the 
 | mixed phone chain | **82.8** (31%) | 75.1 (54%) | 70.6 (41%) | 76.8 (47%) | 68.6 (59%) | 65.7 (79%) | 62.9 (90%) |
 | AUC, clean / mixed | **0.93 / 0.87** | 0.82 / 0.75 | 0.81 / 0.73 | 0.86 / 0.80 | 0.79 / 0.67 | 0.77 / 0.60 | 0.67 / 0.52 |
 
-- eot_v1 leads every model in every condition, by 6.0 to 7.2 points over the next best (paired McNemar p ≤ 3e-8 against
-  codewithmoin).
+- eot_v1 leads every model in every condition, by 6.0 to 7.3 points over the next best. Paired McNemar tests against
+  codewithmoin, deveshu and abhishek in all five conditions give p ≤ 4e-5 for every one of the 15 tests.
 - codewithmoin, deveshu, abhishek and chhotu are community Hinglish end-of-turn models published on Hugging Face.
 - Smart Turn int8 is the file Pipecat ships by default. On real voices it cuts in far more often than Smart Turn's own fp32 file.
 - The "mixed phone chain" draws one random chain per clip: room reverb, noise, AGC, clipping, codecs, packet loss and jitter.
+  Its audio is not bit-identical between our two machines. The eot_v1, codewithmoin and Smart Turn int8 columns were scored
+  on one machine and the rest on the other, so gaps in that row can be off by up to about 0.4 points.
 
 ### Smart Turn's own test set (all its Hindi clips are TTS)
 
@@ -69,8 +71,11 @@ by `scripts/eval_sessions.py` on its cut-in rate and response gap.
 - English slips slightly against our first fine-tune, eot_v0 (−0.7 points clean, p = 3e-4), but stays above Smart Turn everywhere.
 - eot_v1 is fp32, the same size and speed as Smart Turn's fp32 file (`smart-turn-v3.2-gpu.onnx`). The test-set table compares
   it with Smart Turn int8 (`smart-turn-v3.2-cpu.onnx`), the file Pipecat ships.
+- The significance tests treat clips as independent, but one reader can give several clips, so the real uncertainty is
+  somewhat larger than the p-values say.
 - Full reports, commands and significance tests: [`docs/results/week1_eot_v1_report.md`](docs/results/week1_eot_v1_report.md),
-  [`docs/results/week1_fleurs_more_baselines_report.md`](docs/results/week1_fleurs_more_baselines_report.md), and the rest of
+  [`docs/results/week1_fleurs_more_baselines_report.md`](docs/results/week1_fleurs_more_baselines_report.md),
+  [`docs/results/week1_fleurs_significance.md`](docs/results/week1_fleurs_significance.md), and the rest of
   [`docs/results/`](docs/results/).
 
 ## Use the model
