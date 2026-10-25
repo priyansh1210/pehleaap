@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 0952188d-bc75-46ae-a49b-65b82c0ee291
-  modified: 2026-10-24T22:40:43.063Z
+  modified: 2026-10-24T23:45:47.408Z
 ---
 
 The full plan is in the repo at `docs/PLAN.md` (approved 2026-10-23). Don't duplicate it here; read it.
@@ -240,7 +240,7 @@ events recovered within 0.15 s, 0 spurious bc/interrupt, 0 echo found on echo-fr
 into 7 s agent turns): 5/6 found with echo 15 dB down, 2/6 with 3 dB (AEC off: inherently ambiguous; 0/6 without the
 double-talk cue; cutoff safe up to 0.7, spurious from 0.8). Tests: tests/test_echo_labels.py (random-syllable stand-in).
 
-**Session pipeline (2026-10-25 ~05:30, Dev box, uncommitted).** `scripts/process_session.py` replaces the protocol's three
+**Session pipeline (2026-10-25 ~05:30, Dev box; PR #24, merge 726557a).** `scripts/process_session.py` replaces the protocol's three
 after-recording commands: per session (1) sessions.csv row + both speakers' consent_date in speakers.csv; **no consent =
 nothing processed, not even with --force** (it reads speakers.csv only for consent, prints nothing personal); valid devices;
 spk ids match track names; (2) audio health per track (sample rate >= 16 kHz, clipping > 0.1%, speech 95th-pct frame level
@@ -249,3 +249,17 @@ align.measure_drift (PSTN sessions skip: one dual-channel recording); (4) label_
 (5) per-session checksums data/manifests/sessions/<session>.jsonl (replaces build_manifest('raw')); writes
 data/labels/<session>/process.json; prints next steps. `--data-root` for tests. recording_protocol.md §5 and machines.md
 updated. Tests: 4 (good / no consent / drift stopped unless --force / PSTN skip).
+CSV templates created on the Dev box only (gitignored): data/raw/sessions.csv + speakers.csv (headers from protocol §5) and
+data/raw/sessions/. The user was walked through filling them (IDs only, consent_date YYYY-MM-DD, device values).
+
+**Outreach + real-speech test (2026-10-25 ~05:15, Dev box, uncommitted).** docs/recruiting.md: WhatsApp invite (English +
+Hinglish, placeholders for name/thank-you/slots, ~1 h as in the consent form), private booking-sheet columns (device mix
+50/30/20; 15 sessions booked = week-1 exit), HingCoS access email (contact unknown: corresponding author / IITG EMST lab).
+recording_protocol.md §1 "Pilot day, step by step" (P01 Craig / P02 Zoom as separate sessions, stop within 10 s of the last
+clap because measure_drift looks at the first/last 20 s, process_session then verify_app --all). FLEURS: google/fleurs hi_in
+(ungated, CC BY 4.0) test+dev -> `scripts/make_fleurs_eot.py` -> data/external/fleurs-hi-eot/data/{test,dev}.parquet in Smart
+Turn schema: 657 finished (speech end + 0.2 s) + 389 not-finished (0.2 s into one mid-sentence VAD pause >= 0.25 s, not in the
+first second; chosen by md5 of the file name) = 1,046 real-voice clips, built in 1 min. eval_clip_baselines.py: with a
+non-Smart-Turn --data-root the report names the data (README.md first line) and skips the card check (default output
+byte-identical). Eval running on the Dev box (smart_turn int8, codewithmoin, eot_v0; clean/g711/amr7.95/noise10/mixed;
+--out fleurs_eot).
