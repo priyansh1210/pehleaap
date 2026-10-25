@@ -1,5 +1,5 @@
 - [User profile](user-profile.md) — the user (they/them) builds pehleaap: Hinglish telephony turn-taking recipe + benchmark
-- [pehleaap status](pehleaap-status.md) — locked decisions (compute = GPU box while it lasts, Kaggle fallback), schedule (wk1 = Oct 26 2026), done/pending (baseline eval done + merged, PR #6, Oct 24); plan in docs/PLAN.md
+- [pehleaap status](pehleaap-status.md) — locked decisions (compute = GPU box while it lasts, Kaggle fallback), schedule (wk1 = Oct 26 2026), done/pending (eot_v0 fine-tune beats all baselines; int8 done; GPU box idle at PR #27, Oct 25); plan in docs/PLAN.md
 - [Compute setup](two-machine-setup.md) — Dev laptop (GTX 1650) for code/demo; GPU box (RTX 4000 Ada 20 GB) for main runs + fine-tuning while it lasts (end unknown); Kaggle T4 = fallback
 - [Don't disturb GPU-box runs](gpu-box-runs-untouched.md) — Dev-box changes must never change a GPU-box job's results; keep scripts backward compatible, verify identical outputs
 - [Shared memory](shared-memory.md) — memory lives in git (this folder) so both machines share it; pull at start, commit + push before switching
