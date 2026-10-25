@@ -1,11 +1,11 @@
 ---
 name: user-profile
-description: Who the user is and what they are building (Hinglish telephony turn-taking project)
+description: Who Priyansh is and what they are building (Hinglish telephony turn-taking project)
 metadata:
   type: user
 ---
 
-The user is the repo owner (GitHub: priyansh1210). Pronouns not stated: use they/them.
+Priyansh is the repo owner (GitHub: priyansh1210). Pronouns not stated: use they/them.
 
 They are building `pehleaap`, an 8-week portfolio/research project: open turn-taking models
 (end-of-turn, barge-in vs backchannel, hold intent) plus a benchmark for Hinglish voice agents
