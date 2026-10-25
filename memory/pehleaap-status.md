@@ -335,3 +335,12 @@ scenario + fake-PII cards, sync beeps), two tracks with one speaker each (Craig/
 for PSTN). Not usable: real customer calls (never), and old personal calls (no prior consent, real personal details, and a
 phone recorder gives one mixed track that the labeler can't split). Each new session goes through process_session; new
 speakers join train via `make_splits.py --add-new` (the frozen test split never changes).
+
+**Pilot pipeline rehearsed on the Laptop (2026-10-25)** with a synthetic session (TTS turns on two 48 kHz FLAC tracks, Craig
+naming, claps at start/end, fake paperwork, a scratch --data-root): process_session OK (drift +0.0 ms, the planted 40 ms offset
+measured exactly, 24 s for 5.5 min), verify_app --all serves the events and stereo audio, eval_sessions runs (82 s for 68
+pauses x 2 models x 2 conditions on the Laptop; a 25-min call is ~6-8 min). ASR can't run on the Laptop (Whisper large-v3 fp32
+~6 GB > 4 GB VRAM and 8 GB RAM): pilot transcripts are a GPU-box job while it lasts, else labels use duration rules only.
+Found and fixed a metric bug: cut_in_at_gap interpolated from the *worst* threshold among ties (median gaps sit on the
+checkpoint times, so ties are the norm); it now keeps the fewest cut-ins per gap, non-increasing with the gap. Only
+eval_sessions uses it and no reported result depended on it.
