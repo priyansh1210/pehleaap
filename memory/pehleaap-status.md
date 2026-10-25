@@ -300,3 +300,23 @@ before the box goes (model.onnx + best.pt already backed up). Also there: data/e
 `weights/eot_v0/model.onnx` (for eval_sessions.py), runs/eot_v0/summary.orig.json (pre-dev_thresholds copy). Leftover hung python
 PID 1808 (harmless; Priyansh can `Stop-Process -Id 1808 -Force`). Next GPU-box work, if it is still up: `eval_sessions.py` once real
 sessions are recorded and labelled (copy labels + audio there first); optional noise round 2 only after real calls show noise matters.
+(The int8 + Pipecat-graph files were copied to the Laptop at 07:10; hashes match: see the eot_v0 backup note above.)
+
+**Splits + our recordings into training (2026-10-25 ~07:40, Laptop, uncommitted; Priyansh: "build the splits and
+sessions_to_store").** `pehleaap/data/splits.py`: sessions grouped by shared speakers (union-find), each group to one split;
+groups with a PSTN session -> test; rest greedy largest-first to the split furthest below 70/10/20 of minutes, ties to the more
+balanced gender/device mix; freeze() writes benchmark/splits/{train,dev,test}.txt (session ids only) + lock.json (sha256 per
+file); load() raises if a file changed; add_to_train() appends post-freeze sessions only if none of their speakers is in dev/test
+(re-locks train only). `scripts/make_splits.py` (proposal by default; --freeze; --add-new; minutes from labels summary.json, else
+25; genders from speakers.csv, never printed per person). `scripts/sessions_to_store.py`: SHIFT/HOLD of both channels -> clips
+(audio to pause start + 0.2 s; HOLD with pause < tail skipped), split = the session's frozen split (EotStore.append now honours
+an explicit "split"); refuses everything before the freeze and every test session; verified labels when present. Tests:
+tests/test_splits.py (5). Freeze is due end of week 3 (Nov 15), before any test-set run.
+
+**Datasets / HingCoS (2026-10-25, web check).** No open two-channel Hinglish phone-conversation dataset exists (that gap is the
+benchmark's contribution). Hindi phone conversations exist only commercially (Nexdata 760 h, SpeechDataAI 2,000 h, ELRA 759 h;
+Kaggle copies are 0.3 MB teasers, checked via the Kaggle API). IITG-HingCoS is PAID: INR 50,000 + 18% GST by demand draft,
+research-only, no redistribution, read speech -> not pursued (FLEURS covers it); PLAN §2 table + docs/recruiting.md updated
+(no email addresses in git). Send-ready consent copies made on the Laptop only (gitignored): data/raw/consent_{en,hi}_SEND.md
+without the reviewer note and the Sarvam line; Priyansh still fills contact + deletion date and decides on ethics approval.
+Priyansh asked whether datasets could replace recruiting: answered no; recruiting + pilot are theirs to do.

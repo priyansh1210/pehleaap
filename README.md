@@ -27,6 +27,7 @@ and the week-by-week schedule, is in [`docs/PLAN.md`](docs/PLAN.md).
 | Label checking by ear: a local page that plays each event (agent left, customer right) with both speakers' loudness drawn; one key per verdict, 10% double-annotated for Cohen's kappa, verified events written per session | `scripts/verify_app.py`, `pehleaap/labeling/verify.py` |
 | Real human Hindi end-of-turn test from FLEURS read speech (finished sentence vs mid-sentence pause), scored like Smart Turn's test set | `scripts/make_fleurs_eot.py` |
 | Outreach drafts: WhatsApp invite (English and Hinglish), booking sheet, HingCoS access email; pilot-day checklist in the recording protocol | `docs/recruiting.md`, `docs/recording_protocol.md` |
+| Speaker-disjoint train/dev/test splits (PSTN sessions test-only), frozen with a checksum lock; labelled train/dev sessions into training clips (test sessions refused) | `scripts/make_splits.py`, `pehleaap/data/splits.py`, `scripts/sessions_to_store.py` |
 | After a recording day, one command per session: consent check (stops without it), audio health, clock drift between the sync beeps, labels, checksums, next steps | `scripts/process_session.py` |
 | Turn models on recorded sessions: each labelled pause replayed to every model at fixed moments after it starts, through each phone condition; cut-in rate vs response gap, against the silence-timeout bot | `scripts/eval_sessions.py`, `pehleaap/eval/sessions.py`, `pehleaap/telephony/conditions.py` |
 
