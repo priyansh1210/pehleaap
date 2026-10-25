@@ -96,11 +96,19 @@ def timeout_curve(events, timeouts_s, tts_offset_s=0.0) -> list[dict]:
 
 
 def cut_in_at_gap(curve: list[dict], target_gap_s: float) -> float:
-    """Cut-in rate at a matched median response gap, by linear interpolation along the curve."""
-    pts = sorted(
-        (p["median_gap_s"], p["cut_in_rate"]) for p in curve if not np.isnan(p["median_gap_s"])
-    )
-    if not pts:
+    """Cut-in rate at a matched median response gap, by linear interpolation along the curve's best points.
+
+    Median gaps fall on the checkpoint times, so many thresholds share one. At each gap the fewest
+    cut-ins count, and allowing a longer gap never costs cut-ins (a slower point is only worth it if
+    it cuts in less).
+    """
+    best = {}
+    for p in curve:
+        gap, rate = p["median_gap_s"], p["cut_in_rate"]
+        if not (np.isnan(gap) or np.isnan(rate)):
+            best[gap] = min(rate, best.get(gap, rate))
+    if not best:
         return float("nan")
-    gaps, rates = zip(*pts)
+    gaps = sorted(best)
+    rates = np.minimum.accumulate([best[g] for g in gaps])
     return float(np.interp(target_gap_s, gaps, rates))
