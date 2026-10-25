@@ -158,6 +158,30 @@ Bring back `runs\eot_v0\dev.csv`, `summary.json`, `meta.json` and `runs\eot_v0_e
 the same family of augmentations (with other noise recordings), so gains there are expected; the real test is real
 phone calls (plan §6).
 
+**Job 5: eot_v1, with real human Hindi voices** (`configs/train_eot_v1.yaml`). On FLEURS read speech (real voices),
+eot_v0 kept its phone-line robustness but was only slightly better than Smart Turn on clean audio
+(`docs/results/week1_fleurs_eot_report.md`): every Hindi clip it trained on was TTS. eot_v1 is the same recipe with
+FLEURS's train split added. Each recording gives its finished sentence and up to two mid-sentence pauses, 3,761 clips
+in all, and each is seen 3 times per epoch. Dev scores real-voice Hindi as its own group (`hin_real`), so the best
+checkpoint has to do well on it. FLEURS's test and dev splits stay out of training: they're the real-voice test set.
+The FLEURS splits use different sentences, but FLEURS doesn't publish speaker IDs, so speaker overlap can't be ruled out.
+
+```powershell
+git pull
+.venv\Scripts\python scripts\make_fleurs_eot.py --splits train --to-store data\external\eot-train --max-pauses 2
+.venv\Scripts\python scripts\make_fleurs_eot.py
+.venv\Scripts\python scripts\train_eot.py --config configs\train_eot_v1.yaml --out eot_v1 *> runs\eot_v1.log
+.venv\Scripts\python scripts\eval_clip_baselines.py --data-root data\external\fleurs-hi-eot --langs hin --models smart_turn_v3.2_int8 codewithmoin_8s --onnx eot_v0=runs\eot_v0\model.onnx eot_v1=runs\eot_v1\model.onnx --conditions clean g711_mulaw amrnb_7.95 noise10_amr7.95 mixed --threads 24 --out eot_v1_fleurs *> runs\eot_v1_fleurs.log
+.venv\Scripts\python scripts\eval_clip_baselines.py --models smart_turn_v3.2_int8 --onnx eot_v0=runs\eot_v0\model.onnx eot_v1=runs\eot_v1\model.onnx --conditions clean g711_mulaw amrnb_7.95 amrnb_4.75 noise10_amr7.95 noise5_amr7.95 mixed --threads 24 --out eot_v1_eval *> runs\eot_v1_eval.log
+```
+
+The first command takes about 4 minutes. The second builds the FLEURS test set, if it isn't there already. Training
+takes about 25 minutes. The FLEURS evaluation (real voices, 1,046 clips) takes about 15 minutes, and the Smart Turn
+test-set evaluation (TTS, for continuity with Jobs 1-4) about an hour. Then write
+`docs/results/week1_eot_v1_report.md`, eot_v1 against eot_v0, Smart Turn and codewithmoin, real voices first. It
+should answer two questions: did real-voice Hindi improve, and did the phone-line robustness and TTS results hold?
+Bring back `runs\eot_v1\summary.json` and `dev.csv`, and copy `model.onnx` to the Dev box's `weights\eot_v1\`.
+
 **Threshold calibration** (`calibrate_thresholds.py`, seconds, one core: fine to run while another job is going). How much of
 each model's phone-line drop a re-picked decision threshold recovers, cross-fitted so no clip's threshold is tuned on that clip.
 It only reads saved `predictions.csv` files, so run it on Jobs 1-2 now, and again once Jobs 3 and 4 have finished:

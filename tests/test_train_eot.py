@@ -104,3 +104,22 @@ def test_tiny_run_trains_resumes_and_exports(tmp_path):
     with torch.no_grad():
         p_torch = torch.sigmoid(model.eval()(torch.from_numpy(feats))).numpy()
     np.testing.assert_allclose(WhisperMelOnnx(out / "model.onnx").predict_prepared(feats), p_torch, atol=1e-5)
+
+
+def test_real_voice_hindi_is_left_out_by_default_and_repeated_for_v1(tmp_path):
+    from pehleaap.train.eot_data import group, real_flags
+    from pehleaap.train.train_eot import epoch_repeats
+
+    store = EotStore(tmp_path)
+    rng = np.random.default_rng(0)
+    metas = [{"id": "tts-hi", "language": "hin", "endpoint_bool": True, "synthetic": True, "dataset": "chirp3_1"},
+             {"id": "real-hi", "language": "hin", "endpoint_bool": False, "synthetic": False, "dataset": "fleurs_hi_train"},
+             {"id": "en", "language": "eng", "endpoint_bool": True, "synthetic": False, "dataset": "human_5"}]
+    store.append(metas, [0.1 * rng.standard_normal(16000).astype(np.float32) for _ in metas], "s")
+    rows = np.arange(3)
+    assert list(real_flags(EotStore(tmp_path).index)) == [False, True, True]
+    assert list(epoch_repeats(store, rows, TrainConfig())) == [2, 0, 1]  # eot_v0: no real-voice Hindi
+    v1 = load_config(REPO / "configs" / "train_eot_v1.yaml")
+    assert list(epoch_repeats(store, rows, v1)) == [2, 3, 1]
+    assert v1 == TrainConfig(real_hin_repeat=3)  # the only difference from eot_v0's recipe
+    assert [group(m["language"], not m["synthetic"]) for m in metas] == ["hin", "hin_real", "eng"]

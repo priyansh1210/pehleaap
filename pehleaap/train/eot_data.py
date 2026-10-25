@@ -27,6 +27,16 @@ INDEX_COLUMNS = ["id", "language", "label", "synthetic", "dataset", "offset", "l
 DEV_CLEAN, DEV_PHONE = -1, -2  # pseudo-epochs: dev clips scored clean, and through a fixed phone-line chain
 
 
+def real_flags(index: pd.DataFrame) -> np.ndarray:
+    """True for clips of real human speech (synthetic False in the source data)."""
+    return ~index.synthetic.astype(str).str.lower().eq("true").to_numpy()
+
+
+def group(language: str, real: bool) -> str:
+    """Dev-score group: Hindi from real voices (FLEURS, later our recordings) is kept apart from TTS Hindi."""
+    return f"{language}_real" if real and language == "hin" else language
+
+
 def split_of(clip_id: str) -> str:
     return "dev" if int(hashlib.md5(clip_id.encode()).hexdigest()[:8], 16) < DEV_FRACTION * 16**8 else "train"
 
@@ -151,6 +161,6 @@ class Augmenter:
         return {
             "features": torch.from_numpy(np.ascontiguousarray(feats, dtype=np.float32)),
             "labels": torch.tensor(self.store.index.label.to_numpy()[rows], dtype=torch.float32),
-            "language": self.store.index.language.to_numpy()[rows].tolist(),
+            "language": [group(lang, syn) for lang, syn in zip(self.store.index.language.to_numpy()[rows], real_flags(self.store.index)[rows])],
             "phone": torch.from_numpy(is_phone),
         }
