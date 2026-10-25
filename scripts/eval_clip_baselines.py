@@ -180,20 +180,34 @@ def main() -> None:
     df.to_csv(out_dir / "predictions.csv", index=False)
 
     lines = ["# End-of-turn baselines: clean vs phone line", ""]
+    other_data = args.data_root is not None and Path(args.data_root).resolve() != smart_turn_testset.LOCAL_DIR.resolve()
+    if other_data:  # e.g. data/external/fleurs-hi-eot (scripts/make_fleurs_eot.py): no model-card numbers to match
+        readme = Path(args.data_root) / "README.md"
+        about = readme.read_text(encoding="utf-8").splitlines()[0].lstrip("# ") if readme.exists() else "see its folder"
+        lines += [
+            f"Data: `{args.data_root}`: {about}.",
+            "Each model is scored at its own model-card threshold. Cut-in = P(complete) above threshold on an unfinished turn.",
+            "",
+            "## 1. Clean audio (model-card accuracy is for Smart Turn's test set, so no match check)",
+            "",
+        ]
+    else:
+        lines += [
+            "Data: pipecat-ai/smart-turn-data-v3.2-test (English + Hindi; **all Hindi clips are synthetic TTS**).",
+            "Community models were trained on smart-turn-data-v3.2-train, so this test is in-distribution for them.",
+            "Each model is scored at its own model-card threshold. Cut-in = P(complete) above threshold on an unfinished turn.",
+            "",
+            "## 1. Wrapper validation (clean; card numbers are for the full set, so only a full run can match)",
+            "",
+        ]
     lines += [
-        "Data: pipecat-ai/smart-turn-data-v3.2-test (English + Hindi; **all Hindi clips are synthetic TTS**).",
-        "Community models were trained on smart-turn-data-v3.2-train, so this test is in-distribution for them.",
-        "Each model is scored at its own model-card threshold. Cut-in = P(complete) above threshold on an unfinished turn.",
-        "",
-        "## 1. Wrapper validation (clean; card numbers are for the full set, so only a full run can match)",
-        "",
         "| Model | Lang | n | Acc | Card | Δ | Match |",
         "|---|---|---|---|---|---|---|",
     ]
     clean = df[df.condition == "clean"]
     validation = metrics_table(clean, names, ["language"])
     for r in validation:
-        card = CARD_ACCURACY.get(r["model"], {}).get(r["language"])
+        card = None if other_data else CARD_ACCURACY.get(r["model"], {}).get(r["language"])
         delta = f"{r['accuracy'] - card:+.2f}" if card is not None else "n/a"
         match = "n/a" if card is None else ("yes" if abs(r["accuracy"] - card) <= 1.0 else "**NO**")
         lines.append(f"| {r['model']} | {r['language']} | {r['n']} | {r['accuracy']:.2f} | {card if card is not None else '-'} | {delta} | {match} |")
