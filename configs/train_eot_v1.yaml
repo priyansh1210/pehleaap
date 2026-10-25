@@ -1,0 +1,24 @@
+# eot_v1: eot_v0's recipe (configs/train_eot.yaml) plus real human Hindi voices from FLEURS train in the mix.
+# Run make_fleurs_eot.py --splits train --to-store data/external/eot-train --max-pauses 2 first (docs/machines.md).
+
+data_dir: data/external/eot-train
+langs: [eng, hin]
+hin_repeat: 2
+real_hin_repeat: 3  # FLEURS train clips (make_fleurs_eot.py --to-store), each seen 3x per epoch with fresh augmentation
+augment_config: configs/augment.yaml
+p_phone: 0.8
+
+epochs: 4
+batch_size: 384
+micro_batch: 192
+lr: 5.0e-5
+weight_decay: 0.01
+warmup_ratio: 0.1
+grad_clip: 1.0
+
+num_workers: 20
+eval_every_steps: 100
+dev_limit: null
+checkpoint_minutes: 30.0
+seed: 0
+precision: auto  # bf16 on the GPU box, fp16 on Kaggle's T4, fp32 on the Dev box's GTX 1650 and the CPU
