@@ -36,6 +36,20 @@ def test_smart_turn_matches_pipecats_own_analyzer(seconds):
     assert ours["prediction"] == theirs["prediction"]
 
 
+def test_our_onnx_is_a_drop_in_model_file_for_pipecats_analyzer():
+    """The README promises LocalSmartTurnAnalyzerV3(smart_turn_model_path=weights/eot_v1/model.onnx) just works."""
+    from pehleaap.paths import WEIGHTS_DIR
+
+    name = next((m for m in ("eot_v1", "eot_v0") if (WEIGHTS_DIR / m / "model.onnx").exists()), None)
+    if name is None:
+        pytest.skip("none of our models is on this machine (scripts/get_weights.py)")
+    theirs = LocalSmartTurnAnalyzerV3(smart_turn_model_path=str(WEIGHTS_DIR / name / "model.onnx"))
+    ours = ClipModelTurnAnalyzer(model=name)
+    for seconds in (2.0, 9.0):
+        x = _speechlike(seconds, seed=int(seconds))
+        assert theirs._predict_endpoint(x)["probability"] == pytest.approx(ours._predict_endpoint(x)["probability"], abs=1e-5)
+
+
 def _second_model() -> str:
     """A local Smart-Turn-format ONNX to switch to: eot_v0 if it's on this machine, else Pipecat's fp32 file."""
     from pehleaap.baselines.turn_models import fetch
