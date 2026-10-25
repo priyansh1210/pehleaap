@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 0952188d-bc75-46ae-a49b-65b82c0ee291
-  modified: 2026-10-25T04:16:38.902Z
+  modified: 2026-10-25T05:10:41.996Z
 ---
 
 The full plan is in the repo at `docs/PLAN.md` (approved 2026-10-23). Don't duplicate it here; read it.
@@ -370,11 +370,24 @@ sha256 pinned in the script; a test fails while any sha is missing), demo defaul
 machine, README rewritten for strangers (results first, use in Pipecat/Python, demo, benchmark, retrain). Verified: our exported
 model.onnx is a drop-in `LocalSmartTurnAnalyzerV3(smart_turn_model_path=...)` file (probabilities within 1e-6; test added).
 Fairness gap found: FLEURS lacked deveshu / chhotu / abhishek / Smart Turn fp32 (deveshu is 93.2 on TTS Hindi, near eot_v1):
-Laptop ran them (`runs/fleurs_more_baselines`). Still needed from Priyansh: copy eot_v1 model.onnx (+ best.pt) off the GPU box
-before it goes, publish the models-v1 release (GitHub web UI, Priyansh's click).
+Laptop ran them (`runs/fleurs_more_baselines`). The eot_v1 copy to the Laptop and the models-v1 release were both done the same day (below).
 FLEURS other baselines DONE (Laptop, 10:31; `docs/results/week1_fleurs_more_baselines_report.md`): clean acc (cut-in) deveshu 80.9 (36%),
 abhishek 79.5 (49%; AUC 0.86, most noise-robust community model, 76.8 under noise/mixed), Smart Turn fp32 75.0 (36%) vs int8 72.8
 (60%: int8 shifts toward "finished"), chhotu 67.2 (fails on phone audio). eot_v1 leads every model in every condition by 6.0-7.2.
 On clean TTS Hindi codewithmoin edges eot_v1 (93.9 vs 93.7; in-distribution for it); README says so. models-v1 release PUBLISHED by
 Priyansh (2026-10-25); get_weights.py verified against the real release (all 3 sha256 OK). eot_v1 model.onnx + best.pt copied
 to the Laptop's weights/eot_v1/ (hashes match the Job 5 report). The GPU box also has an unscored eot_v1 model_int8.onnx (fe3c6e0a…).
+**v1 merged (PR #36, main f9527ed) and dress-rehearsed from a fresh GitHub clone (Laptop, 2026-10-25):** get_weights.py downloads
+eot_v1 from the release (sha OK); the README's Python and Pipecat snippets both run with the light .venv-demo install on real
+FLEURS clips (finished p=0.987 -> reply, mid-sentence pause p=0.004 -> keep listening; Pipecat's analyzer gives the same p); in the
+clone the demo tests pass (1 skip: needs Smart Turn's test set) and the full research suite passes. Shipped release stays fp32 only;
+int8 eot_v1 (GPU box: needs Hindi threshold 0.75 on phone audio) stays on the roadmap until it ships with its own threshold.
+Left for v1: pilot recording Oct 26 -> pilot results in the README Oct 27 -> final check + Priyansh tags v1.0 Oct 28.
+**Pilot plan changed (Priyansh, 2026-10-25):** the pilot is a free-topic chat with one friend (role-play optional), two people on
+Discord + Craig in separate rooms. Priyansh may supply more conversations later; told them: 2 people per recording on
+Craig/Zoom per-person tracks only (no phone-recorder apps, no 3+ people in one room), and rotate pairs, since a speaker in every
+session forces all sessions into one split. Laptop updated the send-ready consent copies (data/raw, gitignored): "a conversation
+on any topic, ~25 min / 30 min total", no private details about third parties, and storage = "my laptop and a GPU workstation
+where they are processed; the workstation copy is deleted once processing is done". So: after the pilot's --asr run on the GPU
+box, DELETE the pilot audio there (before the box goes, ~Oct 28). recording_protocol.md Option A expanded (Voice Activity +
+manual sensitivity, bitrate, rename Craig's username-named files before processing, 1-min test recording first).

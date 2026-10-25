@@ -17,11 +17,19 @@ which is how alignment is measured.
 
 ### Option A: Craig on Discord (multitrack FLAC)
 1. Create a private Discord server, add the Craig bot (craig.chat), and both people join one voice channel.
-2. In each person's Discord settings, under **Voice & Video**: Noise suppression **None**,
-   Echo cancellation **off**, Automatic gain control **off**, Input sensitivity **manual** at a low threshold.
-3. Type `/join` in the channel to start Craig. It announces that it is recording.
+   Craig records only in a server voice channel (not a DM call), and inviting it needs "Manage Server" on that server.
+   Optionally raise the channel's bitrate to 96 kbps (Edit Channel → Bitrate).
+2. In each person's Discord settings, under **Voice & Video**: Input mode **Voice Activity** (not push-to-talk),
+   Input sensitivity **manual** with the slider near the left (so soft syllables aren't gated), Noise suppression **None**,
+   Echo cancellation **off**, Automatic gain control **off**. The desktop app has all of these; prefer it to a phone.
+3. Type `/join` in a text channel to start Craig. Its nickname shows "[RECORDING]".
 4. **Clap** once, sharply, with both people silent. Talk for 3 min. **Clap** again. Talk for 10 more min. **Clap**.
-5. Run `/stop`, then download **Multi-track → FLAC**.
+5. Run `/stop`. Craig sends a direct message with a download link: choose **Multi-track → FLAC**. The zip has one file
+   per person, named after their Discord username. **Rename the files to the session IDs before processing**
+   (step 4 below), so usernames never reach the checksum manifests that go in git. Craig keeps recordings on its servers
+   only for a limited time; once your copy is saved and checked, delete it there sooner if Craig offers that.
+6. Before the first real session, make a 1-minute test recording with the same settings and run `process_session.py` on it:
+   it catches noise suppression, a gated or quiet mic, and a missing sync sound while they're still easy to fix.
 
 ### Option B: Zoom local recording, one file per participant
 1. On the host's desktop client: Settings → Recording → tick **"Record a separate audio file for each participant"**.
