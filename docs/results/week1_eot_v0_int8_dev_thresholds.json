@@ -1,0 +1,4 @@
+{
+  "dev_thresholds": {"clean/eng": 0.3907, "clean/hin": 0.8136, "phone/eng": 0.3686, "phone/hin": 0.7135},
+  "note": "accuracy-optimal thresholds of model_int8.onnx on the dev split (same keys and seed as train_eot.py), for calibrate_thresholds.py --shipped"
+}
