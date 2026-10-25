@@ -249,3 +249,9 @@ align.measure_drift (PSTN sessions skip: one dual-channel recording); (4) label_
 (5) per-session checksums data/manifests/sessions/<session>.jsonl (replaces build_manifest('raw')); writes
 data/labels/<session>/process.json; prints next steps. `--data-root` for tests. recording_protocol.md §5 and machines.md
 updated. Tests: 4 (good / no consent / drift stopped unless --force / PSTN skip).
+
+**eot_v0 int8 test set (GPU box, 2026-10-25 05:30):** `docs/results/week1_eot_v0_int8.md` (test-set section). Hindi @0.5: int8 1.3-3.7
+pts below fp32 (mean -2.3), cut-ins ~double. Dev-tuned int8 thresholds (clean/hin 0.81, phone/hin 0.71; English 0.37-0.39 don't help,
+keep 0.5) recover half: mean -1.2. int8 still beats Smart Turn int8 everywhere (+18.0 at 5 dB, +3.3 clean, Hindi). Recommendation:
+fp32 eot_v0 where ~57 ms/1 thread is OK (demo); int8 + Hindi thresholds only when CPU-bound. weights/eot_v0/model.onnx copied on
+the GPU box for eval_sessions.py.
