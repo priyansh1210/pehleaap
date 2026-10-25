@@ -36,14 +36,15 @@ from pehleaap.eval.calibration import best_threshold
 from pehleaap.eval.clip_metrics import binary_metrics
 from pehleaap.models.smart_turn import SmartTurnV3, from_published
 from pehleaap.paths import REPO_ROOT, RUNS_DIR
-from pehleaap.train.eot_data import DEV_CLEAN, DEV_PHONE, Augmenter, EotStore, EpochKeys, Keys
+from pehleaap.train.eot_data import DEV_CLEAN, DEV_PHONE, Augmenter, EotStore, EpochKeys, Keys, real_flags
 
 
 @dataclass(frozen=True)
 class TrainConfig:
     data_dir: str = "data/external/eot-train"  # relative to the repo root
     langs: tuple[str, ...] = ("eng", "hin")
-    hin_repeat: int = 2  # Hindi clips appear this many times per epoch (each with fresh augmentation)
+    hin_repeat: int = 2  # TTS Hindi clips appear this many times per epoch (each with fresh augmentation)
+    real_hin_repeat: int = 0  # real-voice Hindi clips (FLEURS train, make_fleurs_eot.py --to-store); 0 leaves them out (eot_v0)
     augment_config: str = "configs/augment.yaml"
     p_phone: float = 0.8  # share of training clips sent through the phone-line chain; the rest stay clean 16 kHz
     epochs: int = 4
@@ -72,6 +73,12 @@ def load_config(path: str | Path | None = None, overrides: list[str] = ()) -> Tr
         key, _, value = item.partition("=")
         raw[key] = yaml.safe_load(value)
     return TrainConfig(**{k: tuple(v) if isinstance(v, list) else v for k, v in raw.items()})
+
+
+def epoch_repeats(store: EotStore, rows: np.ndarray, cfg: TrainConfig) -> np.ndarray:
+    """Times each training clip appears per epoch: TTS Hindi `hin_repeat`, real-voice Hindi `real_hin_repeat`, the rest once."""
+    hindi, real = store.index.language.to_numpy()[rows] == "hin", real_flags(store.index)[rows]
+    return np.where(hindi & real, cfg.real_hin_repeat, np.where(hindi, cfg.hin_repeat, 1))
 
 
 def lr_lambda(warmup: int, total: int):
@@ -178,7 +185,7 @@ def train(cfg: TrainConfig, out: Path, max_steps: int | None = None, device: str
     dev_rows = store.rows("dev", cfg.langs)[: cfg.dev_limit]
     if not len(train_rows):
         raise SystemExit(f"no training clips in {store.root}: run scripts/prepare_eot_train.py first")
-    repeat = np.where(store.index.language.to_numpy()[train_rows] == "hin", cfg.hin_repeat, 1)
+    repeat = epoch_repeats(store, train_rows, cfg)
     keys = EpochKeys(train_rows, repeat, cfg.epochs, cfg.batch_size, cfg.seed)
     steps_per_epoch = keys.epoch_len // cfg.batch_size
     total_steps = min(cfg.epochs * steps_per_epoch, max_steps or 10**9)

@@ -4,6 +4,7 @@
 data_dir: data/external/eot-train
 langs: [eng, hin]
 hin_repeat: 2
+real_hin_repeat: 0  # eot_v0: no real-voice Hindi (configs/train_eot_v1.yaml adds FLEURS)
 augment_config: configs/augment.yaml
 p_phone: 0.8
 

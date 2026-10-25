@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 0952188d-bc75-46ae-a49b-65b82c0ee291
-  modified: 2026-10-25T00:13:50.851Z
+  modified: 2026-10-25T00:31:22.848Z
 ---
 
 The full plan is in the repo at `docs/PLAN.md` (approved 2026-10-23). Don't duplicate it here; read it.
@@ -270,6 +270,18 @@ of ST's cut-ins), but on clean real voices it barely out-ranks ST: it learned th
 codewithmoin generalises best. Caveat: read speech, comma pauses can sound final. NEXT (agreed direction): eot_v1 with
 real-voice clips in the training mix: FLEURS train split (~2.1k recordings, never used for testing) cut the same way,
 then our recordings. GPU box job.
+(Merged as part of PR #26, merge c9d92a7.)
+
+**eot_v1 prep (2026-10-25 ~06:15, Dev box, uncommitted; user: "start eot_v1 with FLEURS train").** make_fleurs_eot.py
+`--to-store DIR --max-pauses N` appends FLEURS train to the EotStore (refuses test/dev: they are the real-voice test set);
+FLEURS train = 2,120 recordings -> 2,120 finished + 1,641 pause clips = 3,761 real Hindi (105 land in dev by md5). TrainConfig
+`real_hin_repeat` (0 in configs/train_eot.yaml: eot_v0 recipe unchanged, real-voice rows excluded; 3 in the new
+configs/train_eot_v1.yaml, the only difference); `epoch_repeats()`; eot_data `real_flags` + `group` -> dev groups eng / hin /
+hin_real (dev_score averages phone accuracy over them, so selection rewards real voices). Laptop smoke (4 steps): published
+Smart Turn on hin_real dev 68.6 clean / 66.7 phone (AUC ~0.7) vs 100 on TTS dev clips. GPU box runbook = Job 5 in
+docs/machines.md (store add, train ~25 min, FLEURS eval + Smart Turn test eval, report week1_eot_v1_report.md). Caveat:
+FLEURS splits have different sentences but no speaker IDs, so speaker overlap train/test can't be ruled out. The GPU box was told
+(before this PR) to git pull, run the ASR check, build the FLEURS test set and pre-download FLEURS train.
 
 **eot_v0 int8 test set (GPU box, 2026-10-25 05:30):** `docs/results/week1_eot_v0_int8.md` (test-set section). Hindi @0.5: int8 1.3-3.7
 pts below fp32 (mean -2.3), cut-ins ~double. Dev-tuned int8 thresholds (clean/hin 0.81, phone/hin 0.71; English 0.37-0.39 don't help,
