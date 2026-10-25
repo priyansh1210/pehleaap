@@ -413,3 +413,9 @@ condition +6.0 to +7.3 (clean 7.27 unrounded; README says 7.2 from rounded value
 deveshu/abhishek match the Laptop exactly on the 4 fixed conditions; the MIXED chain differs slightly between machines for every
 model (1-2 clips; cwm 75.43 Laptop vs 75.05 GPU box already in Job 5), repeatable within one machine: cause not checked
 (likely a codec/ffmpeg stage). Compare models on one machine's mixed audio only.
+
+**After Job 6 (Laptop, 2026-10-25).** PR #39 (memory checkpoint) and PR #40 (Job 6) merged, main 4091499. Laptop recomputed all
+15 McNemar p-values from the b/c counts in `week1_fleurs_significance_mcnemar.json`: all match. README now cites all 15 tests
+(lead 6.0-7.3, p <= 4e-5), notes the mixed row mixes machines (up to ~0.4 pts: cwm 75.43 Laptop vs 75.05 GPU box), and adds the
+clips-not-independent caveat; `week1_fleurs_more_baselines_report.md` got a correction (its "same on both machines" holds only on
+the 4 fixed conditions). Open item 1 of the CHECKPOINT is done; next: Craig test P00, consent placeholders, pilot P01 on Oct 26.
