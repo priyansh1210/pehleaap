@@ -419,3 +419,10 @@ model (1-2 clips; cwm 75.43 Laptop vs 75.05 GPU box already in Job 5), repeatabl
 (lead 6.0-7.3, p <= 4e-5), notes the mixed row mixes machines (up to ~0.4 pts: cwm 75.43 Laptop vs 75.05 GPU box), and adds the
 clips-not-independent caveat; `week1_fleurs_more_baselines_report.md` got a correction (its "same on both machines" holds only on
 the 4 fixed conditions). Open item 1 of the CHECKPOINT is done; next: Craig test P00, consent placeholders, pilot P01 on Oct 26.
+
+**Laptop session 2026-10-26 (talk only, no code changes; Priyansh: "save memory till here, we will talk tomorrow").** Discussed an
+XERJ outreach email (no reply needed; it showed the personal Gmail in commits: [[commit-email-privacy]]), a Hugging Face upload of
+eot_v1 (recommended Oct 28 with the v1.0 tag: [[hf-publish-plan]]), and an honest project review whose main finding is that the FLEURS
+lead is partly in-distribution ([[fleurs-in-distribution-caveat]]). Pending decisions for tomorrow: HF upload + model card draft,
+README "Read with care" line, noreply git email. The v1 schedule is unchanged: pilot P01 Oct 26 -> pilot results in the README
+Oct 27 -> fresh-clone check + v1.0 tag Oct 28. Pilot status not reported in this session: ask.
