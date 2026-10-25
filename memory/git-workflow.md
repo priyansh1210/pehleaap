@@ -35,3 +35,7 @@ When writing a message for the other machine, say "give Priyansh the commit/push
 
 **Don't delete local branches unasked (2026-10-25).** After PR #38, a `git pull` that also ran `git branch -d` on seven old merged
 branches was rejected by Priyansh. After a merge: switch to main and pull only; leave branch cleanup to Priyansh.
+
+**When I run the commit myself, use Bash, not the PowerShell tool (2026-10-26).** In the PowerShell tool, `@' ... '@ | git commit -F -`
+put a UTF-8 BOM at the start of the subject (memory-oct26; Priyansh's own console pipes ASCII, so their copy-paste commits are fine).
+Write the message with a Bash heredoc to a file in the scratchpad and run `git commit -F <file>`, then check the first bytes with `od`.
