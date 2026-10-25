@@ -1,0 +1,81 @@
+{
+  "best_step": 400,
+  "best_dev": [
+    {
+      "condition": "clean",
+      "language": "eng",
+      "n": 1967,
+      "accuracy": 96.7,
+      "auc": 0.9915,
+      "cut_in": 0.0413,
+      "missed_end": 0.025,
+      "best_threshold": 0.5059,
+      "accuracy_at_best": 96.75
+    },
+    {
+      "condition": "clean",
+      "language": "hin",
+      "n": 344,
+      "accuracy": 94.19,
+      "auc": 0.9851,
+      "cut_in": 0.0598,
+      "missed_end": 0.0563,
+      "best_threshold": 0.7446,
+      "accuracy_at_best": 94.19
+    },
+    {
+      "condition": "clean",
+      "language": "hin_real",
+      "n": 105,
+      "accuracy": 93.33,
+      "auc": 0.97,
+      "cut_in": 0.093,
+      "missed_end": 0.0484,
+      "best_threshold": 0.5203,
+      "accuracy_at_best": 94.29
+    },
+    {
+      "condition": "phone",
+      "language": "eng",
+      "n": 1967,
+      "accuracy": 92.83,
+      "auc": 0.9746,
+      "cut_in": 0.0919,
+      "missed_end": 0.0521,
+      "best_threshold": 0.4855,
+      "accuracy_at_best": 93.04
+    },
+    {
+      "condition": "phone",
+      "language": "hin",
+      "n": 344,
+      "accuracy": 91.28,
+      "auc": 0.971,
+      "cut_in": 0.1033,
+      "missed_end": 0.0688,
+      "best_threshold": 0.5524,
+      "accuracy_at_best": 91.86
+    },
+    {
+      "condition": "phone",
+      "language": "hin_real",
+      "n": 105,
+      "accuracy": 86.67,
+      "auc": 0.9021,
+      "cut_in": 0.186,
+      "missed_end": 0.0968,
+      "best_threshold": 0.5096,
+      "accuracy_at_best": 86.67
+    }
+  ],
+  "dev_score": 90.26,
+  "steps": 1020,
+  "dev_thresholds": {
+    "clean/eng": 0.5059,
+    "clean/hin": 0.7446,
+    "clean/hin_real": 0.5203,
+    "phone/eng": 0.4855,
+    "phone/hin": 0.5524,
+    "phone/hin_real": 0.5096
+  }
+}

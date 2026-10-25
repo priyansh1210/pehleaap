@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 0952188d-bc75-46ae-a49b-65b82c0ee291
-  modified: 2026-10-25T00:31:22.848Z
+  modified: 2026-10-25T03:04:41.705Z
 ---
 
 The full plan is in the repo at `docs/PLAN.md` (approved 2026-10-23). Don't duplicate it here; read it.
@@ -282,6 +282,16 @@ Smart Turn on hin_real dev 68.6 clean / 66.7 phone (AUC ~0.7) vs 100 on TTS dev 
 docs/machines.md (store add, train ~25 min, FLEURS eval + Smart Turn test eval, report week1_eot_v1_report.md). Caveat:
 FLEURS splits have different sentences but no speaker IDs, so speaker overlap train/test can't be ruled out. The GPU box was told
 (before this PR) to git pull, run the ASR check, build the FLEURS test set and pre-download FLEURS train.
+
+**eot_v1 RESULTS (GPU box, 2026-10-25 07:04-08:33, Job 5 at f66ff32; report `docs/results/week1_eot_v1_report.md`).**
+Store 77,808 -> 81,569 clips (backup of the old index: data/external/eot-train/index.pre_fleurs.csv, GPU box). Train 25 min,
+1020 steps, best = step 400 (dev score 90.26; hin_real dev 93.3 clean / 86.7 phone, n=105, noisy). FLEURS real-voice test
+(n=1046): clean eot_v1 **88.8** (cut-in 18%, missed 7%, AUC 0.93) vs eot_v0 74.6, codewithmoin 81.6, Smart Turn 72.8; beats cwm
+by 7-10 pts in every condition (McNemar p <= 3e-8); noise10+AMR 83.4, mixed 82.8. TTS test: Hindi = eot_v0 (all |diff| <= 0.7,
+n.s.); English slips (clean 95.40 -> 94.69, p 3e-4; 5 dB -1.7) but stays >= Smart Turn. VERDICT: eot_v1 is the new best model.
+Caveats: read speech; FLEURS has no speaker IDs (train/test speaker overlap possible). model.onnx (sha256 0ccac636…89a52b) on the
+GPU box at runs/eot_v1/: user to copy to Dev box weights/eot_v1/ (Chrome Remote Desktop) and add to the demo's PEHLEAAP_TURN_MODELS.
+`docs/overview.html` (2026-10-25, user asked): plain-language project overview page with framework diagram, progress, results.
 
 **eot_v0 int8 test set (GPU box, 2026-10-25 05:30):** `docs/results/week1_eot_v0_int8.md` (test-set section). Hindi @0.5: int8 1.3-3.7
 pts below fp32 (mean -2.3), cut-ins ~double. Dev-tuned int8 thresholds (clean/hin 0.81, phone/hin 0.71; English 0.37-0.39 don't help,
