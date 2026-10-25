@@ -82,7 +82,8 @@ class EotStore:
                 pcm = (np.clip(x[-WINDOW:], -1, 1) * 32767).astype(np.int16)
                 f.write(pcm.tobytes())
                 rows.append({"id": m["id"], "language": m["language"], "label": int(m["endpoint_bool"]), "synthetic": bool(m["synthetic"]),
-                             "dataset": m["dataset"], "offset": end, "length": len(pcm), "split": split_of(m["id"]), "shard": shard})
+                             "dataset": m["dataset"], "offset": end, "length": len(pcm), "shard": shard,
+                             "split": m.get("split") or split_of(m["id"])})  # our recordings carry their session's split
                 end += len(pcm)
         new = pd.DataFrame(rows, columns=INDEX_COLUMNS)
         new.to_csv(self.root / "index.csv", mode="a", header=not (self.root / "index.csv").exists(), index=False)
