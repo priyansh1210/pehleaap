@@ -301,6 +301,10 @@ Rough guesses, to be replaced by measured throughput after the first week-3 run:
 - **HingCoS** (if access is granted): complete read sentences are **EOT = 1**. Sentences truncated at forced-alignment word boundaries, especially just **before the final verb**, are **EOT = 0**. This gives synthetic verb-final hold examples.
 - **TurnBench 104 h train** (if licensed): pretraining for the barge-in/BC head and Tier B.
 - **IndicVoices:** clean Hindi speech used as the "agent" signal in echo synthesis.
+- **FLEURS Hindi (added Oct 25; google/fleurs, CC BY 4.0, ungated):** real human readers.
+  - `scripts/make_fleurs_eot.py` cuts each test/dev recording at its sentence end (finished) and 0.2 s into one mid-sentence VAD pause (not finished).
+  - The result is 1,046 clips, scored by `eval_clip_baselines.py --data-root data/external/fleurs-hi-eot`. It's the first end-of-turn test on non-TTS Hindi before our own recordings exist.
+  - It's read speech, so it tests real voices and recording conditions rather than conversational turn-taking. The train split stays unused, kept free for training.
 
 ### 4.5 Splits (frozen at the end of week 3)
 
