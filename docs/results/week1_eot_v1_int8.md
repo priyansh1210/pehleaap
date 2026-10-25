@@ -58,5 +58,34 @@ Dev-tuned Hindi thresholds come from the Hindi TTS dev clips (clean 0.89, phone 
 - **Use fp32 eot_v1 where its CPU cost is fine** (the demo, a few calls per core). It is the best model on every test.
 - **Use int8 where the CPU is the limit**, with Hindi thresholds **0.75 on phone audio** (every real call) and 0.5 for English.
   On phone-line real voices it then sits 1-2 points below fp32 with the same cut-in rate, 2.3× faster.
-- Not checked yet: int8 eot_v1 on Smart Turn's TTS test set (about 50 min on CPU). The dev split above predicts the same
-  pattern as eot_v0 (−2 to −6 on Hindi at 0.5, mostly recovered by the Hindi threshold).
+- The TTS test set below confirms it: with the Hindi thresholds, int8 is 1.0-2.0 points below fp32 on Hindi, and English needs no change.
+
+## TTS test set (Smart Turn's test set, the same clips and 7 conditions as `week1_eot_v1_report.md`)
+
+Run: `eval_clip_baselines.py --models smart_turn_v3.2_int8 --onnx eot_v1=runs\eot_v1\model_pipecat_graph.onnx
+eot_v1_int8=runs\eot_v1\model_int8.onnx --conditions clean g711_mulaw amrnb_7.95 amrnb_4.75 noise10_amr7.95 noise5_amr7.95
+mixed --threads 24` (GPU box, 54 min; `week1_eot_v1_int8_eval_report.md`, `_results.json`).
+Sanity checks: eot_v1 in Pipecat's graph scores all 28,490 clip-conditions within 5.1e-6 of the TorchScript export in `eot_v1_eval`,
+and Smart Turn's predictions are identical to `eot_v1_eval`.
+
+The Hindi thresholds are the dev-tuned ones from above (clean 0.89, phone 0.75). English stays at 0.5. p is an exact two-sided
+McNemar test, fp32 @0.5 against int8 with Hindi thresholds, on the same clips.
+
+| Condition | Hindi fp32 @0.5 | Hindi int8 @0.5 | Hindi int8, Hindi thresholds | Smart Turn int8 | p | English fp32 | English int8 @0.5 | Smart Turn int8 |
+|---|---|---|---|---|---|---|---|---|
+| clean | 93.7 (7%) | 91.1 (15%) | 92.7 (5%) | 90.3 (18%) | 0.10 | 94.7 | 94.3 | 94.3 |
+| G.711 μ-law | 93.8 (8%) | 89.9 (18%) | 92.1 (11%) | 86.4 (27%) | 0.002 | 92.7 | 93.0 | 92.1 |
+| AMR-NB 7.95 | 93.9 (7%) | 89.6 (20%) | 92.4 (10%) | 82.8 (35%) | 0.01 | 93.0 | 92.3 | 91.7 |
+| AMR-NB 4.75 | 93.1 (8%) | 88.2 (23%) | 91.3 (13%) | 80.5 (40%) | 0.003 | 92.3 | 91.8 | 90.8 |
+| noise 10 dB + AMR 7.95 | 91.3 (12%) | 87.7 (25%) | 89.6 (16%) | 73.7 (55%) | 0.01 | 91.1 | 90.2 | 85.4 |
+| noise 5 dB + AMR 7.95 | 89.3 (15%) | 84.9 (30%) | 87.3 (19%) | 69.5 (63%) | 0.004 | 88.9 | 87.8 | 81.7 |
+| mixed chain | 91.2 (11%) | 87.5 (24%) | 89.9 (14%) | 73.5 (55%) | 0.05 | 91.3 | 89.8 | 84.3 |
+
+Hindi n = 1284 per condition. English n = 7820 clean and 1947 (25% hash sample) per phone condition.
+
+- **At 0.5, int8 loses 2.6-4.9 points on Hindi TTS, and Hindi cut-ins double** (7-15% → 15-30%), as the dev split predicted.
+- **The Hindi thresholds recover most of it.** int8 is 1.0-2.0 points below fp32 (clean −1.0, p = 0.10; phone conditions −1.3 to
+  −2.0, p = 0.002-0.05), with cut-ins at 5-19% against fp32's 7-15%. eot_v0's int8 with its own Hindi thresholds was 0.5-2.2
+  below its fp32: the same size of loss.
+- **English needs no special threshold.** int8 at 0.5 is within 1.5 points of fp32 everywhere (clean −0.4; mixed chain −1.5, p = 0.004).
+- **int8 eot_v1 with Hindi thresholds beats Smart Turn's int8 in every condition**: +2.4 on clean Hindi and +16 to +18 under noise.
