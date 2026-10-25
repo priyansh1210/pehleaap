@@ -2,14 +2,14 @@
 
     .venv-demo\\Scripts\\python demo\\bot.py     # then open http://localhost:7860/client to talk,
                                               # and http://localhost:7860/switch in a second tab
-    $env:PEHLEAAP_TURN_MODELS = "smart_turn_v3.2_int8,eot_v0,deveshu_fp32"   # which models to load
-    $env:PEHLEAAP_TURN_MODEL = "smart_turn_v3.2_int8"                         # which one decides first
-    $env:PEHLEAAP_PHONE_LINE = "0"                                             # wideband audio instead
+    $env:PEHLEAAP_TURN_MODELS = "smart_turn_v3.2_int8,eot_v1,eot_v0"   # which models to load
+    $env:PEHLEAAP_TURN_MODEL = "smart_turn_v3.2_int8"                   # which one decides first
+    $env:PEHLEAAP_PHONE_LINE = "0"                                       # wideband audio instead
 
 The caller's audio goes through a simulated 8 kHz G.711 phone line, then Silero VAD, then the
-end-of-turn model that is switched on. By default that is Smart Turn v3.2 (the baseline) and eot_v0
-(ours: weights/eot_v0/model.onnx from train_eot.py), starting with eot_v0; the /switch page flips
-between them mid-call. At every pause the log shows the deciding model's verdict and what the
+end-of-turn model that is switched on. By default that is Smart Turn v3.2 (the baseline) and our newest
+model on this machine (weights/eot_v1/model.onnx from scripts/get_weights.py, else eot_v0), starting
+with ours; the /switch page flips between them mid-call. At every pause the log shows the deciding model's verdict and what the
 other would have said. There is no STT, LLM or TTS yet: the ding is the bot taking the turn, so
 cut-ins (ding mid-sentence) and slow replies can be heard directly, and each turn's gap from end of
 speech to ding is logged.
@@ -55,11 +55,18 @@ from pehleaap.pipecat_ext.telephony_sim import PhoneLineProcessor  # noqa: E402
 from pehleaap.pipecat_ext.turn_analyzer import ModelSwitch, SwitchTurnAnalyzer  # noqa: E402
 
 SAMPLE_RATE = 16000
-LABELS = {"smart_turn_v3.2_int8": "Smart Turn v3.2 (baseline)", "eot_v0": "eot_v0 (ours: phone-line fine-tune)"}
+LABELS = {"smart_turn_v3.2_int8": "Smart Turn v3.2 (baseline)", "eot_v1": "eot_v1 (ours: phone line + real Hindi voices)",
+          "eot_v0": "eot_v0 (ours: phone-line fine-tune, TTS Hindi)"}
+OURS = ("eot_v1", "eot_v0")  # newest first: by default the demo runs the newest one on this machine
 
 
 def available_models() -> list[str]:
-    wanted = [m.strip() for m in os.environ.get("PEHLEAAP_TURN_MODELS", "smart_turn_v3.2_int8,eot_v0").split(",") if m.strip()]
+    if "PEHLEAAP_TURN_MODELS" not in os.environ:
+        ours = [m for m in OURS if (WEIGHTS_DIR / m / "model.onnx").exists()][:1]
+        if not ours:
+            logger.warning("[pehleaap] none of our models is on this machine: `python scripts\\get_weights.py` downloads eot_v1")
+        return ["smart_turn_v3.2_int8"] + ours
+    wanted = [m.strip() for m in os.environ["PEHLEAAP_TURN_MODELS"].split(",") if m.strip()]
     found = [m for m in wanted if m in REGISTRY or m.endswith(".onnx") or (WEIGHTS_DIR / m / "model.onnx").exists()]
     for m in sorted(set(wanted) - set(found)):
         logger.warning(f"[pehleaap] skipping turn model {m}: not in the registry and no {WEIGHTS_DIR / m / 'model.onnx'}")
@@ -67,7 +74,7 @@ def available_models() -> list[str]:
 
 
 _models = available_models()
-SWITCH = ModelSwitch(_models, os.environ.get("PEHLEAAP_TURN_MODEL", "eot_v0" if "eot_v0" in _models else _models[0]))
+SWITCH = ModelSwitch(_models, os.environ.get("PEHLEAAP_TURN_MODEL", next((m for m in OURS if m in _models), _models[0])))
 
 SWITCH_PAGE = """<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
