@@ -90,3 +90,18 @@ def test_curves_trade_cut_ins_for_latency():
     assert curve[0]["cut_in_rate"] == 0.0
     assert curve[0]["median_gap_s"] == pytest.approx(0.15)
     assert cut_in_at_gap(silence, 0.5) > cut_in_at_gap(curve, 0.5)
+
+
+def test_cut_in_at_gap_uses_the_best_threshold_at_each_gap():
+    # Two thresholds share the 0.2 s median gap; the one with fewer cut-ins is the fair point.
+    curve = [
+        {"median_gap_s": 0.2, "cut_in_rate": 0.9},
+        {"median_gap_s": 0.2, "cut_in_rate": 0.7},
+        {"median_gap_s": 1.0, "cut_in_rate": 0.3},
+        {"median_gap_s": 3.0, "cut_in_rate": 0.4},  # slower and worse: never chosen
+        {"median_gap_s": float("nan"), "cut_in_rate": 0.0},  # never fired on a turn end
+    ]
+    assert cut_in_at_gap(curve, 0.2) == pytest.approx(0.7)
+    assert cut_in_at_gap(curve, 0.6) == pytest.approx(0.5)
+    assert cut_in_at_gap(curve, 3.0) == pytest.approx(0.3)
+    assert cut_in_at_gap(curve, 0.1) == pytest.approx(0.7)
