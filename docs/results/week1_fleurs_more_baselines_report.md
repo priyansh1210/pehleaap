@@ -9,7 +9,10 @@ abhishek_tiny_attn --onnx smart_turn_v3.2_fp32=weights/pipecat-ai__smart-turn-v3
 g711_mulaw amrnb_7.95 noise10_amr7.95 mixed --threads 4 --out fleurs_more_baselines` (Laptop, 4 cores, about 50 min).
 
 **Every model on FLEURS** (accuracy %, cut-in rate in brackets). The eot_v1, codewithmoin and Smart Turn int8 columns come
-from the GPU box run (`week1_eot_v1_report.md`); the fp32 models score the same on both machines.
+from the GPU box run (`week1_eot_v1_report.md`); the fp32 models score the same on both machines on the four fixed conditions.
+*Correction (Oct 25):* the mixed chain's audio is not identical across the two machines (`week1_fleurs_significance.md`:
+deveshu and abhishek differ by 1–2 clips; codewithmoin scored 75.43 on the Laptop in `week1_fleurs_eot_results.json` and 75.05
+on the GPU box, 4 clips), so gaps in the mixed row between GPU-box and Laptop columns can be off by up to about 0.4 points.
 
 | Condition | eot_v1 | codewithmoin | deveshu | abhishek | Smart Turn fp32 | Smart Turn int8 | chhotu |
 |---|---|---|---|---|---|---|---|
@@ -32,6 +35,8 @@ from the GPU box run (`week1_eot_v1_report.md`); the fp32 models score the same 
   evaluation use only.
 - No significance tests here: the eot_v1 predictions are on the GPU box. The smallest lead over the next best model is 6.0
   points on 1,046 paired clips. Against codewithmoin, leads of 7.2-10.4 points gave McNemar p ≤ 3e-8.
+  *Since done (GPU box, Job 6):* `week1_fleurs_significance.md` tests eot_v1 against codewithmoin, deveshu and abhishek in all
+  five conditions, all on one machine's audio: every one of the 15 tests gives p ≤ 4e-5.
 
 ---
 
