@@ -460,3 +460,6 @@ exactly), #49 IndicVoices builder. Open: #50 TurnBench dev, #51 prereg draft (me
   the Laptop's `D:\pehleaap\data\raw\sessions\` + Downloads for `craig*.zip`.
 - Pending: Laptop row of the compute bench; GPU-eval parity/speed with .venv-gpu; Pipecat 1.15 pin after Nov 12; HF model card;
   shared Whisper features across models in eval_sessions (it recomputes them per model: 3 models x 38 sessions = 22 min).
+- **GPU eval: DONE (Nov 4, branch gpu-eval)**, which supersedes the "GPU-eval parity/speed" item above. `--device cuda` in
+  eval_sessions / eval_clip_baselines (from `.venv-gpu`): fp32 |dp| <= 1.1e-5, results.json identical, 3 TurnBench sessions
+  134.5 s -> 48.5 s. int8 stays on the CPU. Default CPU output is bit-identical to the saved run. `docs/results/week2_gpu_eval.md`.

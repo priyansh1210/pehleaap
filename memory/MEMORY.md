@@ -7,7 +7,7 @@
 - [Git workflow](git-workflow.md) — Priyansh commits and raises PRs from copy-paste commands; no gh; repo priyansh1210/pehleaap (public)
 - [Dev environment](dev-environment.md) — per-machine tool paths, venvs, Windows gotchas (cp1252, PowerShell 5.1 stderr, flaky network, 8 GB RAM)
 - [Naming](naming.md) — in memory: Laptop (laptop + its Claude session), GPU box, Priyansh (they/them); first name is the one allowed name
-- [Compute routing](compute-routing.md) — Priyansh's rule: GPU for GPU-friendly work, CPU for int8/ffmpeg/preprocessing; measure speed + parity before switching
+- [Compute routing](compute-routing.md) — Priyansh's rule: GPU for GPU-friendly work, CPU for int8/ffmpeg/preprocessing; measure speed + parity before switching; `--device cuda` = fp32 evals on GPU (Nov 4)
 - [Hugging Face plan](hf-publish-plan.md) — HF upload of eot_v1 not in the plan; Laptop recommends Oct 28 with v1.0, mirror of the GitHub release; undecided
 - [FLEURS caveat](fleurs-in-distribution-caveat.md) — eot_v1's FLEURS lead is partly home field (eot_v0 74.6 < cwm 81.6); README line done; IndicVoices 300-clip hand-labelled test pending labels
 - [Ponytail](ponytail.md) — Priyansh's rule (Nov 3): ponytail skill (full) for all development + ponytail-review before each PR; one update per PR
