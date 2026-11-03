@@ -18,6 +18,8 @@ metadata:
 Since Nov 3 the runbook's 9.0.2 is also in `~\tools`, but PATH comes first in `ffmpeg_bin`, so jobs still use 9.0.1; keep it
 that way: 9.0.1 and 9.0.2 encode Opus differently, which moves mixed-chain numbers (`docs/results/week2_ffmpeg_opus.md`).
 Has winget. The auto-mode classifier blocked running `setup_claude_memory.ps1` for me: Priyansh runs it.
+`.venv-gpu` = requirements with onnxruntime swapped for `onnxruntime-gpu[cuda,cudnn]==1.31.0` (CUDA 13 + cuDNN 9.27 pip
+wheels added Nov 4; driver 581.42 = CUDA 13.0). Without the extras ORT's CUDA EP silently fell back to the CPU.
 Claude in Chrome is connected on the GPU box (Nov 3): PRs are opened through it (no gh).
 
 **Kaggle** (from 2026-10-29): CLI `kaggle==2.2.4` in `.venv` (pinned in requirements.txt; 2.2.5 skipped as only 2 days old).

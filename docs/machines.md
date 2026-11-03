@@ -90,6 +90,19 @@ powershell -ExecutionPolicy Bypass -File scripts\setup_claude_memory.ps1
 Then start Claude Code in `$HOME\pehleaap`. It loads `CLAUDE.md` and the shared `memory\`, and its SessionStart hook
 pulls the latest commit each time. Approve the project hook when Claude Code asks.
 
+**GPU inference for evals (optional).** `eval_sessions.py` and `eval_clip_baselines.py` take `--device cuda`.
+fp32 models then run on the GPU about 10x faster and match the CPU to 1.1e-5 in probability. Quantized models stay on the
+CPU (`docs/results/week2_gpu_eval.md`). That needs onnxruntime-gpu in its own venv, `.venv-gpu`. The default,
+`--device cpu`, is unchanged.
+
+```powershell
+py -3.12 -m venv .venv-gpu
+.venv-gpu\Scripts\python -m pip install --timeout 30 --retries 10 -r requirements.txt
+.venv-gpu\Scripts\python -m pip uninstall -y onnxruntime
+.venv-gpu\Scripts\python -m pip install --timeout 30 --retries 10 "onnxruntime-gpu[cuda,cudnn]==1.31.0" nvidia-cudnn-cu13==9.27.0.42 nvidia-cublas==13.8.0.4 nvidia-cuda-runtime==13.4.92
+.venv-gpu\Scripts\python scripts\eval_sessions.py "runs\turnbench_labels\TB*" --models eot_v1 --device cuda --out sessions_gpu
+```
+
 **Job 1: end-of-turn baselines, clean vs phone line** (Smart Turn v3.2 + 4 community Hinglish models
 on all 31.5k test clips; 2.5 h on the laptop, too heavy for its 8 GB RAM). The first run downloads the
 4.8 GB test set, checking each shard's sha256.

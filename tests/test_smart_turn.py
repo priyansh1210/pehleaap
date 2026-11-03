@@ -45,3 +45,31 @@ def test_load_any_finds_registry_and_local_models(tmp_path, monkeypatch):
     assert turn_models.load_any("deveshu_fp32")[1] == turn_models.REGISTRY["deveshu_fp32"].threshold
     with pytest.raises(FileNotFoundError):
         turn_models.load_any("missing")
+
+
+def test_quantized_models_are_told_apart():
+    from pehleaap.baselines.turn_models import fetch, is_quantized
+
+    assert is_quantized(fetch("pipecat-ai/smart-turn-v3", "smart-turn-v3.2-cpu.onnx"))  # int8
+    assert not is_quantized(fetch("pipecat-ai/smart-turn-v3", "smart-turn-v3.2-gpu.onnx"))  # fp32
+
+
+def test_cuda_device_matches_cpu_or_says_why_not():
+    import onnxruntime as ort
+    import pytest
+
+    from pehleaap.baselines.turn_models import WhisperMelOnnx, fetch
+
+    fp32 = fetch("pipecat-ai/smart-turn-v3", "smart-turn-v3.2-gpu.onnx")
+    with pytest.raises(ValueError):
+        WhisperMelOnnx(fp32, device="gpu")
+    if "CUDAExecutionProvider" not in ort.get_available_providers():  # the CPU-only research venv
+        with pytest.raises(RuntimeError, match="no CUDA provider"):
+            WhisperMelOnnx(fp32, device="cuda")
+        return
+    feats = np.random.default_rng(0).uniform(-1, 1, (4, 80, 800)).astype(np.float32)
+    gpu = WhisperMelOnnx(fp32, device="cuda")
+    assert gpu.session.get_providers()[0] == "CUDAExecutionProvider"
+    np.testing.assert_allclose(gpu.predict_prepared(feats), WhisperMelOnnx(fp32).predict_prepared(feats), atol=1e-4)
+    int8 = WhisperMelOnnx(fetch("pipecat-ai/smart-turn-v3", "smart-turn-v3.2-cpu.onnx"), device="cuda")
+    assert int8.session.get_providers() == ["CPUExecutionProvider"]
