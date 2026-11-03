@@ -63,6 +63,7 @@ def main() -> None:
     ap.add_argument("--timeout-s", type=float, default=3.0, help="the bot's hard silence timeout (Pipecat's fallback is 3 s)")
     ap.add_argument("--threads", type=int, default=4)
     ap.add_argument("--device", choices=["cpu", "cuda"], default="cpu", help="cuda: fp32 models on the GPU (docs/machines.md)")
+    ap.add_argument("--no-spin", action="store_true", help="quiet ORT threads: same output, 1.5-2.3x faster (week2_gpu_eval.md section 3)")
     ap.add_argument("--out", default="sessions_eval")
     args = ap.parse_args()
 
@@ -75,7 +76,7 @@ def main() -> None:
     if bank is not None and not bank.files:
         raise SystemExit("chain conditions use MUSAN noise: run scripts/get_noise.py first")
     cfg = load_config(REPO_ROOT / "configs" / "augment.yaml")
-    models = {name: load_any(name, threads=args.threads, device=args.device, spin=False) for name in args.models}
+    models = {name: load_any(name, threads=args.threads, device=args.device, spin=not args.no_spin) for name in args.models}
 
     rows, all_events, unverified, t0 = [], [], [], time.time()
     for d in dirs:
