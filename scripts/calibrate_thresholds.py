@@ -83,7 +83,7 @@ def main() -> None:
         lines += ["", f"## {model} (card threshold {card})", "",
                   "Thresholds tuned on all of these clips, per channel/language (reference only: these are test clips; a shipped model"
                   " takes its thresholds from dev data, as train_eot.py's summary.json does): " + ", ".join(f"{k} {v:.2f}" for k, v in sorted(th.items())), "",
-                  *([f"Shipped thresholds (from its dev clips): " + ", ".join(f"{k} {v:.2f}" for k, v in sorted(shipped[model].items())), ""] if has_shipped else []),
+                  *(["Shipped thresholds (from its dev clips): " + ", ".join(f"{k} {v:.2f}" for k, v in sorted(shipped[model].items())), ""] if has_shipped else []),
                   "| Lang | Condition | n | Acc card | channel | +lang | cond+lang | Cut-in card | Cut-in +lang |" + (" Acc shipped | Cut-in shipped |" if has_shipped else ""),
                   "|---|---|---|---|---|---|---|---|---|" + ("---|---|" if has_shipped else "")]
         for lang, cond in sorted(wide.index, key=lambda k: (k[0], order[k[1]])):
