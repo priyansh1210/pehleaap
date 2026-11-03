@@ -68,10 +68,12 @@ def _chunked_histograms(size: int):
 
 
 def quantize_eot(fp32_path: str | Path, out_path: str | Path, features: np.ndarray, method: str = "entropy",
-                 keep_fp32: tuple[str, ...] = (), op_types: tuple[str, ...] | None = UPSTREAM_OP_TYPES) -> Path:
+                 keep_fp32: tuple[str, ...] = (), op_types: tuple[str, ...] | None = UPSTREAM_OP_TYPES,
+                 keep_last_fp32: int = 0) -> Path:
     """Static QDQ int8 copy of `fp32_path`, calibrated on `features`, written to `out_path`.
     Only `op_types` are quantised (None: every op onnxruntime can); nodes whose names start with any
-    of `keep_fp32` stay in float."""
+    of `keep_fp32` stay in float, and so do the last `keep_last_fp32` nodes of `op_types` in graph
+    order (in Smart Turn's graph the last 5 are the attention pool and the classifier)."""
     import onnx
     from onnxruntime.quantization import CalibrationMethod, QuantFormat, QuantType, quantize_static
     from onnxruntime.quantization.shape_inference import quant_pre_process
@@ -80,7 +82,10 @@ def quantize_eot(fp32_path: str | Path, out_path: str | Path, features: np.ndarr
     out_path.parent.mkdir(parents=True, exist_ok=True)
     prepped = out_path.with_suffix(".prep.onnx")
     quant_pre_process(str(fp32_path), str(prepped), skip_optimization=False, skip_symbolic_shape=True)
-    exclude = [n.name for n in onnx.load(str(prepped)).graph.node if n.name.startswith(keep_fp32)] if keep_fp32 else []
+    nodes = onnx.load(str(prepped)).graph.node
+    exclude = [n.name for n in nodes if n.name.startswith(keep_fp32)] if keep_fp32 else []
+    if keep_last_fp32:
+        exclude += [n.name for n in nodes if n.op_type in (op_types or UPSTREAM_OP_TYPES)][-keep_last_fp32:]
     try:
         with _chunked_histograms(32):
             quantize_static(
