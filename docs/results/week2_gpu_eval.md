@@ -54,7 +54,9 @@ would drop from about 22 to about 8 minutes (extrapolated, not run).
 After every run, ONNX Runtime's idle threads keep busy-waiting for a while (`session.intra_op.allow_spinning`). In
 `eval_sessions.py` that starved the next step, the Whisper features. transformers computes those with torch (24 threads),
 so they took about 11 ms per window instead of 1.6 ms, about 63% of the run (cProfile, one session, CPU). Both eval
-scripts now pass `spin=False`. The loader's default is unchanged, so the demo and `compute_bench.py` keep ORT's default.
+scripts take `--no-spin` to quiet the threads. It is opt-in (PR #55 made it the default; Priyansh asked for a flag), so a
+run without it behaves as before. The loader's default is unchanged too, so the demo and `compute_bench.py` keep ORT's
+default. Pass `--no-spin` for every batch eval: output is the same, only faster.
 
 | Run | Spinning (before) | Quiet (now) | Output |
 |---|---|---|---|

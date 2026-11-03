@@ -127,6 +127,7 @@ def main() -> None:
     ap.add_argument("--langs", nargs="+", default=["eng", "hin"])
     ap.add_argument("--threads", type=int, default=4)
     ap.add_argument("--device", choices=["cpu", "cuda"], default="cpu", help="cuda: fp32 models on the GPU (docs/machines.md)")
+    ap.add_argument("--no-spin", action="store_true", help="quiet ORT threads: same output, 1.5-2.3x faster (week2_gpu_eval.md section 3)")
     ap.add_argument("--limit-shards", type=int, default=None)
     ap.add_argument("--out", default="clip_baselines")
     ap.add_argument("--data-root", default=None, help="folder holding data/*.parquet (default: download to data/external)")
@@ -164,8 +165,8 @@ def main() -> None:
             raise SystemExit(f"{saved} is missing or lacks the requested models/conditions; run without --report-only")
         if df is None:
             if models is None:
-                models = {name: load(name, threads=args.threads, device=args.device, spin=False) for name in args.models}
-                models |= {name: WhisperMelOnnx(path, threads=args.threads, device=args.device, spin=False) for name, path in local.items()}
+                models = {name: load(name, threads=args.threads, device=args.device, spin=not args.no_spin) for name in args.models}
+                models |= {name: WhisperMelOnnx(path, threads=args.threads, device=args.device, spin=not args.no_spin) for name, path in local.items()}
             df = predict_shard(models, *smart_turn_testset.read_shard(shard, args.langs), args.conditions, bank, cfg)
             saved.with_suffix(".json").write_text(json.dumps({"langs": args.langs}))
             tmp = saved.with_suffix(".tmp")
