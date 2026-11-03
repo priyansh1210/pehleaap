@@ -215,7 +215,8 @@ v1 is the first working cut. Next:
 - More recorded conversations, then conversational fine-tuning on speaker-disjoint splits.
 - Telling a barge-in from a backchannel ("haan", "achha") while the agent is talking.
 - Hold intent ("ek minute"): wait quietly instead of replying.
-- An int8 eot_v1 for CPU-bound deployments.
+- An int8 eot_v1 for CPU-bound deployments. It runs at Smart Turn int8's speed but needs a Hindi threshold of 0.75 on phone
+  audio. Keeping its last layers in float doesn't remove that ([`week2_eot_v1_int8_head.md`](docs/results/week2_eot_v1_int8_head.md)).
 
 The full plan, including the fact-check of prior work, is in [`docs/PLAN.md`](docs/PLAN.md).
 
