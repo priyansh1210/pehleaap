@@ -426,3 +426,15 @@ eot_v1 (recommended Oct 28 with the v1.0 tag: [[hf-publish-plan]]), and an hones
 lead is partly in-distribution ([[fleurs-in-distribution-caveat]]). Pending decisions for tomorrow: HF upload + model card draft,
 README "Read with care" line, noreply git email. The v1 schedule is unchanged: pilot P01 Oct 26 -> pilot results in the README
 Oct 27 -> fresh-clone check + v1.0 tag Oct 28. Pilot status not reported in this session: ask.
+
+**GPU box session 2026-11-03 (upgrade work).** The GPU box is still up (expected to go Oct 28). Fresh clone at
+`C:\Users\FITT\pehleaap`; the old clone (`Desktop\PRIYANSH!!\pehleaap`) is gone with its data/ and runs/ (eot-train store,
+eot_v1 best.pt and int8 files). Not done by Nov 3: v1.0 tag (only `models-v1` exists), pilot P01 (README still "Coming next"),
+HF upload. Priyansh asked for every item of the Nov 3 improvement list, one by one, each as its own branch + commit + PR that
+Priyansh merges ([[git-workflow]]), with the ponytail skill ([[ponytail]]). Everything was downloaded first: .venv (py 3.12),
+.venv-demo (Pipecat 1.13), .venv-demo-next (Pipecat 1.15, test only), .venv-gpu (onnxruntime-gpu 1.31.0), release weights +
+baselines, Smart Turn test set, FLEURS hi (test/dev built, train fetched), MUSAN, Smart Turn train store; IndicVoices Hindi
+valid (0.52 GB) and TurnBench dev (4.2 GB) are gated: Priyansh accepts the terms and logs in, then `hf download`. Baseline
+tests: 138 passed / 1 skip; demo 7 passed on Pipecat 1.13 AND 1.15. Every dependency bump on the list (Pipecat 1.15.0 Oct 29,
+transformers 5.22.1 Oct 30, onnxruntime 1.31.1 Oct 26, livekit-agents 1.8.10 Oct 28) is < 2 weeks old on Nov 3: test now,
+pin after they are 2 weeks old.
