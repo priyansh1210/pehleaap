@@ -16,8 +16,10 @@ Priyansh said: "the process requires GPU or faster on it - can use GPU and other
 - Measure, don't guess. Time a model on both devices on a small slice, and check GPU vs CPU parity (probabilities within
   ~1e-3), before switching a model.
 - Don't mix devices for one model within a single reported table, or the model-card comparison gets muddied.
-- `pehleaap/baselines/turn_models.py` is CPU-only for now (`providers=["CPUExecutionProvider"]`, plain `onnxruntime`).
-  GPU inference needs `onnxruntime-gpu` (its own venv or swapped in carefully) and a per-model provider choice.
+- GPU inference (Nov 4, branch gpu-eval): `turn_models` `device="cuda"` / the eval scripts' `--device cuda`, run from
+  `.venv-gpu` (onnxruntime-gpu[cuda,cudnn] 1.31.0). fp32 models: TF32 off, |dp| <= 1.1e-5, 0 flips, ~10x faster.
+  Quantized models stay on the CPU automatically, since CUDA EP int8 drifted by up to 0.45 with 20/512 flips. torch must be
+  imported before `ort.preload_dlls()` (their cuDNN DLLs clash); `_load_cuda_dlls` does that. Default stays CPU.
 - This applies on the GPU box (until 2026-10-28) and Kaggle (T4). The Laptop's GTX 1650 4 GB rarely helps.
 
 Related: [[two-machine-setup]], [[dev-environment]].

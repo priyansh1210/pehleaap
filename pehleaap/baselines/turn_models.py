@@ -11,6 +11,8 @@ the end of the window. Preprocessing flags per model come from each model card a
 checked by reproducing the card's published accuracy (scripts/eval_clip_baselines.py).
 """
 
+import functools
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -39,18 +41,56 @@ def fetch(repo: str, filename: str) -> Path:
     return Path(hf_hub_download(repo, filename, local_dir=WEIGHTS_DIR / repo.replace("/", "__")))
 
 
-def _session(onnx_path: str | Path, threads: int) -> ort.InferenceSession:
+QUANT_OPS = {"DynamicQuantizeLinear", "QuantizeLinear", "MatMulInteger", "ConvInteger", "QLinearMatMul", "QLinearConv"}
+
+
+def is_quantized(onnx_path: str | Path) -> bool:
+    import onnx
+
+    return any(n.op_type in QUANT_OPS for n in onnx.load(str(onnx_path), load_external_data=False).graph.node)
+
+
+@functools.cache
+def _load_cuda_dlls() -> None:
+    """The CUDA 13 + cuDNN DLLs of `onnxruntime-gpu[cuda,cudnn]`. torch goes first: its cuDNN shares DLL names with
+    ORT's, and torch fails to import once ORT's are loaded (torch 2.14.1+cu126, 2026-11-04)."""
+    if "CUDAExecutionProvider" not in ort.get_available_providers():
+        raise RuntimeError('no CUDA provider: install "onnxruntime-gpu[cuda,cudnn]==1.31.0" (docs/machines.md)')
+    try:
+        import torch
+    except ImportError:
+        torch = None
+    # shortcut: with torch loaded, ORT runs on torch's cuDNN (its CUDA 12 build; ORT's own clashes by name and fails to
+    # load). Checked by parity, not by design: fp32 |dp| <= 1.1e-5 vs the CPU. Goes away with a CUDA 13 torch.
+    ort.preload_dlls(cudnn=torch is None)
+
+
+def _session(onnx_path: str | Path, threads: int, device: str = "cpu") -> ort.InferenceSession:
+    """device="cuda" runs fp32 models on the GPU with TF32 off (TF32 moved probabilities by up to 6e-3, off by <=1.1e-5:
+    docs/results/week2_gpu_eval.md). Quantized models stay on the CPU, where they were validated."""
     so = ort.SessionOptions()
     so.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
     so.inter_op_num_threads = 1
     so.intra_op_num_threads = threads
     so.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
-    return ort.InferenceSession(str(onnx_path), sess_options=so, providers=["CPUExecutionProvider"])
+    if device not in ("cpu", "cuda"):
+        raise ValueError(f"device must be cpu or cuda, not {device!r}")
+    on_gpu = device == "cuda" and not is_quantized(onnx_path)
+    if device == "cuda" and not on_gpu:
+        print(f"{Path(onnx_path).name}: quantized, stays on the CPU", file=sys.stderr)
+    providers: list = ["CPUExecutionProvider"]
+    if on_gpu:
+        _load_cuda_dlls()
+        providers.insert(0, ("CUDAExecutionProvider", {"use_tf32": "0"}))
+    session = ort.InferenceSession(str(onnx_path), sess_options=so, providers=providers)
+    if on_gpu and session.get_providers()[0] != "CUDAExecutionProvider":
+        raise RuntimeError(f"{onnx_path}: the CUDA provider didn't load (ORT silently fell back to the CPU)")
+    return session
 
 
 class _OnnxClipModel:
-    def __init__(self, onnx_path: str | Path, threads: int = 1, output_is_logit: bool = False):
-        self.session = _session(onnx_path, threads)
+    def __init__(self, onnx_path: str | Path, threads: int = 1, output_is_logit: bool = False, device: str = "cpu"):
+        self.session = _session(onnx_path, threads, device)
         inp = self.session.get_inputs()[0]
         self.input_name = inp.name
         # Some exports fix the batch dimension at 1.
@@ -80,10 +120,10 @@ class _OnnxClipModel:
 class WhisperMelOnnx(_OnnxClipModel):
     """Input: Whisper log-mel (80, 800) of the last 8 s."""
 
-    def __init__(self, onnx_path, threads: int = 1, do_normalize: bool = True, output_is_logit: bool = False):
+    def __init__(self, onnx_path, threads: int = 1, do_normalize: bool = True, output_is_logit: bool = False, device: str = "cpu"):
         from transformers import WhisperFeatureExtractor
 
-        super().__init__(onnx_path, threads, output_is_logit)
+        super().__init__(onnx_path, threads, output_is_logit, device)
         self.do_normalize = do_normalize
         self.feature_extractor = WhisperFeatureExtractor(chunk_length=WINDOW_S)
 
@@ -106,8 +146,8 @@ class WhisperMelOnnx(_OnnxClipModel):
 class WaveformOnnx(_OnnxClipModel):
     """Input: raw last-8 s waveform (128000,), optionally standardised over the real samples first."""
 
-    def __init__(self, onnx_path, threads: int = 1, standardize: bool = False, output_is_logit: bool = False):
-        super().__init__(onnx_path, threads, output_is_logit)
+    def __init__(self, onnx_path, threads: int = 1, standardize: bool = False, output_is_logit: bool = False, device: str = "cpu"):
+        super().__init__(onnx_path, threads, output_is_logit, device)
         self.standardize = standardize
 
     def prepare(self, audio_16k: np.ndarray) -> np.ndarray:
@@ -149,22 +189,22 @@ REGISTRY: dict[str, ModelSpec] = {
 }
 
 
-def load(name: str, threads: int = 1) -> _OnnxClipModel:
+def load(name: str, threads: int = 1, device: str = "cpu") -> _OnnxClipModel:
     spec = REGISTRY[name]
     path = fetch(spec.repo, spec.filename)
     cls = WhisperMelOnnx if spec.kind == "mel" else WaveformOnnx
-    return cls(path, threads=threads, **spec.kwargs)
+    return cls(path, threads=threads, device=device, **spec.kwargs)
 
 
-def load_any(name: str, threads: int = 1) -> tuple[_OnnxClipModel, float]:
+def load_any(name: str, threads: int = 1, device: str = "cpu") -> tuple[_OnnxClipModel, float]:
     """(model, decision threshold) for a REGISTRY name, or for one of our own Smart-Turn-format ONNX files:
     weights/<name>/model.onnx (e.g. eot_v0, from train_eot.py) or a path ending in .onnx, at threshold 0.5.
 
     Our models stay out of REGISTRY so the baseline evals' default model list never changes under them.
     """
     if name in REGISTRY:
-        return load(name, threads), REGISTRY[name].threshold
+        return load(name, threads, device), REGISTRY[name].threshold
     path = Path(name) if name.endswith(".onnx") else WEIGHTS_DIR / name / "model.onnx"
     if not path.exists():
         raise FileNotFoundError(f"{name!r} is not a registry model and {path} doesn't exist")
-    return WhisperMelOnnx(path, threads=threads), 0.5
+    return WhisperMelOnnx(path, threads=threads, device=device), 0.5
