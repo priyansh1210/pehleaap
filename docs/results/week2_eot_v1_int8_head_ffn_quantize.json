@@ -1,0 +1,83 @@
+{
+  "source": "runs\\eot_v1\\model_pipecat_graph.onnx",
+  "graph": "pipecat smart-turn-v3.2-gpu.onnx",
+  "best_step": null,
+  "graft_max_abs_diff": 2.86102294921875e-06,
+  "method": "entropy",
+  "calib_clips": 1024,
+  "calib": "clean train clips",
+  "seed": 0,
+  "keep_last_fp32": 7,
+  "size_mb": {
+    "fp32": 32.41,
+    "int8": 12.84
+  },
+  "dev": [
+    {
+      "condition": "clean",
+      "language": "eng",
+      "n": 1967,
+      "acc_fp32": 96.64,
+      "acc_int8": 95.68,
+      "auc_fp32": 0.9915,
+      "auc_int8": 0.9898,
+      "cut_in_fp32": 0.0424,
+      "cut_in_int8": 0.0527,
+      "decision_agreement": 0.9792,
+      "max_abs_diff": 0.7698
+    },
+    {
+      "condition": "clean",
+      "language": "hin",
+      "n": 344,
+      "acc_fp32": 93.9,
+      "acc_int8": 89.83,
+      "auc_fp32": 0.9851,
+      "auc_int8": 0.9783,
+      "cut_in_fp32": 0.0652,
+      "cut_in_int8": 0.1522,
+      "decision_agreement": 0.9419,
+      "max_abs_diff": 0.8696
+    },
+    {
+      "condition": "phone",
+      "language": "eng",
+      "n": 1967,
+      "acc_fp32": 93.04,
+      "acc_int8": 91.36,
+      "auc_fp32": 0.9748,
+      "auc_int8": 0.9684,
+      "cut_in_fp32": 0.0868,
+      "cut_in_int8": 0.1178,
+      "decision_agreement": 0.9609,
+      "max_abs_diff": 0.686
+    },
+    {
+      "condition": "phone",
+      "language": "hin",
+      "n": 344,
+      "acc_fp32": 91.57,
+      "acc_int8": 86.63,
+      "auc_fp32": 0.9685,
+      "auc_int8": 0.9602,
+      "cut_in_fp32": 0.087,
+      "cut_in_int8": 0.2337,
+      "decision_agreement": 0.8866,
+      "max_abs_diff": 0.7306
+    }
+  ],
+  "latency_ms_batch1": {
+    "smart_turn_v3.2_int8": {
+      "1": 27.93,
+      "4": 10.04
+    },
+    "eot_v1_fp32": {
+      "1": 56.0,
+      "4": 17.41
+    },
+    "eot_v1_int8": {
+      "1": 32.6,
+      "4": 11.24
+    }
+  }
+}
