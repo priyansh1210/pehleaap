@@ -11,7 +11,8 @@ pauses finished**, so the bot talks over the caller.
 This repo has three parts:
 
 - **eot_v1**, the model: Smart Turn v3.2 fine-tuned for phone lines and real Hindi voices. It's the same size and speed as
-  Smart Turn (a 32 MB ONNX file, about 17 ms per decision on 4 threads of a workstation CPU), and the file drops straight
+  Smart Turn's fp32 file (32 MB; about 17 ms per decision on 4 threads of a workstation CPU, 56 ms on one core, so one core
+  carries about 47 calls: [`week2_compute_bench.md`](docs/results/week2_compute_bench.md)), and the file drops straight
   into Pipecat's own analyzer.
 - **A benchmark** that scores any end-of-turn model on clean audio and on simulated phone lines (G.711, AMR-NB, noise, echo,
   packet loss), on single clips and on recorded two-person conversations.
