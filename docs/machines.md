@@ -100,7 +100,7 @@ py -3.12 -m venv .venv-gpu
 .venv-gpu\Scripts\python -m pip install --timeout 30 --retries 10 -r requirements.txt
 .venv-gpu\Scripts\python -m pip uninstall -y onnxruntime
 .venv-gpu\Scripts\python -m pip install --timeout 30 --retries 10 "onnxruntime-gpu[cuda,cudnn]==1.31.0" nvidia-cudnn-cu13==9.27.0.42 nvidia-cublas==13.8.0.4 nvidia-cuda-runtime==13.4.92
-.venv-gpu\Scripts\python scripts\eval_sessions.py "runs\turnbench_labels\TB*" --models eot_v1 --device cuda --out sessions_gpu
+.venv-gpu\Scripts\python scripts\eval_sessions.py "runs\turnbench_labels\TB*" --models eot_v1 --device cuda --no-spin --out sessions_gpu
 ```
 
 **Job 1: end-of-turn baselines, clean vs phone line** (Smart Turn v3.2 + 4 community Hinglish models
