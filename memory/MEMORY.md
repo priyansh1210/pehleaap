@@ -10,4 +10,5 @@
 - [Compute routing](compute-routing.md) — Priyansh's rule: GPU for GPU-friendly work, CPU for int8/ffmpeg/preprocessing; measure speed + parity before switching
 - [Hugging Face plan](hf-publish-plan.md) — HF upload of eot_v1 not in the plan; Laptop recommends Oct 28 with v1.0, mirror of the GitHub release; undecided
 - [FLEURS caveat](fleurs-in-distribution-caveat.md) — eot_v1's FLEURS lead is partly home field (eot_v0 74.6 < cwm 81.6); README line + held-out corpus proposed
+- [Ponytail](ponytail.md) — Priyansh's rule (Nov 3): ponytail skill (full) for all development + ponytail-review before each PR; one update per PR
 - [Commit email privacy](commit-email-privacy.md) — 35 commits expose the personal Gmail; switch to noreply; XERJ outreach email needs no reply

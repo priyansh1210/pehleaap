@@ -65,8 +65,12 @@ by `scripts/eval_sessions.py` on its cut-in rate and response gap.
 ### Read with care
 
 - **FLEURS is read speech, not conversation.** Readers pause at commas, not before a verb. Recorded conversations are the real test.
-- FLEURS publishes no speaker IDs. eot_v1 trained on FLEURS's train split, so some test readers may also appear in training.
-  The sentences never overlap.
+- **FLEURS is home ground for eot_v1.** It trained on FLEURS's train split: the same recording setup and the same way of
+  cutting clips. No other model's card lists FLEURS in its training data. Our first fine-tune, eot_v0, had the same recipe
+  without FLEURS and scored 74.6 on clean audio, below codewithmoin's 81.6
+  ([`week1_fleurs_eot_report.md`](docs/results/week1_fleurs_eot_report.md)). So much of eot_v1's lead comes from that
+  data. A test that no model trained on comes next.
+- FLEURS publishes no speaker IDs, so some test readers may also appear in training. The sentences never overlap.
 - An 18% cut-in rate on clean real voices is still too high for a product. Threshold tuning and conversational training data come next.
 - English slips slightly against our first fine-tune, eot_v0 (−0.7 points clean, p = 3e-4), but stays above Smart Turn everywhere.
 - eot_v1 is fp32, the same size and speed as Smart Turn's fp32 file (`smart-turn-v3.2-gpu.onnx`). The test-set table compares
