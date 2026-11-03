@@ -1,0 +1,37 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: ffmpeg
+        # Ubuntu's ffmpeg has libgsm but no AMR-NB; the static build pinned in the Kaggle template has AMR-NB.
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q ffmpeg
+          url=$(sed -n 's/^FFMPEG_URL = "\(.*\)"$/\1/p' scripts/kaggle_job_template.py)
+          sha=$(sed -n 's/^FFMPEG_SHA256 = "\(.*\)"$/\1/p' scripts/kaggle_job_template.py)
+          curl -sSL --retry 5 -o /tmp/ffmpeg.tar.xz "$url"
+          echo "$sha  /tmp/ffmpeg.tar.xz" | sha256sum -c -
+          tar -xJf /tmp/ffmpeg.tar.xz -C /tmp
+          echo "PEHLEAAP_FFMPEG_EXTRA=$(echo /tmp/ffmpeg-*-amd64-static/ffmpeg)" >> "$GITHUB_ENV"
+
+      - name: Install the research stack with CPU torch
+        run: |
+          pip install torch==2.14.1 --index-url https://download.pytorch.org/whl/cpu
+          grep -v '^torch==' requirements.txt > /tmp/requirements.txt
+          pip install -r /tmp/requirements.txt ruff==0.17.1
+
+      - run: ruff check pehleaap scripts tests demo
+      - run: python -m pytest
