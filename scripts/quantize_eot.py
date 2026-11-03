@@ -20,6 +20,7 @@ import argparse
 import json
 import sys
 import time
+from dataclasses import asdict
 from pathlib import Path
 
 import numpy as np
@@ -29,7 +30,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from pehleaap.eval.clip_metrics import binary_metrics  # noqa: E402
 from pehleaap.models.quantize import quantize_eot  # noqa: E402
-from pehleaap.models.smart_turn import PUBLISHED, onnx_with_state_dict  # noqa: E402
+from pehleaap.models.smart_turn import PUBLISHED, onnx_with_state_dict, state_dict_from_onnx  # noqa: E402
+from pehleaap.train.train_eot import load_config  # noqa: E402
 from pehleaap.baselines.turn_models import fetch  # noqa: E402
 from pehleaap.paths import REPO_ROOT, RUNS_DIR  # noqa: E402
 from pehleaap.train.eot_data import DEV_CLEAN, DEV_PHONE, Augmenter, EotStore  # noqa: E402
@@ -82,14 +84,25 @@ def main() -> None:
     ap.add_argument("--calib-clips", type=int, default=1024)
     ap.add_argument("--method", default="entropy", choices=["entropy", "minmax", "percentile"])
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--keep-last-fp32", type=int, default=0, help="leave the last N Conv/MatMul/Gemm nodes in float (5 = pool + classifier)")
+    ap.add_argument("--out", default="model_int8", help="int8 file name in the run folder, without .onnx")
+    ap.add_argument("--config", help="training config, for a run folder without meta.json (e.g. configs/train_eot_v1.yaml)")
     args = ap.parse_args()
     sys.stdout.reconfigure(encoding="utf-8")
 
     run = RUNS_DIR / args.run
-    exported, fp32, int8 = run / "model.onnx", run / "model_pipecat_graph.onnx", run / "model_int8.onnx"
-    best = torch.load(run / "best.pt", map_location="cpu", weights_only=False)
+    exported, fp32, int8 = run / "model.onnx", run / "model_pipecat_graph.onnx", run / f"{args.out}.onnx"
+    if (run / "best.pt").exists():
+        best = torch.load(run / "best.pt", map_location="cpu", weights_only=False)
+    else:  # only the exported model, e.g. the released file: Whisper's frozen position table isn't in it, so it comes from upstream
+        best = {"step": None, "model": {**state_dict_from_onnx(fetch(*PUBLISHED)), **state_dict_from_onnx(exported)}}
     onnx_with_state_dict(fetch(*PUBLISHED), best["model"], fp32)
-    cfg = json.loads((run / "meta.json").read_text(encoding="utf-8"))["config"]
+    if (run / "meta.json").exists():
+        cfg = json.loads((run / "meta.json").read_text(encoding="utf-8"))["config"]
+    elif args.config:
+        cfg = asdict(load_config(REPO_ROOT / args.config))
+    else:
+        raise SystemExit(f"{run} has no meta.json: pass the training config with --config")
     store = EotStore(REPO_ROOT / cfg["data_dir"])
     augmenter = Augmenter(store, REPO_ROOT / cfg["augment_config"], cfg["p_phone"], cfg["seed"])
 
@@ -98,7 +111,7 @@ def main() -> None:
     calib = features_for(augmenter, [(DEV_CLEAN, int(r)) for r in calib_rows])  # the DEV_CLEAN key = no augmentation
     print(f"calibration features: {len(calib_rows)} clean train clips ({np.mean(calib['language'] == 'hin'):.0%} Hindi), {time.time() - t0:.0f}s", flush=True)
     t0 = time.time()
-    quantize_eot(fp32, int8, calib["features"], args.method)
+    quantize_eot(fp32, int8, calib["features"], args.method, keep_last_fp32=args.keep_last_fp32)
     print(f"quantized ({args.method}) in {time.time() - t0:.0f}s: {fp32.stat().st_size / 1e6:.1f} MB -> {int8.stat().st_size / 1e6:.1f} MB", flush=True)
 
     dev_rows = store.rows("dev", tuple(cfg["langs"]))
@@ -131,10 +144,12 @@ def main() -> None:
 
     summary = {"source": str(fp32.relative_to(REPO_ROOT)), "graph": "pipecat smart-turn-v3.2-gpu.onnx", "best_step": best["step"],
                "graft_max_abs_diff": graft_diff, "method": args.method, "calib_clips": int(len(calib_rows)), "calib": "clean train clips",
-               "seed": args.seed, "size_mb": {"fp32": round(fp32.stat().st_size / 1e6, 2), "int8": round(int8.stat().st_size / 1e6, 2)},
+               "seed": args.seed, "keep_last_fp32": args.keep_last_fp32,
+               "size_mb": {"fp32": round(fp32.stat().st_size / 1e6, 2), "int8": round(int8.stat().st_size / 1e6, 2)},
                "dev": rows, "latency_ms_batch1": latency}
-    (run / "quantize.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
-    print(f"wrote {int8} and {run / 'quantize.json'}")
+    report = run / ("quantize.json" if args.out == "model_int8" else f"quantize_{args.out}.json")
+    report.write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    print(f"wrote {int8} and {report}")
 
 
 if __name__ == "__main__":
