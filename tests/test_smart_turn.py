@@ -73,3 +73,18 @@ def test_cuda_device_matches_cpu_or_says_why_not():
     np.testing.assert_allclose(gpu.predict_prepared(feats), WhisperMelOnnx(fp32).predict_prepared(feats), atol=1e-4)
     int8 = WhisperMelOnnx(fetch("pipecat-ai/smart-turn-v3", "smart-turn-v3.2-cpu.onnx"), device="cuda")
     assert int8.session.get_providers() == ["CPUExecutionProvider"]
+
+
+def test_spin_off_is_opt_in_and_keeps_outputs():
+    import pytest
+
+    from pehleaap.baselines.turn_models import WhisperMelOnnx, fetch
+
+    key = "session.intra_op.allow_spinning"
+    fp32 = fetch("pipecat-ai/smart-turn-v3", "smart-turn-v3.2-gpu.onnx")
+    spinning, quiet = WhisperMelOnnx(fp32, threads=2), WhisperMelOnnx(fp32, threads=2, spin=False)
+    with pytest.raises(RuntimeError):  # the default sets nothing: ORT's own default (spin) applies
+        spinning.session.get_session_options().get_session_config_entry(key)
+    assert quiet.session.get_session_options().get_session_config_entry(key) == "0"
+    feats = np.random.default_rng(0).uniform(-1, 1, (4, 80, 800)).astype(np.float32)
+    np.testing.assert_array_equal(quiet.predict_prepared(feats), spinning.predict_prepared(feats))

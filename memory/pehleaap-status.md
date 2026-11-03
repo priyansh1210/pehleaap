@@ -460,8 +460,11 @@ exactly), #49 IndicVoices builder. Open: #50 TurnBench dev, #51 prereg draft (me
   held-out result. Plan as in recording_protocol.md §1 (consent -> Craig settings -> 1-min P00 test -> ~25-min P01 free chat).
   Laptop advice (Nov 4): do the P00 clap test in the same room, since a clap must reach both mics for the clock check, then
   record P01 from separate rooms as planned on Oct 25.
-- Pending: Laptop row of the compute bench; GPU-eval parity/speed with .venv-gpu; Pipecat 1.15 pin after Nov 12; HF model card;
-  shared Whisper features across models in eval_sessions (it recomputes them per model: 3 models x 38 sessions = 22 min).
-- **GPU eval: DONE (Nov 4, branch gpu-eval)**, which supersedes the "GPU-eval parity/speed" item above. `--device cuda` in
+- Pending: Laptop row of the compute bench; Pipecat 1.15 pin after Nov 12; HF model card.
+- **GPU eval: DONE (Nov 4, PR #54):** `--device cuda` in
   eval_sessions / eval_clip_baselines (from `.venv-gpu`): fp32 |dp| <= 1.1e-5, results.json identical, 3 TurnBench sessions
   134.5 s -> 48.5 s. int8 stays on the CPU. Default CPU output is bit-identical to the saved run. `docs/results/week2_gpu_eval.md`.
+- **Eval speed (Nov 4, branch eval-nospin):** the 22-min TurnBench run was slow because of ORT's spinning idle threads
+  starving the torch-based Whisper features (~63% of the time), not because each model recomputes them. Both eval scripts now
+  pass `spin=False`; output is bit-identical. 3 TurnBench sessions: 134.5 s -> 58.4 s on CPU, 33.5 s with `--device cuda`.
+  FLEURS: 1,266 s -> 869 s. Shared features were measured and dropped: no gain once the threads are quiet.
