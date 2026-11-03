@@ -75,7 +75,7 @@ def main() -> None:
     if bank is not None and not bank.files:
         raise SystemExit("chain conditions use MUSAN noise: run scripts/get_noise.py first")
     cfg = load_config(REPO_ROOT / "configs" / "augment.yaml")
-    models = {name: load_any(name, threads=args.threads, device=args.device) for name in args.models}
+    models = {name: load_any(name, threads=args.threads, device=args.device, spin=False) for name in args.models}
 
     rows, all_events, unverified, t0 = [], [], [], time.time()
     for d in dirs:

@@ -1,4 +1,4 @@
-# Evals on the GPU: `--device cuda` (GPU box, 2026-11-04)
+# Eval speed: `--device cuda` and quiet CPU threads (GPU box, 2026-11-04)
 
 `eval_sessions.py` and `eval_clip_baselines.py` take `--device cuda` (default `cpu`, unchanged). fp32 models then run on
 ONNX Runtime's CUDA provider with TF32 off. Quantized models stay on the CPU. Setup is in `docs/machines.md` (`.venv-gpu`).
@@ -48,6 +48,26 @@ python scripts/eval_sessions.py runs/turnbench_labels/TB105 runs/turnbench_label
 
 That's 2.8x faster overall. The int8 model, VAD and feature extraction stay on the CPU. At this rate the 38-session dev run
 would drop from about 22 to about 8 minutes (extrapolated, not run).
+
+## 3. Quiet ORT threads in batch evals
+
+After every run, ONNX Runtime's idle threads keep busy-waiting for a while (`session.intra_op.allow_spinning`). In
+`eval_sessions.py` that starved the next step, the Whisper features. transformers computes those with torch (24 threads),
+so they took about 11 ms per window instead of 1.6 ms, about 63% of the run (cProfile, one session, CPU). Both eval
+scripts now pass `spin=False`. The loader's default is unchanged, so the demo and `compute_bench.py` keep ORT's default.
+
+| Run | Spinning (before) | Quiet (now) | Output |
+|---|---|---|---|
+| TurnBench TB105, CPU, 3 models | 36 s | 20 s | bit-identical |
+| TurnBench TB105-TB107, CPU (section 2) | 134.5 s | 58.4 s | probabilities and `results.json` bit-identical |
+| TurnBench TB105-TB107, `--device cuda` | 48.5 s | 33.5 s | bit-identical |
+| FLEURS, 7 models x 5 conditions (`week2_fleurs_one_machine_report.md`) | 1,266 s | 869 s | `predictions.csv` (5,230 rows) and `report.md` identical |
+
+Times are from each script's "elapsed" line. The FLEURS "before" comes from the earlier run's log. FLEURS gains less
+because its codec chains (ffmpeg) take a larger share.
+
+Considered and dropped: sharing the Whisper features between models with the same settings. On TB105 it gave 26 s
+alone and 20 s with quiet threads, so it adds nothing once the threads are quiet. Capping torch at 4 threads gave 22 s.
 
 ## Known limits
 

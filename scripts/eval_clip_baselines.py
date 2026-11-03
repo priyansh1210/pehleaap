@@ -164,8 +164,8 @@ def main() -> None:
             raise SystemExit(f"{saved} is missing or lacks the requested models/conditions; run without --report-only")
         if df is None:
             if models is None:
-                models = {name: load(name, threads=args.threads, device=args.device) for name in args.models}
-                models |= {name: WhisperMelOnnx(path, threads=args.threads, device=args.device) for name, path in local.items()}
+                models = {name: load(name, threads=args.threads, device=args.device, spin=False) for name in args.models}
+                models |= {name: WhisperMelOnnx(path, threads=args.threads, device=args.device, spin=False) for name, path in local.items()}
             df = predict_shard(models, *smart_turn_testset.read_shard(shard, args.langs), args.conditions, bank, cfg)
             saved.with_suffix(".json").write_text(json.dumps({"langs": args.langs}))
             tmp = saved.with_suffix(".tmp")

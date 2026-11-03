@@ -20,6 +20,7 @@ Priyansh said: "the process requires GPU or faster on it - can use GPU and other
   `.venv-gpu` (onnxruntime-gpu[cuda,cudnn] 1.31.0). fp32 models: TF32 off, |dp| <= 1.1e-5, 0 flips, ~10x faster.
   Quantized models stay on the CPU automatically, since CUDA EP int8 drifted by up to 0.45 with 20/512 flips. torch must be
   imported before `ort.preload_dlls()` (their cuDNN DLLs clash); `_load_cuda_dlls` does that. Default stays CPU.
+- Batch evals: ORT threads must not spin (`spin=False`, the eval scripts do it): spinning starved torch feature extraction.
 - This applies on the GPU box (until 2026-10-28) and Kaggle (T4). The Laptop's GTX 1650 4 GB rarely helps.
 
 Related: [[two-machine-setup]], [[dev-environment]].
