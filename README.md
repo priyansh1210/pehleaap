@@ -42,7 +42,8 @@ brackets: the share of mid-sentence pauses the model called finished, where the 
 - Smart Turn int8 is the file Pipecat ships by default. On real voices it cuts in far more often than Smart Turn's own fp32 file.
 - The "mixed phone chain" draws one random chain per clip: room reverb, noise, AGC, clipping, codecs, packet loss and jitter.
 - Every cell comes from one run on one machine ([`week2_fleurs_one_machine_report.md`](docs/results/week2_fleurs_one_machine_report.md)).
-  The mixed chain's audio is not bit-identical across machines, and chhotu, an int8 model, scored 1 to 4 clips differently
+  The mixed chain's audio depends on the ffmpeg build, since 9.0.1 and 9.0.2 encode Opus differently
+  ([`week2_ffmpeg_opus.md`](docs/results/week2_ffmpeg_opus.md)). chhotu, an int8 model, scored 1 to 4 clips differently
   on another CPU even on clean audio, so compare models within one run.
 
 ### Smart Turn's own test set (all its Hindi clips are TTS)

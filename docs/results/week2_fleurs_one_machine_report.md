@@ -11,7 +11,8 @@ conditions in one run on the GPU box.
 - **The fp32 models the Laptop scored** (deveshu, abhishek, Smart Turn fp32) match it exactly in the 4 fixed conditions
   and differ only on the mixed chain, by 0 to 3 clips: deveshu 70.55 -> 70.36, Smart Turn fp32 68.55 -> 68.83,
   abhishek's cut-in rate 47.3% -> 47.6%. These GPU-box mixed values are the ones the significance tests
-  (`week1_fleurs_significance.md`) already used.
+  (`week1_fleurs_significance.md`) already used. The cause is the ffmpeg build: 9.0.1 here and 9.0.2 on the Laptop encode
+  Opus differently, and with 9.0.2 this machine reproduces the Laptop's mixed numbers exactly (`week2_ffmpeg_opus.md`).
 - **chhotu, the one int8 model scored on both machines, differs in every condition, clean audio included**
   (67.21 -> 67.30 clean, 54.40 -> 54.02 G.711, 60.23 -> 59.85 AMR-NB, 64.05 -> 63.96 noise, 62.91 -> 63.10 mixed).
   Clean audio is identical on both machines, so the int8 inference itself differs between the two CPUs (i5-11300H on the
