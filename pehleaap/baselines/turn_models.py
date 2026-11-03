@@ -65,14 +65,19 @@ def _load_cuda_dlls() -> None:
     ort.preload_dlls(cudnn=torch is None)
 
 
-def _session(onnx_path: str | Path, threads: int, device: str = "cpu") -> ort.InferenceSession:
+def _session(onnx_path: str | Path, threads: int, device: str = "cpu", spin: bool = True) -> ort.InferenceSession:
     """device="cuda" runs fp32 models on the GPU with TF32 off (TF32 moved probabilities by up to 6e-3, off by <=1.1e-5:
-    docs/results/week2_gpu_eval.md). Quantized models stay on the CPU, where they were validated."""
+    docs/results/week2_gpu_eval.md). Quantized models stay on the CPU, where they were validated.
+
+    spin=False stops ORT's idle threads from busy-waiting after each run. In batch evals they starved the torch-based
+    Whisper features: a TurnBench session took 36 s with spinning, 20 s without, bit-identical (docs/results/week2_gpu_eval.md)."""
     so = ort.SessionOptions()
     so.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
     so.inter_op_num_threads = 1
     so.intra_op_num_threads = threads
     so.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
+    if not spin:
+        so.add_session_config_entry("session.intra_op.allow_spinning", "0")
     if device not in ("cpu", "cuda"):
         raise ValueError(f"device must be cpu or cuda, not {device!r}")
     on_gpu = device == "cuda" and not is_quantized(onnx_path)
@@ -89,8 +94,8 @@ def _session(onnx_path: str | Path, threads: int, device: str = "cpu") -> ort.In
 
 
 class _OnnxClipModel:
-    def __init__(self, onnx_path: str | Path, threads: int = 1, output_is_logit: bool = False, device: str = "cpu"):
-        self.session = _session(onnx_path, threads, device)
+    def __init__(self, onnx_path: str | Path, threads: int = 1, output_is_logit: bool = False, device: str = "cpu", spin: bool = True):
+        self.session = _session(onnx_path, threads, device, spin)
         inp = self.session.get_inputs()[0]
         self.input_name = inp.name
         # Some exports fix the batch dimension at 1.
@@ -120,10 +125,12 @@ class _OnnxClipModel:
 class WhisperMelOnnx(_OnnxClipModel):
     """Input: Whisper log-mel (80, 800) of the last 8 s."""
 
-    def __init__(self, onnx_path, threads: int = 1, do_normalize: bool = True, output_is_logit: bool = False, device: str = "cpu"):
+    def __init__(
+        self, onnx_path, threads: int = 1, do_normalize: bool = True, output_is_logit: bool = False, device: str = "cpu", spin: bool = True
+    ):
         from transformers import WhisperFeatureExtractor
 
-        super().__init__(onnx_path, threads, output_is_logit, device)
+        super().__init__(onnx_path, threads, output_is_logit, device, spin)
         self.do_normalize = do_normalize
         self.feature_extractor = WhisperFeatureExtractor(chunk_length=WINDOW_S)
 
@@ -146,8 +153,10 @@ class WhisperMelOnnx(_OnnxClipModel):
 class WaveformOnnx(_OnnxClipModel):
     """Input: raw last-8 s waveform (128000,), optionally standardised over the real samples first."""
 
-    def __init__(self, onnx_path, threads: int = 1, standardize: bool = False, output_is_logit: bool = False, device: str = "cpu"):
-        super().__init__(onnx_path, threads, output_is_logit, device)
+    def __init__(
+        self, onnx_path, threads: int = 1, standardize: bool = False, output_is_logit: bool = False, device: str = "cpu", spin: bool = True
+    ):
+        super().__init__(onnx_path, threads, output_is_logit, device, spin)
         self.standardize = standardize
 
     def prepare(self, audio_16k: np.ndarray) -> np.ndarray:
@@ -189,22 +198,22 @@ REGISTRY: dict[str, ModelSpec] = {
 }
 
 
-def load(name: str, threads: int = 1, device: str = "cpu") -> _OnnxClipModel:
+def load(name: str, threads: int = 1, device: str = "cpu", spin: bool = True) -> _OnnxClipModel:
     spec = REGISTRY[name]
     path = fetch(spec.repo, spec.filename)
     cls = WhisperMelOnnx if spec.kind == "mel" else WaveformOnnx
-    return cls(path, threads=threads, device=device, **spec.kwargs)
+    return cls(path, threads=threads, device=device, spin=spin, **spec.kwargs)
 
 
-def load_any(name: str, threads: int = 1, device: str = "cpu") -> tuple[_OnnxClipModel, float]:
+def load_any(name: str, threads: int = 1, device: str = "cpu", spin: bool = True) -> tuple[_OnnxClipModel, float]:
     """(model, decision threshold) for a REGISTRY name, or for one of our own Smart-Turn-format ONNX files:
     weights/<name>/model.onnx (e.g. eot_v0, from train_eot.py) or a path ending in .onnx, at threshold 0.5.
 
     Our models stay out of REGISTRY so the baseline evals' default model list never changes under them.
     """
     if name in REGISTRY:
-        return load(name, threads, device), REGISTRY[name].threshold
+        return load(name, threads, device, spin), REGISTRY[name].threshold
     path = Path(name) if name.endswith(".onnx") else WEIGHTS_DIR / name / "model.onnx"
     if not path.exists():
         raise FileNotFoundError(f"{name!r} is not a registry model and {path} doesn't exist")
-    return WhisperMelOnnx(path, threads=threads, device=device), 0.5
+    return WhisperMelOnnx(path, threads=threads, device=device, spin=spin), 0.5
