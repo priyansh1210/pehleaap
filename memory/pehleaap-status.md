@@ -438,3 +438,25 @@ valid (0.52 GB) and TurnBench dev (4.2 GB) are gated: Priyansh accepts the terms
 tests: 138 passed / 1 skip; demo 7 passed on Pipecat 1.13 AND 1.15. Every dependency bump on the list (Pipecat 1.15.0 Oct 29,
 transformers 5.22.1 Oct 30, onnxruntime 1.31.1 Oct 26, livekit-agents 1.8.10 Oct 28) is < 2 weeks old on Nov 3: test now,
 pin after they are 2 weeks old.
+
+**GPU box session 2026-11-04 (upgrade work, continued; PRs through Claude in Chrome).** Merged: #44 v1 closeout (README FLEURS
+"home ground" line, v1.0.0 version), #45 FLEURS table from one machine, #46 compute bench (eot_v1 56 ms/decision on one core,
+~47 calls/core; Laptop row still to run), #47 int8 with the last layers in float (no fix: pool+classifier in float changes no
+Hindi decision; int8 still needs the 0.75 Hindi phone threshold, release stays fp32), #48 Opus parity (ffmpeg 9.0.1 GPU box vs
+9.0.2 Laptop encode Opus differently; only the mixed chain uses Opus; with 9.0.2 the GPU box reproduces the Laptop's mixed numbers
+exactly), #49 IndicVoices builder. Open: #50 TurnBench dev, #51 prereg draft (merge after #50).
+- **TurnBench dev (English, 38 conversations, 26 speakers, human-verified pauses):** cut-in @0.5 s gap eot_v1 13.5%, Smart Turn
+  fp32 13.9%, int8 14.7%, timeout 41.6%; speaker-clustered CIs include 0 except vs int8 @0.8 s (-2.2 [-3.8, -0.2]): English
+  level with Smart Turn, no regression. **Our automatic labels:** 30% of automatic SHIFTs are human HOLDs (long backchannels over
+  bc_max_notext_s 0.6 s, overlaps); they understate cut-ins by 2-3 points and flipped eot_v1 vs fp32, so every test-split pause
+  goes through `verify_app.py --all` (prereg §5). `--asr` backchannel words might fix part of it: untested.
+- **IndicVoices:** segment ends aren't turn ends (no punctuation, many end mid-sentence), so Priyansh hand-labels 300 clips (one
+  per speaker; 216 segment ends + 84 pauses; end clips padded with their own background to the same 0.2 s VAD tail). Clips are on
+  the GPU box in `data/external/indicvoices-hi-eot/` (open `label.html`, download labels.json, then `make_indicvoices_eot.py
+  build`). **Freeze the prereg before scoring them** (they are its confirmatory H5).
+- **Prereg:** Priyansh OK'd moving faster than the timeline (freeze before Nov 15 is fine). The draft (#51) leaves H1's rival +
+  condition, minimum data and profile gap targets for Priyansh to confirm.
+- **Pilot:** nothing on the GPU box; Priyansh wasn't sure whether P00/P01 were ever recorded. Check the Craig DM in Discord and
+  the Laptop's `D:\pehleaap\data\raw\sessions\` + Downloads for `craig*.zip`.
+- Pending: Laptop row of the compute bench; GPU-eval parity/speed with .venv-gpu; Pipecat 1.15 pin after Nov 12; HF model card;
+  shared Whisper features across models in eval_sessions (it recomputes them per model: 3 models x 38 sessions = 22 min).

@@ -13,9 +13,12 @@ metadata:
 - Smart Turn v3.2 test set (4.8 GB, CC-BY-4.0) in `data/external/smart-turn-data-v3.2-test`; weights in `weights/` (both gitignored).
 - No winget, no 7-Zip, no gh. Use `curl.exe` and `Expand-Archive` (zip builds).
 
-**GPU box** (maybe until 2026-10-28; repo `C:\Users\FITT\Desktop\PRIYANSH!!\pehleaap`): evals, fine-tuning, quantisation; 24 cores, 64 GB RAM. Python 3.12.10 via `py`
-(venv `.venv`, pins install fine, 64 tests pass). ffmpeg 9.0.1 gyan.dev full build from winget is on PATH (amrnb/gsm/opus present),
-so no `~\tools` install. Has winget. The auto-mode classifier blocked running `setup_claude_memory.ps1` for me: Priyansh runs it.
+**GPU box** (still up on 2026-11-04, end unknown; repo `C:\Users\FITT\pehleaap`, fresh clone Nov 3): evals, fine-tuning, quantisation; 24 cores, 64 GB RAM. Python 3.12.10 via `py`
+(venv `.venv`, pins install fine). ffmpeg 9.0.1 gyan.dev full build from winget is on PATH (amrnb/gsm/opus present).
+Since Nov 3 the runbook's 9.0.2 is also in `~\tools`, but PATH comes first in `ffmpeg_bin`, so jobs still use 9.0.1; keep it
+that way: 9.0.1 and 9.0.2 encode Opus differently, which moves mixed-chain numbers (`docs/results/week2_ffmpeg_opus.md`).
+Has winget. The auto-mode classifier blocked running `setup_claude_memory.ps1` for me: Priyansh runs it.
+Claude in Chrome is connected on the GPU box (Nov 3): PRs are opened through it (no gh).
 
 **Kaggle** (from 2026-10-29): CLI `kaggle==2.2.4` in `.venv` (pinned in requirements.txt; 2.2.5 skipped as only 2 days old).
 Auth = API token from kaggle.com/settings/api saved as `%USERPROFILE%\.kaggle\access_token` (or `.txt`, or env KAGGLE_API_TOKEN),
