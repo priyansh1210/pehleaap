@@ -456,7 +456,9 @@ exactly), #49 IndicVoices builder. Open: #50 TurnBench dev, #51 prereg draft (me
   build`). **Freeze the prereg before scoring them** (they are its confirmatory H5).
 - **Prereg:** Priyansh OK'd moving faster than the timeline (freeze before Nov 15 is fine). The draft (#51) leaves H1's rival +
   condition, minimum data and profile gap targets for Priyansh to confirm.
-- **Pilot:** nothing on the GPU box; Priyansh wasn't sure whether P00/P01 were ever recorded. Check the Craig DM in Discord and
-  the Laptop's `D:\pehleaap\data\raw\sessions\` + Downloads for `craig*.zip`.
+- **Pilot: NOT recorded yet (Priyansh, Nov 4)**, neither P00 nor P01, so H1-H4 have no data and IndicVoices (H5) is the next
+  held-out result. Plan as in recording_protocol.md §1 (consent -> Craig settings -> 1-min P00 test -> ~25-min P01 free chat).
+  Laptop advice (Nov 4): do the P00 clap test in the same room, since a clap must reach both mics for the clock check, then
+  record P01 from separate rooms as planned on Oct 25.
 - Pending: Laptop row of the compute bench; GPU-eval parity/speed with .venv-gpu; Pipecat 1.15 pin after Nov 12; HF model card;
   shared Whisper features across models in eval_sessions (it recomputes them per model: 3 models x 38 sessions = 22 min).
