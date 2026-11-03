@@ -30,11 +30,12 @@ Output of `python scripts/env_check.py --markdown` on each machine. Re-run after
 | ffmpeg codecs | libopencore_amrnb, libgsm, libopus, pcm_mulaw, pcm_alaw |
 | git commit | no commits |
 
-## GPU box (RTX 4000 SFF Ada, 20 GB): until Oct 28, 2026
+## GPU box (RTX 4000 SFF Ada, 20 GB): still up on Nov 3, 2026, end date unknown
 
-This box is only available until Oct 28, so it runs Job 1 below and nothing else. From Oct 29, heavy jobs run on
-Kaggle (next section). Repo at `C:\Users\FITT\Desktop\PRIYANSH!!\pehleaap`. Python 3.12.10 (the pins install and all
-tests pass on it). ffmpeg is a winget 9.0.1 full build on PATH, with the same codecs as the Dev box's 9.0.2.
+It was expected to go on Oct 28; it is still available on Nov 3, so heavy jobs keep running here, with Kaggle (next
+section) as the fallback. Repo at `C:\Users\FITT\pehleaap` (fresh clone, Nov 3; the earlier clone at
+`C:\Users\FITT\Desktop\PRIYANSH!!\pehleaap` is gone, together with its `data\` and `runs\`). Python 3.12.10 (the pins
+install and all tests pass on it). ffmpeg is a winget 9.0.1 full build on PATH, with the same codecs as the Dev box's 9.0.2.
 
 | Item | Value |
 |---|---|
