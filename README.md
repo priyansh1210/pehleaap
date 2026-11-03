@@ -28,11 +28,11 @@ brackets: the share of mid-sentence pauses the model called finished, where the 
 
 | Audio | **eot_v1 (ours)** | codewithmoin | deveshu | abhishek | Smart Turn fp32 | Smart Turn int8 | chhotu |
 |---|---|---|---|---|---|---|---|
-| clean 16 kHz | **88.8** (18%) | 81.6 (37%) | 80.9 (36%) | 79.5 (49%) | 75.0 (36%) | 72.8 (60%) | 67.2 (55%) |
-| G.711 μ-law (landline) | **86.7** (23%) | 80.7 (39%) | 79.9 (39%) | 78.3 (51%) | 71.8 (49%) | 69.4 (73%) | 54.4 (40%) |
-| AMR-NB 7.95 kbit/s (mobile) | **86.9** (25%) | 80.5 (41%) | 77.5 (43%) | 78.4 (49%) | 70.6 (57%) | 68.4 (77%) | 60.2 (62%) |
-| 10 dB noise + AMR-NB | **83.4** (33%) | 76.3 (52%) | 71.1 (47%) | 76.8 (45%) | 67.7 (66%) | 65.2 (84%) | 64.1 (92%) |
-| mixed phone chain | **82.8** (31%) | 75.1 (54%) | 70.6 (41%) | 76.8 (47%) | 68.6 (59%) | 65.7 (79%) | 62.9 (90%) |
+| clean 16 kHz | **88.8** (18%) | 81.6 (37%) | 80.9 (36%) | 79.5 (49%) | 75.0 (36%) | 72.8 (60%) | 67.3 (55%) |
+| G.711 μ-law (landline) | **86.7** (23%) | 80.7 (39%) | 79.9 (39%) | 78.3 (51%) | 71.8 (49%) | 69.4 (73%) | 54.0 (40%) |
+| AMR-NB 7.95 kbit/s (mobile) | **86.9** (25%) | 80.5 (41%) | 77.5 (43%) | 78.4 (49%) | 70.6 (57%) | 68.4 (77%) | 59.9 (62%) |
+| 10 dB noise + AMR-NB | **83.4** (33%) | 76.3 (52%) | 71.1 (47%) | 76.8 (45%) | 67.7 (66%) | 65.2 (84%) | 64.0 (92%) |
+| mixed phone chain | **82.8** (31%) | 75.1 (54%) | 70.4 (41%) | 76.8 (48%) | 68.8 (58%) | 65.7 (79%) | 63.1 (90%) |
 | AUC, clean / mixed | **0.93 / 0.87** | 0.82 / 0.75 | 0.81 / 0.73 | 0.86 / 0.80 | 0.79 / 0.67 | 0.77 / 0.60 | 0.67 / 0.52 |
 
 - eot_v1 leads every model in every condition, by 6.0 to 7.3 points over the next best. Paired McNemar tests against
@@ -40,8 +40,9 @@ brackets: the share of mid-sentence pauses the model called finished, where the 
 - codewithmoin, deveshu, abhishek and chhotu are community Hinglish end-of-turn models published on Hugging Face.
 - Smart Turn int8 is the file Pipecat ships by default. On real voices it cuts in far more often than Smart Turn's own fp32 file.
 - The "mixed phone chain" draws one random chain per clip: room reverb, noise, AGC, clipping, codecs, packet loss and jitter.
-  Its audio is not bit-identical between our two machines. The eot_v1, codewithmoin and Smart Turn int8 columns were scored
-  on one machine and the rest on the other, so gaps in that row can be off by up to about 0.4 points.
+- Every cell comes from one run on one machine ([`week2_fleurs_one_machine_report.md`](docs/results/week2_fleurs_one_machine_report.md)).
+  The mixed chain's audio is not bit-identical across machines, and chhotu, an int8 model, scored 1 to 4 clips differently
+  on another CPU even on clean audio, so compare models within one run.
 
 ### Smart Turn's own test set (all its Hindi clips are TTS)
 
