@@ -36,6 +36,8 @@ It was expected to go on Oct 28; it is still available on Nov 3, so heavy jobs k
 section) as the fallback. Repo at `C:\Users\FITT\pehleaap` (fresh clone, Nov 3; the earlier clone at
 `C:\Users\FITT\Desktop\PRIYANSH!!\pehleaap` is gone, together with its `data\` and `runs\`). Python 3.12.10 (the pins
 install and all tests pass on it). ffmpeg is a winget 9.0.1 full build on PATH, with the same codecs as the Dev box's 9.0.2.
+The two builds encode Opus differently, so the mixed chain's numbers differ between the machines by a few clips
+(`docs/results/week2_ffmpeg_opus.md`). Keep 9.0.1 first on PATH here so earlier GPU-box results reproduce.
 
 | Item | Value |
 |---|---|
