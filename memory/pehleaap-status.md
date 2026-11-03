@@ -465,6 +465,6 @@ exactly), #49 IndicVoices builder. Open: #50 TurnBench dev, #51 prereg draft (me
   eval_sessions / eval_clip_baselines (from `.venv-gpu`): fp32 |dp| <= 1.1e-5, results.json identical, 3 TurnBench sessions
   134.5 s -> 48.5 s. int8 stays on the CPU. Default CPU output is bit-identical to the saved run. `docs/results/week2_gpu_eval.md`.
 - **Eval speed (Nov 4, branch eval-nospin):** the 22-min TurnBench run was slow because of ORT's spinning idle threads
-  starving the torch-based Whisper features (~63% of the time), not because each model recomputes them. Both eval scripts now
-  pass `spin=False`; output is bit-identical. 3 TurnBench sessions: 134.5 s -> 58.4 s on CPU, 33.5 s with `--device cuda`.
+  starving the torch-based Whisper features (~63% of the time), not because each model recomputes them. Both eval scripts take
+  opt-in `--no-spin` (PR #55 had it as default; Priyansh asked for a flag, Nov 4); output is bit-identical. 3 TurnBench sessions: 134.5 s -> 58.4 s on CPU, 33.5 s with `--device cuda`.
   FLEURS: 1,266 s -> 869 s. Shared features were measured and dropped: no gain once the threads are quiet.
