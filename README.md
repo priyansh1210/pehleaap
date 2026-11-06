@@ -1,31 +1,65 @@
+<div align="center">
+
 # pehleaap
 
-*Pehle aap* ("after you"): turn-taking for **Hinglish voice agents on 8 kHz phone lines**.
+**Turn-taking for Hinglish voice agents on 8 kHz phone lines**
+
+*Pehle aap* (पहले आप, "after you"): a voice agent that lets the caller finish.
+
+[![Licence: BSD-2-Clause](https://img.shields.io/badge/licence-BSD--2--Clause-blue.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/version-1.0.0-informational.svg)](pyproject.toml)
+[![Python](https://img.shields.io/badge/python-3.11%2B-3776AB.svg)](pyproject.toml)
+[![Model: ONNX](https://img.shields.io/badge/model-ONNX%20·%2032%20MB-005CED.svg)](https://github.com/priyansh1210/pehleaap/releases/tag/models-v1)
+[![Pipecat](https://img.shields.io/badge/works%20with-Pipecat-7C3AED.svg)](https://github.com/pipecat-ai/pipecat)
+
+[Results](#results) · [Quick start](#quick-start) · [Demo](#demo-hear-the-difference) · [Benchmark](#benchmark-your-own-model) · [Retrain](#retrain-on-your-own-data) · [Roadmap](#roadmap)
+
+</div>
+
+---
+
+## The problem
 
 At every pause, a voice agent has to decide whether the caller has finished. Hindi callers often pause mid-sentence, before
-the verb or to look something up ("mera account number hai... ek minute..."), and a phone codec throws away half the audio
-bandwidth the model listens to. Smart Turn v3.2, the open end-of-turn model most voice stacks use, learned from wideband audio
-and synthetic (TTS) Hindi. On real Hindi voices over a G.711 phone line, the file Pipecat ships calls **73% of mid-sentence
-pauses finished**, so the bot talks over the caller.
+the verb or to look something up (*"mera account number hai... ek minute..."*), and a phone codec throws away half of the
+audio bandwidth the model listens to.
 
-This repo has three parts:
+Smart Turn v3.2, the open end-of-turn model most voice stacks use, learned from wideband audio and synthetic (TTS) Hindi. On
+real Hindi voices over a G.711 phone line, the file Pipecat ships calls **73% of mid-sentence pauses finished**, so the bot
+talks over the caller.
 
-- **eot_v1**, the model: Smart Turn v3.2 fine-tuned for phone lines and real Hindi voices. It's the same size and speed as
-  Smart Turn's fp32 file (32 MB; about 17 ms per decision on 4 threads of a workstation CPU, 56 ms on one core, so one core
-  carries about 47 calls: [`week2_compute_bench.md`](docs/results/week2_compute_bench.md)), and the file drops straight
-  into Pipecat's own analyzer.
-- **A benchmark** that scores any end-of-turn model on clean audio and on simulated phone lines (G.711, AMR-NB, noise, echo,
+## Highlights
+
+|  | Pipecat default (Smart Turn v3.2 int8) | **eot_v1** |
+|---|---|---|
+| Accuracy, real Hindi voices, clean | 72.8% | **88.8%** |
+| Accuracy, real Hindi voices, G.711 phone line | 69.4% | **86.7%** |
+| Cut-ins on mid-sentence pauses, G.711 | 73% | **23%** |
+| English conversation (TurnBench), cut-ins at a 0.5 s reply gap | 14.7% | **13.5%** |
+| Size and speed | 8.7 MB, int8 | 32 MB, fp32; about 17 ms per decision on 4 CPU threads |
+| Integration | built in | drop-in model file for Pipecat's own analyzer |
+
+pehleaap has three parts:
+
+- **eot_v1, the model.** Smart Turn v3.2 fine-tuned for phone lines and real Hindi voices. It has the same size and speed
+  as Smart Turn's fp32 file: 32 MB, about 17 ms per decision on 4 threads of a workstation CPU and 56 ms on one core, so one
+  core carries about 47 calls at 20 pauses a minute ([compute bench](docs/results/week2_compute_bench.md)). The file drops straight into
+  Pipecat's own analyzer.
+- **A benchmark.** It scores any end-of-turn model on clean audio and on simulated phone lines (G.711, AMR-NB, noise, echo,
   packet loss), on single clips and on recorded two-person conversations.
-- **The recipe** to rerun all of it on your own call data: phone-line augmentation, the training script, labelling tools and a
-  recording protocol.
+- **A recipe.** Everything needed to rerun the work on your own call data: phone-line augmentation, the training script,
+  labelling tools and a recording protocol with consent forms.
 
-## Results (v1, October 2026)
+---
 
-### Real human Hindi voices
+## Results
 
-FLEURS Hindi read speech: 1,046 clips (657 finished sentences, and 389 cut 0.2 s into a pause the reader made mid-sentence).
-None of these clips were trained on. Each cell is accuracy (%) at the model's own threshold, with the **cut-in rate** in
-brackets: the share of mid-sentence pauses the model called finished, where the bot would talk over the caller.
+### Real human Hindi voices (FLEURS)
+
+FLEURS Hindi read speech: 1,046 clips. 657 are finished sentences, and 389 are cut 0.2 s into a pause the reader made
+mid-sentence. None of these clips were used in training. Each cell is accuracy (%) at the model's own threshold, with the
+**cut-in rate** in brackets: the share of mid-sentence pauses the model called finished, where the bot would talk over the
+caller.
 
 | Audio | **eot_v1 (ours)** | codewithmoin | deveshu | abhishek | Smart Turn fp32 | Smart Turn int8 | chhotu |
 |---|---|---|---|---|---|---|---|
@@ -36,17 +70,18 @@ brackets: the share of mid-sentence pauses the model called finished, where the 
 | mixed phone chain | **82.8** (31%) | 75.1 (54%) | 70.4 (41%) | 76.8 (48%) | 68.8 (58%) | 65.7 (79%) | 63.1 (90%) |
 | AUC, clean / mixed | **0.93 / 0.87** | 0.82 / 0.75 | 0.81 / 0.73 | 0.86 / 0.80 | 0.79 / 0.67 | 0.77 / 0.60 | 0.67 / 0.52 |
 
-- eot_v1 leads every model in every condition, by 6.0 to 7.3 points over the next best. Paired McNemar tests against
-  codewithmoin, deveshu and abhishek in all five conditions give p ≤ 4e-5 for every one of the 15 tests.
+- **eot_v1 leads every model in every condition**, by 6.0 to 7.3 points over the next best. Paired McNemar tests against
+  codewithmoin, deveshu and abhishek in all five conditions give p ≤ 4e-5 in each of the 15 tests.
 - codewithmoin, deveshu, abhishek and chhotu are community Hinglish end-of-turn models published on Hugging Face.
-- Smart Turn int8 is the file Pipecat ships by default. On real voices it cuts in far more often than Smart Turn's own fp32 file.
-- The "mixed phone chain" draws one random chain per clip: room reverb, noise, AGC, clipping, codecs, packet loss and jitter.
-- Every cell comes from one run on one machine ([`week2_fleurs_one_machine_report.md`](docs/results/week2_fleurs_one_machine_report.md)).
-  The mixed chain's audio depends on the ffmpeg build, since 9.0.1 and 9.0.2 encode Opus differently
-  ([`week2_ffmpeg_opus.md`](docs/results/week2_ffmpeg_opus.md)). chhotu, an int8 model, scored 1 to 4 clips differently
-  on another CPU even on clean audio, so compare models within one run.
+- Smart Turn int8 is the file Pipecat ships by default. On real voices it cuts in far more often than Smart Turn's own
+  fp32 file.
+- The mixed phone chain draws one random chain per clip: room reverb, noise, AGC, clipping, codecs, packet loss and jitter.
+- Every cell comes from one run on one machine ([report](docs/results/week2_fleurs_one_machine_report.md)). The mixed
+  chain's audio depends on the ffmpeg build, since ffmpeg 9.0.1 and 9.0.2 encode Opus differently
+  ([details](docs/results/week2_ffmpeg_opus.md)). chhotu, an int8 model, scored 1 to 4 clips differently on another CPU
+  even on clean audio, so compare models within one run.
 
-### Smart Turn's own test set (all its Hindi clips are TTS)
+### Smart Turn's own test set (its Hindi clips are all TTS)
 
 | Audio | Hindi: **eot_v1** | Hindi: codewithmoin | Hindi: deveshu | Hindi: Smart Turn int8 | English: **eot_v1** | English: Smart Turn int8 |
 |---|---|---|---|---|---|---|
@@ -56,41 +91,66 @@ brackets: the share of mid-sentence pauses the model called finished, where the 
 | 5 dB noise + AMR-NB | **89.3** (15%) | 86.3 (21%) | 77.9 (12%) | 69.5 (63%) | **88.9** | 81.7 |
 | mixed phone chain | **91.2** (11%) | 89.4 (13%) | 82.6 (9%) | 73.5 (55%) | **91.3** | 84.3 |
 
-The community models trained on this test set's own training split, so it's in-distribution for them. On clean TTS Hindi,
-codewithmoin edges eot_v1 by 0.2 points. Once phone-line damage is added, eot_v1 leads, and on real voices (above) the gap is
-6 to 7 points.
+The community models trained on this test set's own training split, so it is in-distribution for them. On clean TTS Hindi,
+codewithmoin edges eot_v1 by 0.2 points. Once phone-line damage is added, eot_v1 leads, and on real voices (above) the gap
+is 6 to 7 points.
 
-### A real two-person conversation
+### English conversation (TurnBench dev)
 
-Coming next: the first recorded Hinglish conversation (two consenting adults, scripted role-play with fake details), scored
-by `scripts/eval_sessions.py` on its cut-in rate and response gap.
+[TurnBench dev](docs/results/week2_turnbench_dev.md): 38 real English two-person conversations (7.3 h, 26 speakers) with
+human-verified turn labels, scored on 5,965 pauses of clean studio audio. A **cut-in** is a pause where the model replied
+while the speaker was still holding the floor. The models are compared at matched reply speed.
 
-### Read with care
+| Model | Cut-in @ 0.5 s reply gap | Cut-in @ 0.8 s reply gap |
+|---|---|---|
+| **eot_v1** | **13.5%** | **10.8%** |
+| Smart Turn v3.2 fp32 | 13.9% | 12.4% |
+| Smart Turn v3.2 int8 (Pipecat default) | 14.7% | 13.0% |
+| Silence timeout | 41.6% | 19.5% |
 
-- **FLEURS is read speech, not conversation.** Readers pause at commas, not before a verb. Recorded conversations are the real test.
-- **FLEURS is home ground for eot_v1.** It trained on FLEURS's train split: the same recording setup and the same way of
-  cutting clips. No other model's card lists FLEURS in its training data. Our first fine-tune, eot_v0, had the same recipe
-  without FLEURS and scored 74.6 on clean audio, below codewithmoin's 81.6
-  ([`week1_fleurs_eot_report.md`](docs/results/week1_fleurs_eot_report.md)). So much of eot_v1's lead comes from that
-  data. A test that no model trained on comes next.
+**The Hinglish fine-tune costs nothing on English.** eot_v1 is level with Smart Turn, which trained on English: three of the
+four speaker-resampled 95% intervals include zero, and the fourth (against int8 at 0.8 s, −2.2 points [−3.8, −0.2]) favours
+eot_v1. At its default threshold, eot_v1 waits longer before replying on English (median 0.8 s against 0.3 to 0.5 s), so
+an English-first deployment would lower the threshold. TurnBench is used for evaluation only; its audio is not
+redistributed.
+
+### Coming next: a recorded Hinglish conversation
+
+The first recorded Hinglish conversation (two consenting adults, scripted role-play with fake details) will be scored by
+`scripts/eval_sessions.py` on cut-in rate against response gap. A hand-labelled Hindi test from IndicVoices, which no model
+trained on, follows under a preregistered analysis plan ([`docs/prereg.md`](docs/prereg.md)).
+
+### Limitations
+
+- **FLEURS is read speech, not conversation.** Readers pause at commas, not before a verb. Recorded conversations are the
+  real test.
+- **FLEURS is home ground for eot_v1.** It trained on FLEURS's train split, which shares the test split's recording setup
+  and the way clips are cut. No other model's card lists FLEURS in its training data. Our first fine-tune, eot_v0, used
+  the same recipe without FLEURS and scored 74.6 on clean audio, below codewithmoin's 81.6
+  ([report](docs/results/week1_fleurs_eot_report.md)). Much of eot_v1's lead therefore comes from that data, and a test that
+  no model trained on is next.
 - FLEURS publishes no speaker IDs, so some test readers may also appear in training. The sentences never overlap.
-- An 18% cut-in rate on clean real voices is still too high for a product. Threshold tuning and conversational training data come next.
-- English slips slightly against our first fine-tune, eot_v0 (−0.7 points clean, p = 3e-4), but stays above Smart Turn everywhere.
-- eot_v1 is fp32, the same size and speed as Smart Turn's fp32 file (`smart-turn-v3.2-gpu.onnx`). The test-set table compares
-  it with Smart Turn int8 (`smart-turn-v3.2-cpu.onnx`), the file Pipecat ships.
-- The significance tests treat clips as independent, but one reader can give several clips, so the real uncertainty is
-  somewhat larger than the p-values say.
-- Full reports, commands and significance tests: [`docs/results/week1_eot_v1_report.md`](docs/results/week1_eot_v1_report.md),
-  [`docs/results/week1_fleurs_more_baselines_report.md`](docs/results/week1_fleurs_more_baselines_report.md),
-  [`docs/results/week1_fleurs_significance.md`](docs/results/week1_fleurs_significance.md), and the rest of
-  [`docs/results/`](docs/results/).
+- An 18% cut-in rate on clean real voices is still too high for a product. Threshold tuning and conversational training
+  data come next.
+- English accuracy slips slightly against eot_v0 on Smart Turn's test set (−0.7 points clean, p = 3e-4) but stays above
+  Smart Turn everywhere.
+- eot_v1 is fp32, the same size and speed as Smart Turn's fp32 file (`smart-turn-v3.2-gpu.onnx`). The test-set table
+  compares it with Smart Turn int8 (`smart-turn-v3.2-cpu.onnx`), the file Pipecat ships.
+- The significance tests treat clips as independent, but one reader can contribute several clips, so the real uncertainty
+  is somewhat larger than the p-values suggest.
 
-## Use the model
+Full reports, commands and significance tests are in [`docs/results/`](docs/results/), starting with the
+[eot_v1 report](docs/results/week1_eot_v1_report.md), the [baseline comparison](docs/results/week1_fleurs_more_baselines_report.md)
+and the [significance tests](docs/results/week1_fleurs_significance.md).
+
+---
+
+## Quick start
 
 ```powershell
 git clone https://github.com/priyansh1210/pehleaap
 cd pehleaap
-python -m venv .venv-demo                                   # the light install: Pipecat, onnxruntime, no PyTorch
+python -m venv .venv-demo                                   # light install: Pipecat and onnxruntime, no PyTorch
 .venv-demo\Scripts\python -m pip install -r requirements-demo.txt
 .venv-demo\Scripts\python -m pip install -e . --no-deps
 .venv-demo\Scripts\python scripts\get_weights.py            # weights\eot_v1\model.onnx, checksum-verified
@@ -98,7 +158,9 @@ python -m venv .venv-demo                                   # the light install:
 
 On Linux or macOS, use `.venv-demo/bin/python` instead.
 
-**In Pipecat**, use it in place of Smart Turn's own file:
+### In Pipecat
+
+Use eot_v1 in place of Smart Turn's own file:
 
 ```python
 from pipecat.audio.turn.smart_turn.local_smart_turn_v3 import LocalSmartTurnAnalyzerV3
@@ -106,10 +168,13 @@ from pipecat.audio.turn.smart_turn.local_smart_turn_v3 import LocalSmartTurnAnal
 turn_analyzer = LocalSmartTurnAnalyzerV3(smart_turn_model_path="weights/eot_v1/model.onnx")
 ```
 
-Then pass it wherever your pipeline takes Smart Turn, for example `TurnAnalyzerUserTurnStopStrategy(turn_analyzer=...)` as in
-[`demo/bot.py`](demo/bot.py). `tests/test_pipecat_ext.py` checks that Pipecat's analyzer and ours give the same probabilities.
+Then pass it wherever your pipeline takes Smart Turn, for example `TurnAnalyzerUserTurnStopStrategy(turn_analyzer=...)` as
+in [`demo/bot.py`](demo/bot.py). `tests/test_pipecat_ext.py` checks that Pipecat's analyzer and ours return the same
+probabilities.
 
-**In Python**, ask it at every pause your VAD reports:
+### In Python
+
+Ask the model at every pause your VAD reports:
 
 ```python
 from pehleaap.audio.io import load_audio
@@ -123,28 +188,29 @@ print("reply" if p >= threshold else "keep listening")
 
 ## Demo: hear the difference
 
-Run a browser call through a simulated 8 kHz phone line. The bot dings when the turn model decides you've finished, so a ding
-mid-sentence is a cut-in.
+Make a browser call through a simulated 8 kHz phone line. The bot dings when the turn model decides you have finished, so a
+ding mid-sentence is a cut-in.
 
 ```powershell
-.venv-demo\Scripts\python demo\bot.py        # open http://localhost:7860, allow the mic, talk
+.venv-demo\Scripts\python demo\bot.py        # open http://localhost:7860, allow the mic, and talk
 ```
 
-Open http://localhost:7860/switch in a second tab to flip between Smart Turn v3.2 and eot_v1 mid-call. The terminal shows both
-models' verdicts at every pause, and each turn's gap from the end of speech to the ding.
+Open http://localhost:7860/switch in a second tab to flip between Smart Turn v3.2 and eot_v1 mid-call. The terminal shows
+both models' verdicts at every pause, and each turn's gap from the end of speech to the ding.
 
-To change what's loaded:
-- `$env:PEHLEAAP_TURN_MODELS`: other models (registry names, or folders under `weights\`).
-- `$env:PEHLEAAP_TURN_MODEL`: which one decides first.
-- `$env:PEHLEAAP_PHONE_LINE = "0"`: wideband audio, no phone line.
+| Environment variable | Effect |
+|---|---|
+| `PEHLEAAP_TURN_MODELS` | Models to load (registry names, or folders under `weights\`) |
+| `PEHLEAAP_TURN_MODEL` | The model that decides first |
+| `PEHLEAAP_PHONE_LINE = "0"` | Wideband audio, no phone line |
 
-## Score your own model
+## Benchmark your own model
 
-The benchmark scores any Smart-Turn-format ONNX file (`--onnx name=path`) or any model in
-`pehleaap/baselines/turn_models.py`'s `REGISTRY`. This needs the full research install (below).
+The benchmark scores any Smart-Turn-format ONNX file (`--onnx name=path`) or any model in the `REGISTRY` of
+`pehleaap/baselines/turn_models.py`. It needs the [research install](#research-install).
 
 ```powershell
-# Smart Turn's test set (downloaded on first use, 4.8 GB), clean and phone conditions
+# Smart Turn's test set (4.8 GB, downloaded on first use), clean and phone conditions
 .venv\Scripts\python scripts\eval_clip_baselines.py --models smart_turn_v3.2_int8 --onnx mine=path\to\model.onnx `
     --conditions clean g711_mulaw amrnb_7.95 mixed
 # Real Hindi voices: build the FLEURS clips once, then score them
@@ -154,12 +220,16 @@ The benchmark scores any Smart-Turn-format ONNX file (`--onnx name=path`) or any
 ```
 
 The noise and `mixed` conditions use MUSAN noise. Fetch it once with `scripts\get_noise.py` (0.7 GB kept, about 75 min).
+Both evaluation scripts accept `--device cuda` to run fp32 models on a GPU, and `--no-spin` for faster CPU runs; both give
+the same results as the default.
 
 To score **recorded conversations** instead of clips:
-1. Record two tracks, one per speaker, following [`docs/recording_protocol.md`](docs/recording_protocol.md) (consent forms included).
+
+1. Record two tracks, one per speaker, following [`docs/recording_protocol.md`](docs/recording_protocol.md) (consent
+   forms included).
 2. Run `scripts\process_session.py`: consent check, audio and clock checks, then turn-taking labels.
 3. Check the labels by ear with `scripts\verify_app.py`.
-4. Run `scripts\eval_sessions.py`. It reports the cut-in rate against the response gap, next to a plain silence-timeout bot.
+4. Run `scripts\eval_sessions.py`. It reports cut-in rate against response gap, next to a plain silence-timeout bot.
 
 ## Retrain on your own data
 
@@ -173,9 +243,11 @@ Training takes about 25 minutes on a 20 GB GPU (RTX 4000 Ada, bf16). Every clip 
 chain on the fly (`configs/augment.yaml`). Checkpoints are resumable, and the best dev step is exported to ONNX.
 
 Your own recordings go into training with `scripts\sessions_to_store.py`, after `scripts\make_splits.py --freeze` has made
-speaker-disjoint train, dev and test splits. Real phone-line sessions only ever go in the test split.
+speaker-disjoint train, dev and test splits. Real phone-line sessions only ever go into the test split.
 
-## Install (research stack, Windows)
+## Research install
+
+Windows:
 
 ```powershell
 python -m venv .venv
@@ -184,26 +256,29 @@ python -m venv .venv
 .venv\Scripts\python scripts\env_check.py                 # specs, dedicated VRAM, codecs
 ```
 
-You also need an **ffmpeg full build** that includes `libopencore_amrnb`, for the AMR-NB codec (for example the gyan.dev
+You also need an **ffmpeg full build** that includes `libopencore_amrnb` for the AMR-NB codec (for example the gyan.dev
 `full_build-shared` build). Put it on `PATH`, or set `PEHLEAAP_FFMPEG` to `ffmpeg.exe`. The demo's tests run in their own
 venv: `.venv-demo\Scripts\python -m pytest tests\test_pipecat_ext.py`.
 
-## What's in the repo
+---
 
-| Piece | Where |
+## Repository map
+
+| Component | Location |
 |---|---|
 | Smart Turn v3.2 baseline (ONNX), plus a reproduction of its published accuracy | `scripts/repro_smart_turn.py` |
-| Community Hinglish end-of-turn models (deveshu, abhishek, codewithmoin, Chhotu) behind one interface | `pehleaap/baselines/turn_models.py` |
-| Clip metrics (Smart Turn's definitions) and causal event-level metrics (cut-in vs response gap) | `pehleaap/eval/` |
-| Baselines on clean vs 8 kHz G.711 / AMR-NB audio, a codec sweep, and the full phone chain | `scripts/eval_clip_baselines.py` |
-| Phone-line augmentation: room reverb, noise at an SNR bucket, speakerphone echo, AGC, clipping, band-pass, codecs (with G.711 tandem), packet loss + jitter with concealment. Timing stays within 1 ms | `pehleaap/telephony/pipeline.py`, `configs/augment.yaml` |
-| Real-time phone line (G.711 bit-identical to ffmpeg, ~6 ms delay) | `pehleaap/telephony/realtime.py` |
+| Community Hinglish end-of-turn models (deveshu, abhishek, codewithmoin, chhotu) behind one interface | `pehleaap/baselines/turn_models.py` |
+| Clip metrics (Smart Turn's definitions) and causal event-level metrics (cut-in against response gap) | `pehleaap/eval/` |
+| Baselines on clean and 8 kHz G.711 / AMR-NB audio, a codec sweep, and the full phone chain | `scripts/eval_clip_baselines.py` |
+| Phone-line augmentation: room reverb, noise at an SNR bucket, speakerphone echo, AGC, clipping, band-pass, codecs (with G.711 tandem), packet loss and jitter with concealment; timing stays within 1 ms | `pehleaap/telephony/pipeline.py`, `configs/augment.yaml` |
+| Real-time phone line (G.711 bit-identical to ffmpeg, about 6 ms delay) | `pehleaap/telephony/realtime.py` |
 | Smart Turn v3.2 in PyTorch, loaded from the published fp32 ONNX (matches it within 4e-6), as the starting point for fine-tuning | `pehleaap/models/smart_turn.py` |
-| Fine-tuning: English + Hindi clips through the augmentation chain, resumable checkpoints, ONNX export, int8 copies | `scripts/train_eot.py`, `scripts/quantize_eot.py`, `pehleaap/train/`, `configs/train_eot*.yaml` |
+| Fine-tuning: English and Hindi clips through the augmentation chain, resumable checkpoints, ONNX export, int8 copies | `scripts/train_eot.py`, `scripts/quantize_eot.py`, `pehleaap/train/`, `configs/train_eot*.yaml` |
 | Cross-fitted threshold calibration: how much of a model's phone-line drop a re-picked threshold wins back | `scripts/calibrate_thresholds.py` |
-| Real human Hindi end-of-turn test from FLEURS read speech | `scripts/make_fleurs_eot.py` |
-| Labelling engine: VAD → speech units → SHIFT / HOLD / BC / INTERRUPT / HOLD_REQ / NOISE_ECHO events. With `--asr`, Whisper large-v3 transcripts drive the backchannel, hold-request and digit rules; speakerphone echo is cut out frame by frame | `pehleaap/labeling/`, `scripts/label_session.py` |
-| Label checking by ear: a local page that plays each event with both speakers' loudness, and 10% double-annotated for Cohen's kappa | `scripts/verify_app.py` |
+| Real human Hindi end-of-turn tests from FLEURS read speech and hand-labelled IndicVoices clips | `scripts/make_fleurs_eot.py`, `scripts/make_indicvoices_eot.py` |
+| English conversation check on TurnBench dev, and automatic labels compared with human ones | `scripts/turnbench_to_sessions.py`, `scripts/turnbench_verify.py`, `scripts/paired_bootstrap.py` |
+| Labelling engine: VAD → speech units → SHIFT / HOLD / BC / INTERRUPT / HOLD_REQ / NOISE_ECHO events. With `--asr`, Whisper large-v3 transcripts drive the backchannel, hold-request and digit rules; speakerphone echo is removed frame by frame | `pehleaap/labeling/`, `scripts/label_session.py` |
+| Label checking by ear: a local page that plays each event with both speakers' loudness, with 10% double-annotated for Cohen's kappa | `scripts/verify_app.py` |
 | One command per recorded session: consent check (stops without it), audio health, clock drift, labels, checksums | `scripts/process_session.py` |
 | Turn models on recorded sessions: each pause replayed to every model through each phone condition | `scripts/eval_sessions.py` |
 | Speaker-disjoint splits (real phone sessions test-only), frozen with a checksum lock | `scripts/make_splits.py`, `scripts/sessions_to_store.py` |
@@ -212,25 +287,33 @@ venv: `.venv-demo\Scripts\python -m pytest tests\test_pipecat_ext.py`.
 
 ## Roadmap
 
-v1 is the first working cut. Next:
+v1 is the first working release. Next:
+
 - More recorded conversations, then conversational fine-tuning on speaker-disjoint splits.
-- Telling a barge-in from a backchannel ("haan", "achha") while the agent is talking.
-- Hold intent ("ek minute"): wait quietly instead of replying.
+- Telling a barge-in from a backchannel (*"haan"*, *"achha"*) while the agent is talking.
+- Hold intent (*"ek minute"*): wait quietly instead of replying.
 - An int8 eot_v1 for CPU-bound deployments. It runs at Smart Turn int8's speed but needs a Hindi threshold of 0.75 on phone
-  audio. Keeping its last layers in float doesn't remove that ([`week2_eot_v1_int8_head.md`](docs/results/week2_eot_v1_int8_head.md)).
+  audio, and keeping its last layers in float doesn't remove that ([details](docs/results/week2_eot_v1_int8_head.md)).
 
-The full plan, including the fact-check of prior work, is in [`docs/PLAN.md`](docs/PLAN.md).
+The full plan, including a fact-check of prior work, is in [`docs/PLAN.md`](docs/PLAN.md).
 
-## Development
+## Recognition
 
-The code was developed on a laptop, and the main runs used a GPU box (runbooks: [`docs/machines.md`](docs/machines.md));
-Kaggle is the fallback. Audio never goes in git. `data/manifests/*.jsonl` holds a sha256 per file, so
-`scripts\env_check.py --verify-data` proves two machines hold the same data. Claude Code's project memory lives in git
-(`CLAUDE.md` and `memory/`), so both machines share it.
+- **XERJ Corpus Hub.** Commit [`2b35753`](https://github.com/priyansh1210/pehleaap/commit/2b357531fa602370c32b00c620a1f6afe09c07b8),
+  which added the checksum-verified model downloader, its tests and the demo wiring, was selected for the Corpus Hub of
+  [XERJ](https://github.com/xerj-org/xerj).
+
+## Reproducibility
+
+Development ran on a laptop, and the main evaluations and fine-tuning ran on a dedicated GPU workstation (runbooks:
+[`docs/machines.md`](docs/machines.md)), with Kaggle as the fallback. Audio never goes into git: `data/manifests/*.jsonl`
+holds a sha256 per file, so `scripts\env_check.py --verify-data` proves that two machines hold the same data. The reports
+in [`docs/results/`](docs/results/) give the commands and result files behind their numbers.
 
 ## Licence and credits
 
-BSD-2-Clause ([`LICENSE`](LICENSE)). eot_v1 is a fine-tune of [Smart Turn](https://github.com/pipecat-ai/smart-turn)
-v3.2 (BSD-2-Clause, Daily). It was trained on Smart Turn's training data, FLEURS and MUSAN (all CC BY 4.0). Notices and
-credits are in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md). Community models are compared, not redistributed, and each
-keeps its own licence.
+Released under the BSD-2-Clause licence ([`LICENSE`](LICENSE)). eot_v1 is a fine-tune of
+[Smart Turn](https://github.com/pipecat-ai/smart-turn) v3.2 (BSD-2-Clause, Daily). It was trained on Smart Turn's training
+data, FLEURS and MUSAN (all CC BY 4.0). Notices and credits are in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+Community models are compared, not redistributed, and each keeps its own licence. TurnBench dev (Mundo AI, NonCommercial
+licence) is used for evaluation only.
