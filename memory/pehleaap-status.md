@@ -468,3 +468,11 @@ exactly), #49 IndicVoices builder. Open: #50 TurnBench dev, #51 prereg draft (me
   starving the torch-based Whisper features (~63% of the time), not because each model recomputes them. Both eval scripts take
   opt-in `--no-spin` (PR #55 had it as default; Priyansh asked for a flag, Nov 4); output is bit-identical. 3 TurnBench sessions: 134.5 s -> 58.4 s on CPU, 33.5 s with `--device cuda`.
   FLEURS: 1,266 s -> 869 s. Shared features were measured and dropped: no gain once the threads are quiet.
+- **Next: verb-final negatives (designed Nov 4, nothing built yet).** Step 1 = test set + baseline scores before any
+  retraining: `scripts/make_verbfinal_eot.py` on FLEURS test+dev (418+239 rec, 1 over 28 s). Whisper large-v3 (cached)
+  word timings, kept only if its last words match the TSV transcript (col 3, strip `।`/punctuation/nukta). Verb group =
+  trailing run of auxiliaries/light verbs (है हैं था थी थे गया गई गए जाता सकता रहा होगा चाहिए किया दिया ...; those three
+  alone end 70% of sentences) + 1 word before. Not-finished clip = cut at verb-group start, snapped to min-energy 10 ms,
+  + 0.2 s room tone; finished clip = cut at the VAD end + the same tail (same artifact in both classes). Reuse `with_tail`
+  (add an optional `end_s`, default unchanged). Write Smart Turn parquet to data/external/fleurs-hi-verbfinal; score with
+  `eval_clip_baselines.py --no-spin`. Retrain (eot_v2, train split -> store) only if models fail these cuts.
