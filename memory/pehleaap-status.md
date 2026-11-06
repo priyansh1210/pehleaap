@@ -468,3 +468,11 @@ exactly), #49 IndicVoices builder. Open: #50 TurnBench dev, #51 prereg draft (me
   starving the torch-based Whisper features (~63% of the time), not because each model recomputes them. Both eval scripts take
   opt-in `--no-spin` (PR #55 had it as default; Priyansh asked for a flag, Nov 4); output is bit-identical. 3 TurnBench sessions: 134.5 s -> 58.4 s on CPU, 33.5 s with `--device cuda`.
   FLEURS: 1,266 s -> 869 s. Shared features were measured and dropped: no gain once the threads are quiet.
+
+**Laptop session 2026-11-06: README polish MERGED (PR #57, branch readme-polish).** Professional layout: centred header +
+badges, Highlights table (Pipecat default vs eot_v1), TurnBench English table added, IndicVoices + prereg as "Coming next",
+`--device cuda` / `--no-spin` noted, "Read with care" -> "Limitations", "What's in the repo" -> "Repository map", new
+"Recognition" section (XERJ Corpus Hub, commit 2b35753 = e436969 after the rewrite, at Priyansh's request), "Development" -> "Reproducibility" with the
+Claude Code memory line removed ([[readme-no-ai-mentions]]). Numbers unchanged from main. memory-oct26 branch is stale (7
+memory commits behind main at the time); memory now continues on memory-nov6 from main.
+Later Nov 6: history rewritten to drop the Claude co-author trailers and the Gmail ([[no-claude-attribution]]); every SHA changed.
