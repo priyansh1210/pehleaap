@@ -1,5 +1,5 @@
 - [Priyansh profile](user-profile.md) — Priyansh (they/them) builds pehleaap: Hinglish telephony turn-taking recipe + benchmark
-- [pehleaap status](pehleaap-status.md) — locked decisions (compute = GPU box while it lasts, Kaggle fallback), schedule (wk1 = Oct 26 2026), done/pending (eot_v1 = best model: real-voice FLEURS 88.8 vs eot_v0 74.6; v1 milestone Oct 28); Nov 4: TurnBench English check, prereg draft; plan in docs/PLAN.md
+- [pehleaap status](pehleaap-status.md) — locked decisions (compute = GPU box while it lasts, Kaggle fallback), schedule (wk1 = Oct 26 2026), done/pending (eot_v1 = best model: real-voice FLEURS 88.8 vs eot_v0 74.6; v1 milestone Oct 28); Nov 4: TurnBench English check, prereg draft; Nov 6: README polish merged (#57); plan in docs/PLAN.md
 - [Compute setup](two-machine-setup.md) — Laptop (GTX 1650) for code/demo; GPU box (RTX 4000 Ada 20 GB) for main runs + fine-tuning while it lasts (end unknown); Kaggle T4 = fallback
 - [Don't disturb GPU-box runs](gpu-box-runs-untouched.md) — Laptop changes must never change a GPU-box job's results; keep scripts backward compatible, verify identical outputs
 - [Shared memory](shared-memory.md) — memory lives in git (this folder) so both machines share it; pull at start, commit + push before switching
@@ -11,4 +11,6 @@
 - [Hugging Face plan](hf-publish-plan.md) — HF upload of eot_v1 not in the plan; Laptop recommends Oct 28 with v1.0, mirror of the GitHub release; undecided
 - [FLEURS caveat](fleurs-in-distribution-caveat.md) — eot_v1's FLEURS lead is partly home field (eot_v0 74.6 < cwm 81.6); README line done; IndicVoices 300-clip hand-labelled test pending labels
 - [Ponytail](ponytail.md) — Priyansh's rule (Nov 3): ponytail skill (full) for all development + ponytail-review before each PR; one update per PR
-- [Commit email privacy](commit-email-privacy.md) — 35 commits expose the personal Gmail; switch to noreply; XERJ outreach email needs no reply
+- [Commit email privacy](commit-email-privacy.md) — 35 commits expose the personal Gmail; switch to noreply; XERJ outreach email needs no reply (README now credits it, Priyansh's call, Nov 6)
+- [README: no AI mentions](readme-no-ai-mentions.md) — Priyansh's rule (Nov 6): README professional, never mentions Claude/Anthropic/AI authorship
+- [No Claude attribution](no-claude-attribution.md) — Priyansh's rule (Nov 6): no Co-Authored-By Claude trailers; history rewritten Nov 6 (all SHAs changed; GPU box must re-clone)

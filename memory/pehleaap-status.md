@@ -476,3 +476,11 @@ exactly), #49 IndicVoices builder. Open: #50 TurnBench dev, #51 prereg draft (me
   + 0.2 s room tone; finished clip = cut at the VAD end + the same tail (same artifact in both classes). Reuse `with_tail`
   (add an optional `end_s`, default unchanged). Write Smart Turn parquet to data/external/fleurs-hi-verbfinal; score with
   `eval_clip_baselines.py --no-spin`. Retrain (eot_v2, train split -> store) only if models fail these cuts.
+
+**Laptop session 2026-11-06: README polish MERGED (PR #57, branch readme-polish).** Professional layout: centred header +
+badges, Highlights table (Pipecat default vs eot_v1), TurnBench English table added, IndicVoices + prereg as "Coming next",
+`--device cuda` / `--no-spin` noted, "Read with care" -> "Limitations", "What's in the repo" -> "Repository map", new
+"Recognition" section (XERJ Corpus Hub, commit 2b35753 = e436969 after the rewrite, at Priyansh's request), "Development" -> "Reproducibility" with the
+Claude Code memory line removed ([[readme-no-ai-mentions]]). Numbers unchanged from main. memory-oct26 branch is stale (7
+memory commits behind main at the time); memory now continues on memory-nov6 from main.
+Later Nov 6: history rewritten to drop the Claude co-author trailers and the Gmail ([[no-claude-attribution]]); every SHA changed.
