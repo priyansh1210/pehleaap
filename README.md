@@ -299,7 +299,7 @@ The full plan, including a fact-check of prior work, is in [`docs/PLAN.md`](docs
 
 ## Recognition
 
-- **XERJ Corpus Hub.** Commit [`2b35753`](https://github.com/priyansh1210/pehleaap/commit/2b357531fa602370c32b00c620a1f6afe09c07b8),
+- **XERJ Corpus Hub.** Commit [`e436969`](https://github.com/priyansh1210/pehleaap/commit/e4369694610f05314fae216367686820c1c80385),
   which added the checksum-verified model downloader, its tests and the demo wiring, was selected for the Corpus Hub of
   [XERJ](https://github.com/xerj-org/xerj).
 
