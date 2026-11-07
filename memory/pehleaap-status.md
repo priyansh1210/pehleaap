@@ -484,3 +484,5 @@ badges, Highlights table (Pipecat default vs eot_v1), TurnBench English table ad
 Claude Code memory line removed ([[readme-no-ai-mentions]]). Numbers unchanged from main. memory-oct26 branch is stale (7
 memory commits behind main at the time); memory now continues on memory-nov6 from main.
 Later Nov 6: history rewritten to drop the Claude co-author trailers and the Gmail ([[no-claude-attribution]]); every SHA changed.
+Nov 7: contributors API shows only priyansh1210; #59 merged; `untrack-claude` PR pending; open question on memory/ and the
+setup scripts ([[no-claude-attribution]]).
