@@ -13,4 +13,4 @@
 - [Ponytail](ponytail.md) — Priyansh's rule (Nov 3): ponytail skill (full) for all development + ponytail-review before each PR; one update per PR
 - [Commit email privacy](commit-email-privacy.md) — 35 commits expose the personal Gmail; switch to noreply; XERJ outreach email needs no reply (README now credits it, Priyansh's call, Nov 6)
 - [README: no AI mentions](readme-no-ai-mentions.md) — Priyansh's rule (Nov 6): README professional, never mentions Claude/Anthropic/AI authorship
-- [No Claude attribution](no-claude-attribution.md) — Priyansh's rule (Nov 6): no Co-Authored-By Claude trailers; history rewritten Nov 6 (all SHAs changed; GPU box must re-clone)
+- [No Claude attribution](no-claude-attribution.md) — Priyansh's rule (Nov 6): no Co-Authored-By Claude trailers; history rewritten Nov 6 (all SHAs changed; GPU box must re-clone); Nov 7: API clean, untrack-claude PR pending, memory/ question open
